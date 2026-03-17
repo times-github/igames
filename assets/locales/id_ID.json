@@ -1,0 +1,183 @@
+{
+    "button": {
+        "signUp": "Daftar",
+        "signIn": "Masuk",
+        "signOut": "Keluar",
+        "submit": "Kirim",
+        "cancel": "Batal"
+    },
+    "language": "Bahasa",
+    "moneySymbol": "Rp",
+    "login": "Masuk",
+    "register": "Daftar",
+    "email": "Email",
+    "password": "Kata Sandi",
+    "confirmPassword": "Konfirmasi Kata Sandi",
+    "agree": "Saya setuju dengan syarat dan ketentuan",
+    "forgotPassword": "Lupa Kata Sandi?",
+    "loginToRegister": "Sudah punya akun? Masuk",
+    "registerToLogin": "Belum punya akun? Daftar",
+    "agreeToTerms": "Saya telah membaca dan menyetujui syarat dan ketentuan, dan telah berusia 18 tahun atau lebih",
+    "pleaseEnterAccount": "Silakan masukkan akun",
+    "pleaseEnterPassword": "Silakan masukkan kata sandi",
+    "accountLengthMustBeAtLeast6": "Panjang akun harus minimal 6",
+    "passwordLengthMustBeAtLeast6": "Panjang kata sandi harus minimal 6",
+    "pleaseEnterEmail": "Silakan masukkan email",
+    "pleaseEnterConfirmPassword": "Silakan masukkan konfirmasi kata sandi",
+    "pleaseEnterAgreeToTerms": "Silakan masukkan setuju dengan syarat dan ketentuan",
+    "pleaseEnterAtLeast18YearsOld": "Silakan masukkan berusia 18 tahun atau lebih",
+
+    "loginSuccess": "Login berhasil", 
+    "loginFailed": "Login gagal",
+    "registerSuccess": "Daftar berhasil",
+    "registerFailed": "Daftar gagal",
+    "networkError": "Kesalahan jaringan, silakan coba lagi",
+    "welcome": "Selamat datang",
+    "tip": "Tip",
+    "passwordNotMatch": "Kata sandi tidak cocok",
+    "passwordError": "Kata sandi salah",
+    "pleaseEnterAllInformation": "Silakan masukkan semua informasi",
+    "contactCustomerService": "Hubungi layanan pelanggan",
+    "customerService": "Layanan pelanggan",
+    "userProfile": "Profil pengguna",
+    
+    "gamestype": {
+        "all": "Semua",
+        "slot": "Slot",
+        "table": "Meja",
+        "animal": "Hewan",
+        "live": "Langsung",
+        "fish": "Ikan",
+        "arcade": "Arkade",
+        "other": "Lainnya"
+    },
+    "returnHome": "Kembali ke Beranda",
+    "startGame": "Mulai Permainan",
+    "startInputGameName": "Mulai memasukkan nama permainan",
+    "allGames": "Semua",
+    "noGame": "Tidak ada permainan",
+
+
+    "siteFotter": {
+        "aboutUs": "Tentang Kami",
+        "terms": "Syarat dan Ketentuan",
+        "privacy": "Kebijakan Privasi",
+        "responsible": "Bermain Secara Bersponsif",
+        "partners": "Partner",
+        "support": "Dukungan 24/7",
+        "email": "Kirim Email",
+        "tips": "Bermain dengan Bijak. Ingat, saat Anda bertaruh, Anda bertaruh pada risiko. Jangan menghabiskan lebih dari yang Anda bisa menangkan.",
+        "copyright": "Hak Cipta © 2025 getwiner.win",
+        "payment": "Metode Pembayaran",
+        "providers": "Penyedia",
+        "introduce": "getwiner.win dioperasikan oleh Mamba Edge B.V., sebuah perusahaan yang didirikan di Curaçao, menurut hukum Curaçao, dengan nomor pendaftaran 166370 dan alamat pendaftaran Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao, dan anak perusahaan Mamba Edge B.V. Mamba Edge B.V. diatur dan diawasi oleh Gaming Services Provider N.V., nomor lisensi 365/JAZ. Ingat, perjudian bisa menjadi kecanduan. Bermain dengan bijak.",
+        "help": "Ada masalah?",
+        "info": "Informasi"  
+    },
+
+    "logout": "Keluar",
+    "wallet": "Dompet",
+    "walletHistory": "Riwayat Dompet",
+    "gameHistory": "Riwayat Permainan",
+    "deposit": "Setoran",
+    "withdraw": "Penarikan",
+    "back": "Kembali",
+    "currentPoints": "Poin Saat Ini",
+
+    "userAccountNotFound": "Akun pengguna tidak ditemukan",
+    "depositRequestFailed": "Permintaan deposit gagal",
+    "depositFailed": "Deposit gagal",
+    "confirmDeposit": "Konfirmasi Deposit",
+    "depositSuccess": "Deposit berhasil",
+    "pleaseEnterDepositAmount": "Silakan masukkan jumlah deposit",
+    "pleaseEnterValidDepositAmount": "Silakan masukkan jumlah deposit yang valid",
+    "depositSubmitted": "Permintaan deposit telah dikirim",
+    "remark": "Catatan",
+    "pleaseEnterRemark": "Silakan masukkan catatan",
+    "depositAmount": "Pilih jumlah deposit",
+    "selectedDepositAmount": "Jumlah deposit: ",
+    "processing": "Proses...",
+    "cannotOpenPaymentPage": "Tidak dapat membuka halaman pembayaran",
+    "openPaymentPageFailed": "Gagal membuka halaman pembayaran",
+    "withdrawAmount": "Jumlah Penarikan",
+    "pleaseEnterWithdrawAmount": "Silakan masukkan jumlah penarikan",
+    "pleaseEnterValidWithdrawAmount": "Silakan masukkan jumlah penarikan yang valid",
+    "withdrawSubmitted": "Permintaan penarikan telah dikirim",
+    "withdrawSuccess": "Penarikan berhasil",
+    "withdrawFailed": "Penarikan gagal",
+    "cardNumber": "Nomor Kartu",
+    "pleaseEnterCardNumber": "Silakan masukkan nomor kartu",
+    "name": "Nama Pemilik",
+    "pleaseEnterName": "Silakan masukkan nama pemilik",
+    "mobile": "Nomor Telepon",
+        "pleaseEnterMobile": "Silakan masukkan nomor telepon",
+    "selectBank": "Pilih Bank",
+    "confirmWithdraw": "Konfirmasi Penarikan",
+    "pleaseEnterBankCode": "Silakan masukkan kode bank",
+    "getBankListFailed": "Gagal mendapatkan daftar bank",
+    "withdrawRequestFailed": "Permintaan penarikan gagal",
+    "bankCardNumber": "Nomor Kartu",
+    "pleaseEnterBankCardNumber": "Silakan masukkan nomor kartu",
+    "pleaseEnterCardholderName": "Silakan masukkan nama pemilik",
+    "cardholderName": "Nama Pemilik",
+    "pleaseSelectBank": "Pilih Bank",
+    "transactionStatus": {
+        "created": "Dibuat",
+        "init_order": "Ditugaskan",
+        "no_pay": "Belum dibayar",
+        "pay_cancel": "Dibatalkan",
+        "pay_error": "Gagal dibayar",
+        "pending": "Menunggu",
+        "processing": "Dalam proses",
+        "success": "Berhasil",
+        "failed": "Gagal",
+        "bank_processing": "Dalam proses bank"
+    },
+    "orderNumber": "Nomor pesanan",
+    "copied": "Disalin",
+    "noMore": "Tidak ada lagi",
+    "walletManagement": "Manajemen Dompet",
+    "clickTheButtonAboveToRechargeOrWithdraw": "Klik tombol di atas untuk deposit atau withdraw",
+    "all": "Semua",
+    "bet": "Taruh",
+    "endround": "Keluar",
+    "rollout": "Keluar",
+    "takeall": "Keluar semua",
+    "rollin": "Masuk",
+    "debit": "Debet",
+    "credit": "Kredit",
+    "payoff": "Keluar",
+    "refund": "Kembali",
+    "balanceBefore": "Sebelum perubahan",
+    "balanceAfter": "Setelah perubahan",
+    "reloadGame": "Muat ulang permainan",
+    "refresh": "Muat ulang",
+    "shrink": "Perkecil",
+    "expand": "Perbesar",
+    "close": "Tutup",
+    "loadingGame": "Memuat permainan...",
+    "loadingGameFailed": "Gagal memuat permainan"
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+ 
+    
+
+} 

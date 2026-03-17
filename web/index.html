@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="application/javascript" src="/assets/packages/flutter_inappwebview_web/assets/web/web_support.js" defer></script>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Platform game online terpercaya di Indonesia dengan slot gacor, live casino, taruhan olahraga, dan bonus harian menarik. Daftar sekarang dan nikmati pengalaman bermain terbaik!">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="igames">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>igames</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --bg-1: #0c1020;
+      --bg-2: #141a32;
+      --accent-1: #7a4cff;
+      --accent-2: #6d7bff;
+      --text-1: #e7ebff;
+      --text-2: #9fb3ff;
+    }
+    /* 背景渐变 + 粒子 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 20%, rgba(122, 76, 255, 0.15), transparent 40%),
+                  radial-gradient(circle at 80% 10%, rgba(109, 123, 255, 0.18), transparent 35%),
+                  linear-gradient(145deg, var(--bg-1), var(--bg-2));
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* 粒子点 */
+    .particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+        radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 120px 120px, 180px 180px;
+      background-position: 0 0, 60px 60px;
+      filter: blur(0.2px);
+      opacity: 0.6;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(-12px, -10px, 0); }
+    }
+
+    #loading {
+      position: relative;
+      text-align: center;
+      color: var(--text-1);
+      z-index: 2;
+    }
+
+    /* Logo 容器带光晕 */
+    .logo-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 120px;
+      height: 120px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(122, 76, 255, 0.2), rgba(109, 123, 255, 0.18));
+      box-shadow:
+        0 20px 40px rgba(0,0,0,0.35),
+        0 0 24px rgba(122, 76, 255, 0.35);
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    .logo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -30%;
+      background: conic-gradient(from 90deg, rgba(122,76,255,0.35), rgba(109,123,255,0.1), rgba(122,76,255,0.35));
+      animation: rotate 8s linear infinite;
+      opacity: 0.6;
+    }
+    .logo-wrap img {
+      position: relative;
+      width: 82px;
+      height: 82px;
+      border-radius: 22px;
+      background: #0d1020;
+      padding: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%,100% { transform: scale(1); box-shadow: 0 20px 40px rgba(0,0,0,0.35), 0 0 24px rgba(122, 76, 255, 0.35); }
+      50% { transform: scale(1.03); box-shadow: 0 24px 50px rgba(0,0,0,0.42), 0 0 32px rgba(122, 76, 255, 0.45); }
+    }
+
+    /* 进度条 */
+    .progress {
+      position: relative;
+      margin: 22px auto 8px;
+      width: 220px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+    }
+    .progress::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(122,76,255,0), rgba(122,76,255,0.7), rgba(109,123,255,0));
+      animation: slide 1.2s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* 文案 */
+    #loading p { display: none; }
+
+    #flutter_container {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    /* 防止 Flutter canvas 覆盖成白底 */
+    canvas {
+      background-color: transparent !important;
+    }
+  </style>
+
+  <!-- Meta Pixel Code -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  
+  fbq('init', '4141153622861642', {
+    test_event_code: 'TEST39529' // ⚠️ 测试期用
+  });
+  
+  fbq('track', 'PageView');
+  </script>
+  <!-- End Meta Pixel Code -->
+  
+
+</head>
+<body>  <!-- 加载中的动画 -->
+  <div class="particles"></div>
+  <div id="loading">
+    <div class="logo-wrap">
+      <img src="assets/assets/images/getwiner.png" alt="Logo">
+    </div>
+    <div class="progress"></div>
+  </div>
+
+
+  <!-- Flutter 容器 -->
+  <div id="flutter_container"></div>
+
+  <!-- Flutter 入口 -->
+  <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+
+    // Flutter 渲染第一个 frame 后，隐藏 loading
+    window.addEventListener("flutter-first-frame", function () {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("flutter_container").style.display = "block";
+    });
+  </script>
+</body>
+</html>

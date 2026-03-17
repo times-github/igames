@@ -1,0 +1,5991 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "默认模块",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "工具"
+    },
+    {
+      "name": "data"
+    },
+    {
+      "name": "admin"
+    },
+    {
+      "name": "Api"
+    },
+    {
+      "name": "role"
+    },
+    {
+      "name": "login"
+    }
+  ],
+  "paths": {
+    "/getcq9gamedata": {
+      "get": {
+        "summary": "拉取更新游戏",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/user/file": {
+      "post": {
+        "summary": "文件上传",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "工具"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string",
+                    "description": "请选择上传文件",
+                    "example": "file:///Users/times/Downloads/图片/图标素材/网易云音乐_爱给网_aigei_com.png"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.FileUploadRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/callback": {
+      "post": {
+        "summary": "万能回调接口",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "分组",
+            "required": false,
+            "example": "12312",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "xhgjsqsb",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "jjnejj",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "namefrom": {
+                    "description": "名称",
+                    "example": "滑稽",
+                    "type": "string"
+                  },
+                  "name2": {
+                    "example": "受委屈",
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "bb": "huaji"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/player/check/{account}": {
+      "get": {
+        "summary": "检查玩家账号",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "123456",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "wtoken",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "88888",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/balance/{account}": {
+      "get": {
+        "summary": "检查玩家账号余额",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "123456",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "1": {
+                    "summary": "异常示例",
+                    "value": "{\"data\":null,\"status\":{\"code\":\"1006\",\"datetime\":\"2025-09-04T19:02:54+08:00\",\"message\":\"User Not Found.\"}}"
+                  },
+                  "2": {
+                    "summary": "成功示例",
+                    "value": "{\"data\":{\"balance\":10000,\"currency\":\"IDR\"},\"status\":{\"code\":\"0\",\"message\":\"Success\",\"datetime\":\"2025-09-04T19:03:59+08:00\"}}"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/bet": {
+      "post": {
+        "summary": "電子遊戲下注 (派彩接口使用Endound API)",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "eventTime": {
+                    "example": "2025-09-10T21:23:37.478739558-04:00",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "example": "cq9",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "example": "21",
+                    "type": "string"
+                  },
+                  "roundid": {
+                    "example": "52771692JNKXWVTOEFEOPSZMWFHBBPDMWVPZWKCH",
+                    "type": "string"
+                  },
+                  "amount": {
+                    "example": "20.54",
+                    "type": "string"
+                  },
+                  "mtcode": {
+                    "example": "rel-bet-52771692JNKXWVTOEFEOPSZMWFHBBPDMWVPZWKCH:cq9",
+                    "type": "string"
+                  },
+                  "session": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "platform\t": {
+                    "example": "web",
+                    "type": "string"
+                  },
+                  "type": {
+                    "example": "test",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "eventTime",
+                  "gamehall",
+                  "gamecode",
+                  "roundid",
+                  "amount",
+                  "mtcode"
+                ]
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/endround": {
+      "post": {
+        "summary": "電子遊戲派彩",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "example": "cq9",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "example": "721",
+                    "type": "string"
+                  },
+                  "roundid": {
+                    "example": "52245374RZOWPSMXOVQJBSWSKPJYQEWDNLDQWBZV",
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "[{\\\"mtcode\\\":\\\"rel-win-52245374RZOWPSMXOVQJBSWSKPJYQEWDNLDQWBZV:cq9\\\",\\\"amount\\\":209.87,\\\"eventtime\\\":\\\"2025-09-16T22:17:11.3522-04:00\\\",\\\"validbet\\\":0},{\\\"mtcode\\\":\\\"rel-win-52245374RZOWPSMXOVQJBSWSKPJYQEWDNLDQWBZV-1:cq9\\\",\\\"amount\\\":37.22,\\\"eventtime\\\":\\\"2025-09-16T22:17:11.3522-04:00\\\",\\\"validbet\\\":0}]"
+                    ]
+                  },
+                  "createTime": {
+                    "example": "2025-09-08T03:39:15.13-04:00",
+                    "type": "string"
+                  },
+                  "freegame": {
+                    "type": "number",
+                    "example": 4
+                  },
+                  "bonus": {
+                    "type": "number",
+                    "example": 112
+                  },
+                  "luckydraw": {
+                    "type": "number",
+                    "description": "抽獎遊戲次數",
+                    "example": 13
+                  },
+                  "jackpot": {
+                    "type": "number",
+                    "description": "彩池奖金",
+                    "example": 1000
+                  },
+                  "jackpotcontribution": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "彩池奖金贡献值",
+                    "example": [
+                      "0.086080",
+                      "0.080",
+                      "1111"
+                    ]
+                  },
+                  "freeticket": {
+                    "type": "boolean",
+                    "example": "true"
+                  }
+                },
+                "required": [
+                  "account",
+                  "gamehall",
+                  "gamecode",
+                  "roundid",
+                  "data",
+                  "createTime"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/rollout": {
+      "post": {
+        "summary": "转出玩家'部分'额度至游戏",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "1234569",
+                    "type": "string"
+                  },
+                  "eventTime": {
+                    "example": "2025-09-08T03:41:24.487299-04:00",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "example": "001",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "example": "21",
+                    "type": "string"
+                  },
+                  "roundid": {
+                    "example": "111555221",
+                    "type": "string"
+                  },
+                  "amount": {
+                    "example": "1",
+                    "type": "string"
+                  },
+                  "mtcode": {
+                    "example": "111554",
+                    "type": "string"
+                  },
+                  "session": {
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "eventTime",
+                  "gamehall",
+                  "gamecode",
+                  "roundid",
+                  "amount",
+                  "mtcode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/takeall": {
+      "post": {
+        "summary": "转出玩家'全部'额度至游戏",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "123456789",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventTime",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "2017-01-19T22:56:30-04:00",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gamehall",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "001",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gamecode",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "21",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roundid",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "11155522",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mtcode",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "111554",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "session",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/rollin": {
+      "post": {
+        "summary": "一场游戏结束，转回额度至玩家钱包",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456789",
+                    "type": "string"
+                  },
+                  "eventTime": {
+                    "description": "事件时间",
+                    "example": "2025-09-08T03:40:34.817-04:00",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "description": "游戏厂商代号",
+                    "example": "001",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "description": "游戏单号",
+                    "example": "GINKGO01",
+                    "type": "string"
+                  },
+                  "roundid": {
+                    "description": "注单号",
+                    "example": "GINKGO081864162MKIVCRHOXXONAPEWJSMYPFPNZYYCFVPS",
+                    "type": "string"
+                  },
+                  "validbet": {
+                    "description": "有效投注",
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "bet": {
+                    "description": "下注金额",
+                    "example": 8.1075,
+                    "type": "number"
+                  },
+                  "win": {
+                    "description": "赢的金额",
+                    "example": "-8.1075",
+                    "type": "string"
+                  },
+                  "roomfee": {
+                    "description": "开房费用",
+                    "example": 10.11,
+                    "type": "number"
+                  },
+                  "amount": {
+                    "description": "金额（实际给玩家钱包的金额）",
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "mtcode": {
+                    "description": "交易码",
+                    "example": "rel-rolli1n-GINKGO01864162MKIVCRHOXXONAPEWJSMYPFPNZYYCFVPS:cq9",
+                    "type": "number"
+                  },
+                  "createTime": {
+                    "description": "成单时间",
+                    "example": "2025-09-08T03:40:34.817-04:00",
+                    "type": "string"
+                  },
+                  "rake": {
+                    "description": "抽水金额",
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "gametype": {
+                    "description": "游戏类型",
+                    "example": "不知道",
+                    "type": "string"
+                  },
+                  "tableid": {
+                    "description": "桌号",
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "eventTime",
+                  "gamehall",
+                  "gamecode",
+                  "roundid",
+                  "validbet",
+                  "bet",
+                  "win",
+                  "amount",
+                  "mtcode",
+                  "createTime",
+                  "rake",
+                  "gametype"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/debit": {
+      "post": {
+        "summary": "针对'已完成'的订单做扣款。 例如，游戏逻辑错误进行修正",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "description": "false",
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "eventTime": {
+                    "description": "false",
+                    "example": "2025-09-08T03:42:24.16815-04:00",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "description": "false",
+                    "example": "001",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "description": "false",
+                    "example": "21",
+                    "type": "string"
+                  },
+                  "roundid": {
+                    "description": "false",
+                    "example": "11155522",
+                    "type": "string"
+                  },
+                  "mtcode": {
+                    "description": "false",
+                    "example": "111554",
+                    "type": "string"
+                  },
+                  "amount": {
+                    "example": "58.41",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "eventTime",
+                  "gamehall",
+                  "gamecode",
+                  "roundid",
+                  "mtcode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/credit": {
+      "post": {
+        "summary": "针对'已完成'的订单做补款。 例如，游戏逻辑错误进行修正 Copy",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "description": "false",
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "eventTime": {
+                    "description": "false",
+                    "example": "2025-09-08T03:42:24.16815-04:00",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "description": "false",
+                    "example": "001",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "description": "false",
+                    "example": "21",
+                    "type": "string"
+                  },
+                  "roundid": {
+                    "description": "false",
+                    "example": "11155522",
+                    "type": "string"
+                  },
+                  "mtcode": {
+                    "description": "false",
+                    "example": "111554",
+                    "type": "string"
+                  },
+                  "amount": {
+                    "example": "58.41001",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "eventTime",
+                  "gamehall",
+                  "gamecode",
+                  "roundid",
+                  "mtcode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/game/refund": {
+      "post": {
+        "summary": "退款下注",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "mtcode",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "rel-win-152188468YDKRYDGSPYUZTSAXLURMEFWJJXWXHWVY:cq9",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "123456",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "null"
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "datetime",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/cq9/transaction/user/payoff": {
+      "post": {
+        "summary": "貴司如有參與我方舉辦之活動，活動獎勵透過此支API派發給玩家",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "description": "false",
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "eventTime": {
+                    "description": "false",
+                    "example": "2025-09-08T03:42:24.16815-04:00",
+                    "type": "string"
+                  },
+                  "mtcode": {
+                    "description": "false",
+                    "example": "111554",
+                    "type": "string"
+                  },
+                  "amount": {
+                    "example": "58.41001",
+                    "type": "string"
+                  },
+                  "remark": {
+                    "example": "毕竟我快去微信吧",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "eventTime",
+                  "mtcode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "null"
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "datetime",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/user/register": {
+      "post": {
+        "summary": "用户注册",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456789",
+                    "type": "string"
+                  },
+                  "pwd": {
+                    "example": "Mm5203838438",
+                    "type": "string"
+                  },
+                  "confirm_pwd": {
+                    "description": "确认密码",
+                    "example": "Mm5203838438",
+                    "type": "string"
+                  },
+                  "otp_code": {
+                    "description": "短信验证码",
+                    "example": "474504",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "1": {
+                    "summary": "成功示例",
+                    "value": {
+                      "code": 1,
+                      "msg": "success",
+                      "data": {
+                        "id": 2
+                      }
+                    }
+                  },
+                  "2": {
+                    "summary": "异常示例",
+                    "value": {
+                      "code": 0,
+                      "msg": "两次密码不一致，请重新输入",
+                      "data": {}
+                    }
+                  },
+                  "3": {
+                    "summary": "异常示例",
+                    "value": {
+                      "code": 3,
+                      "msg": "账号已存在，请重新输入",
+                      "data": {}
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/user/login": {
+      "post": {
+        "summary": "登录",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "pwd": {
+                    "example": "123456",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {}
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "examples": {
+                  "1": {
+                    "summary": "异常示例",
+                    "value": {
+                      "code": 0,
+                      "msg": "密码错误!!",
+                      "data": {}
+                    }
+                  },
+                  "2": {
+                    "summary": "异常示例",
+                    "value": {
+                      "code": 0,
+                      "msg": "账号不存在!",
+                      "data": {}
+                    }
+                  },
+                  "3": {
+                    "summary": "成功示例",
+                    "value": {
+                      "code": 1,
+                      "msg": "登录成功",
+                      "data": {
+                        "token": "+3eL2h8aiyXLBqCUQrASF58SVn8BfQ3cMDxWSsDkCdshn/rfaHNxnSfGZRLrI4Bz",
+                        "avatar": "",
+                        "nickname": ""
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/user/transactions": {
+      "get": {
+        "summary": "用户钱包交易记录",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "2",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action_type",
+            "in": "query",
+            "description": "deposit /withdraw/all",
+            "required": false,
+            "example": "deposit",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "code": 1,
+                  "msg": "success",
+                  "data": {
+                    "transactions_record": [
+                      {
+                        "Id": 18,
+                        "Account": "123456",
+                        "ActionType": "deposit",
+                        "Amount": 12000,
+                        "Remark": "getwiner_Topay",
+                        "Currency": "IDR",
+                        "GameorderNum": "Deposit20250922191136UZMFBb",
+                        "OrderStatus": "created",
+                        "CreatedAt": "2025-09-22 19:11:37",
+                        "UpdatedAt": "2025-09-22 19:11:37"
+                      },
+                      {
+                        "Id": 14,
+                        "Account": "123456",
+                        "ActionType": "deposit",
+                        "Amount": 10000,
+                        "Remark": "test914",
+                        "Currency": "IDR",
+                        "GameorderNum": "game202509141827378Cj65A",
+                        "OrderStatus": "SUCCESS",
+                        "CreatedAt": "2025-09-14 18:27:39",
+                        "UpdatedAt": "2025-09-15 22:49:31"
+                      }
+                    ],
+                    "page": 1,
+                    "size": 2,
+                    "total": 10
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/user/game/score/record": {
+      "get": {
+        "summary": "获取游戏积分记录",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "20",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "description": "bet / endround / rollout / /rollin /refund",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/user/games/type": {
+      "post": {
+        "summary": "通过类型查找游戏",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language_code": {
+                    "example": "id",
+                    "type": "string"
+                  },
+                  "game_type": {
+                    "example": "slot",
+                    "type": "string"
+                  },
+                  "platform_type": {
+                    "example": "web",
+                    "type": "string"
+                  },
+                  "page": {
+                    "example": "1",
+                    "type": "string"
+                  },
+                  "size": {
+                    "example": "11",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "code": 1,
+                  "msg": "success",
+                  "data": {
+                    "list": [
+                      {
+                        "id": 1,
+                        "gamehall": "cq9",
+                        "gamecode": "1",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "FruitKing",
+                        "icon_url": "https：//en",
+                        "lang": ""
+                      },
+                      {
+                        "id": 2,
+                        "gamehall": "cq9",
+                        "gamecode": "113",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Flying Cai Shen",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 3,
+                        "gamehall": "cq9",
+                        "gamecode": "115",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Snow Queen",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 4,
+                        "gamehall": "cq9",
+                        "gamecode": "117",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "5 God beasts",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 5,
+                        "gamehall": "cq9",
+                        "gamecode": "12",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "TreasureHouse",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 6,
+                        "gamehall": "cq9",
+                        "gamecode": "122",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Zuma Wild",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 7,
+                        "gamehall": "cq9",
+                        "gamecode": "124",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Invincible Elephant",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 8,
+                        "gamehall": "cq9",
+                        "gamecode": "125",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Zeus M",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 9,
+                        "gamehall": "cq9",
+                        "gamecode": "127",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "God of War M",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 10,
+                        "gamehall": "cq9",
+                        "gamecode": "128",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Wheel Money",
+                        "icon_url": "",
+                        "lang": ""
+                      },
+                      {
+                        "id": 11,
+                        "gamehall": "cq9",
+                        "gamecode": "129",
+                        "gametype": "slot",
+                        "gametech": "html5",
+                        "status": "true",
+                        "maintain": "false",
+                        "name": "Gu Gu Gu 2 M",
+                        "icon_url": "",
+                        "lang": ""
+                      }
+                    ],
+                    "page": 1,
+                    "size": 11,
+                    "total": 107
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/user/getgamelink": {
+      "post": {
+        "summary": "获取游戏链接",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "example": "cq9",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "description": "solt =10，live =GINKGO01，",
+                    "example": "122",
+                    "type": "string"
+                  },
+                  "gameplat": {
+                    "description": "游戏平台，请填入 web 或 mobile\n※若 gameplat 不为该游戏平台时，将带入预设值，默认值为 web",
+                    "example": "moblie",
+                    "type": "string"
+                  },
+                  "lang": {
+                    "example": "zh-cn",
+                    "type": "string"
+                  },
+                  "session": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "app": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "detect": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "gamesite": {
+                    "example": "滑稽得玩",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "gamehall",
+                  "gamecode",
+                  "gameplat",
+                  "lang"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": "{\"data\":{\"url\":\"https://h5cq.cqgame.games/h5/10/?token=bcd146c316b75f1a607d7bfb142e6001&language=zh-cn&dollarsign=Y&app=&detect=\",\"token\":\"bcd146c316b75f1a607d7bfb142e6001\"},\"status\":{\"code\":\"0\",\"message\":\"Success\",\"datetime\":\"2025-08-25T03:27:57-04:00\",\"traceCode\":\"e75825IZgmBGjtN\",\"latency\":\"\"}}"
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/user/otp/send": {
+      "post": {
+        "summary": "发送登录otp",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "6281234567890",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scene",
+            "in": "query",
+            "description": "in:register,login",
+            "required": false,
+            "example": "register",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nonce",
+            "in": "query",
+            "description": "随机串",
+            "required": false,
+            "example": "66668690",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timestamp",
+            "in": "query",
+            "description": "时间戳(秒)",
+            "required": false,
+            "example": "7712346",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sign",
+            "in": "query",
+            "description": "签名 phone=1322551&scene=register&nonce=66668888&timestamp=7712346&sign=999000999990009999900099999000991 加上密钥串（7hygjitdsghyr475f6）。 md5 加密 将生成的 MD5 哈希值转换为大写形式\n",
+            "required": false,
+            "example": "999000999990009999900099999000991",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": "{\"code\":1,\"msg\":\"success\",\"data\":{\"expires_in\":300}}"
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/data/head": {
+      "get": {
+        "summary": "数据大屏幕的头部数据",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "data"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.DataHeadRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/admin/delete": {
+      "get": {
+        "summary": "删除用户",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "id",
+            "required": true,
+            "schema": {
+              "description": "id",
+              "format": "uint",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.DeleteAdminRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/admin/create": {
+      "post": {
+        "summary": "创建admin",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Api"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "description": "头像",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "account": {
+                    "example": "admin",
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "example": "test",
+                    "type": "string"
+                  },
+                  "pwd": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "group_id": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "is_admin": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "remark": {
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "nickname",
+                  "pwd"
+                ]
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.CreateAdminRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/admin/detail": {
+      "get": {
+        "summary": "获取admin详情",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.AdminInfoRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/admin/index": {
+      "post": {
+        "summary": "获取admin列表",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "分页号码，默认1",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "分页号码，默认1",
+              "format": "int",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "分页数量，最大50",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "分页数量，最大50",
+              "format": "int",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {},
+                "type": "object"
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.AdminGetListRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/admin/update/{Id}": {
+      "post": {
+        "summary": "更新admin",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "description": "id",
+              "format": "uint",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "avatar": {
+                    "description": "头像",
+                    "format": "string",
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "昵称",
+                    "format": "string",
+                    "type": "string"
+                  },
+                  "pwd": {
+                    "description": "密码",
+                    "format": "string",
+                    "type": "string"
+                  },
+                  "group_id": {
+                    "description": "组id",
+                    "format": "uint",
+                    "type": "integer"
+                  },
+                  "is_super_admin": {
+                    "description": "是否是超级管理员",
+                    "format": "uint",
+                    "type": "integer"
+                  },
+                  "remark": {
+                    "description": "备注",
+                    "format": "string",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "nickname",
+                  "pwd"
+                ],
+                "type": "object"
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.UpdateAdminRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/role/add": {
+      "post": {
+        "summary": "添加角色",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "role"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/bank_system.api.boss.CreateRoleReq"
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.CreateRoleRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/role/delete": {
+      "delete": {
+        "summary": "删除角色",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "role"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "id",
+            "required": true,
+            "schema": {
+              "description": "id",
+              "format": "uint",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.DeleteRoleRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/role/index": {
+      "get": {
+        "summary": "获取role列表",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "role"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "分页号码，默认1",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "分页号码，默认1",
+              "format": "int",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "分页数量，最大50",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "分页数量，最大50",
+              "format": "int",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.RoleIndexRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/boss/role/update/{Id}": {
+      "post": {
+        "summary": "更新role",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "role"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "description": "id",
+              "format": "uint",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "rules": {
+                    "description": "权限",
+                    "format": "string",
+                    "type": "string"
+                  },
+                  "status": {
+                    "description": "状态",
+                    "format": "string",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "角色名",
+                    "format": "string",
+                    "type": "string"
+                  },
+                  "pid": {
+                    "description": "父id",
+                    "format": "uint",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "name",
+                  "pid",
+                  "rules",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.UpdateRoleRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/user/list": {
+      "get": {
+        "summary": "获取用户列表",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "description": "按账号模糊查询",
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "status": {
+                    "description": "状态筛选:-1=全部,0=正常,1=冻结,2=封禁",
+                    "example": "0",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "account": {
+                                "type": "string"
+                              },
+                              "nickname": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "integer"
+                              },
+                              "totp_status": {
+                                "type": "integer"
+                              },
+                              "balance_available": {
+                                "type": "number"
+                              },
+                              "balance_freeze": {
+                                "type": "integer"
+                              },
+                              "remark": {
+                                "type": "string"
+                              },
+                              "created_at": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "list",
+                        "page",
+                        "size",
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/user/detail": {
+      "get": {
+        "summary": "获取用户详情",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID 编号",
+            "required": false,
+            "example": "8",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "account": {
+                          "type": "string"
+                        },
+                        "nickname": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "totp_status": {
+                          "type": "integer"
+                        },
+                        "balance_available": {
+                          "type": "number"
+                        },
+                        "balance_freeze": {
+                          "type": "integer"
+                        },
+                        "remark": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string"
+                        },
+                        "updated_at": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "account",
+                        "nickname",
+                        "avatar",
+                        "status",
+                        "totp_status",
+                        "balance_available",
+                        "balance_freeze",
+                        "remark",
+                        "created_at",
+                        "updated_at"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "code": 1,
+                  "msg": "success",
+                  "data": {
+                    "id": 8,
+                    "account": "123456",
+                    "nickname": "",
+                    "avatar": "",
+                    "status": 0,
+                    "totp_status": 0,
+                    "balance_available": 80219.26,
+                    "balance_freeze": 0,
+                    "remark": "测试账号",
+                    "created_at": "2025-08-23 16:33:27",
+                    "updated_at": "2025-09-17 12:45:40"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/user/status": {
+      "post": {
+        "summary": "更新用户状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "ID 编号",
+                    "example": "8",
+                    "type": "string"
+                  },
+                  "status": {
+                    "description": "状态只能为0、1或2\"   \"0=正常,1=冻结,2=封禁",
+                    "example": "0",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/user/reset-password": {
+      "post": {
+        "summary": "重置用户登录密码",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "new_password": {
+                    "description": "required|length:6,15#请输入6-15位新密码",
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "ID 编号",
+                    "example": "8",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "new_password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {}
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/bind/totp": {
+      "post": {
+        "summary": "绑定totp",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "login"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "admin",
+                    "type": "string"
+                  },
+                  "pwd": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "totp": {
+                    "example": "632197",
+                    "type": "string"
+                  }
+                }
+              },
+              "example": ""
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bank_system.api.boss.LoginBindTotpRes"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/login": {
+      "post": {
+        "summary": "管理员登录",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "admin",
+                    "type": "string"
+                  },
+                  "pwd": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "totp": {
+                    "example": "998480",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/player/logout": {
+      "post": {
+        "summary": "注销代理单一玩家",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/ping": {
+      "get": {
+        "summary": "取得时戳",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2ODg5ZmRmNzM5ODBhYzQ4MjYzYjlmZDkiLCJhY2NvdW50IjoiZ2V0d2luZXJfc3ciLCJvd25lciI6IjY4ODlmZGY3Mzk4MGFjNDgyNjNiOWZkOSIsInBhcmVudCI6InNlbGYiLCJjdXJyZW5jeSI6IklEUiIsImJyYW5kIjoiY3E5IiwianRpIjoiNTI4NzcxMjg3IiwiaWF0IjoxNzUzODczOTExLCJpc3MiOiJDeXByZXNzIiwic3ViIjoiU1NUb2tlbiJ9.DdRd6khxmglCC8WPt_u786kssequJPYkZYfXFDsjD38",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "null"
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "traceCode": {
+                          "type": "string"
+                        },
+                        "latency": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "datetime",
+                        "traceCode",
+                        "latency"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                },
+                "example": {
+                  "data": {
+                    "timestamp": 1754734023
+                  },
+                  "status": {
+                    "code": "0",
+                    "message": "Success",
+                    "datetime": "2025-08-09T06:07:03-04:00",
+                    "traceCode": "e75825CHqv1q0AY",
+                    "latency": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/game/halls": {
+      "get": {
+        "summary": "取得正式游戏厂商列表",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gamehall": {
+                    "example": "cq9",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "gamehall": {
+                            "type": "string"
+                          },
+                          "fullname": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "traceCode": {
+                          "type": "string"
+                        },
+                        "latency": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "datetime",
+                        "traceCode",
+                        "latency"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "gamehall": "cq9",
+                      "fullname": "cq9"
+                    }
+                  ],
+                  "status": {
+                    "code": "0",
+                    "message": "Success",
+                    "datetime": "2025-08-09T06:00:41-04:00",
+                    "traceCode": "e75825CHjM3gRJ3",
+                    "latency": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/game/list/{gamehall}": {
+      "get": {
+        "summary": "取得游戏列表",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "gamehall",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "cq9",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "gamehall": {
+                            "type": "string"
+                          },
+                          "fullname": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "traceCode": {
+                          "type": "string"
+                        },
+                        "latency": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "datetime",
+                        "traceCode",
+                        "latency"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/player/sw/lobbylink": {
+      "post": {
+        "summary": "Player 取得游戏大厅链接",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456789",
+                    "type": "string"
+                  },
+                  "lang": {
+                    "example": "zh-cn",
+                    "type": "string"
+                  },
+                  "session": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "app": {
+                    "description": "是否是透过app 执行游戏，Y=是，N=否，默认为N",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "detect": {
+                    "description": "是否开启阻挡不合游戏规格浏览器提示， Y=是，N=否，默认为N",
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "lang"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "null"
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "traceCode": {
+                          "type": "string"
+                        },
+                        "latency": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "datetime",
+                        "traceCode",
+                        "latency"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                },
+                "example": {
+                  "data": {
+                    "token": "5dd45971360e36a1b396d6e7d15e2437",
+                    "url": "https://lobby.cqgame.games/#/?token=5dd45971360e36a1b396d6e7d15e2437&language=zh-cn&hasms=false&dollarsign=Y&app=N&detect=N"
+                  },
+                  "status": {
+                    "code": "0",
+                    "message": "Success",
+                    "datetime": "2025-08-09T05:33:23-04:00",
+                    "traceCode": "e75825CGQV0FA39",
+                    "latency": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/player/sw/gamelink": {
+      "post": {
+        "summary": "Player 取得游戏链接",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456789",
+                    "type": "string"
+                  },
+                  "gamehall": {
+                    "example": "cq9",
+                    "type": "string"
+                  },
+                  "gamecode": {
+                    "description": "solt =10，live =GINKGO01，",
+                    "example": "10",
+                    "type": "string"
+                  },
+                  "gameplat": {
+                    "description": "游戏平台，请填入 web 或 mobile\n※若 gameplat 不为该游戏平台时，将带入预设值，默认值为 web",
+                    "example": "moblie",
+                    "type": "string"
+                  },
+                  "lang": {
+                    "example": "zh-cn",
+                    "type": "string"
+                  },
+                  "session": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "app": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "detect": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "gamesite": {
+                    "example": "滑稽得玩",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "gamehall",
+                  "gamecode",
+                  "gameplat"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "data": {
+                    "url": "https://h5cq.cqgame.games/h5/10/?token=f2afa4712b19904bf9ed2ef9533281ef&language=zh-cn&dollarsign=Y&app=&detect=",
+                    "token": "f2afa4712b19904bf9ed2ef9533281ef"
+                  },
+                  "status": {
+                    "code": "0",
+                    "message": "Success",
+                    "datetime": "2025-08-09T06:51:14-04:00",
+                    "traceCode": "e75825CIb9Ces7N",
+                    "latency": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/order/view": {
+      "get": {
+        "summary": "注单查询",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "starttime",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "2025-08-13T00:00:00-04:00",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endtime",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "2025-08-14T00:00:00-04:00",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "123456789",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagesize",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "20",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gametype",
+            "in": "query",
+            "description": "报表的游戏类别[slot|arcade|fish|table]\nslot：只有slot\narcade： 只有arcade\ntable：只有table\nfish ： 只有 fish\nlive：包含live （不含table）\n※若未带参数则默认为slot",
+            "required": false,
+            "example": "slot",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "data": {
+                    "TotalSize": 100,
+                    "Data": [
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848587",
+                        "balance": 15500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:26.323-04:00",
+                        "createtime": "2025-08-13T06:56:26.117-04:00",
+                        "bettime": "2025-08-13T06:56:25.176-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848586",
+                        "balance": 81500,
+                        "win": 60000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:24.394-04:00",
+                        "createtime": "2025-08-13T06:56:24.172-04:00",
+                        "bettime": "2025-08-13T06:56:22.047-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848582",
+                        "balance": 87500,
+                        "win": 48000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:21.247-04:00",
+                        "createtime": "2025-08-13T06:56:21.045-04:00",
+                        "bettime": "2025-08-13T06:56:19.122-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848580",
+                        "balance": 105500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:18.974-04:00",
+                        "createtime": "2025-08-13T06:56:18.558-04:00",
+                        "bettime": "2025-08-13T06:56:17.623-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848578",
+                        "balance": 171500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:17.465-04:00",
+                        "createtime": "2025-08-13T06:56:17.059-04:00",
+                        "bettime": "2025-08-13T06:56:15.716-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848577",
+                        "balance": 237500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:15.258-04:00",
+                        "createtime": "2025-08-13T06:56:15.039-04:00",
+                        "bettime": "2025-08-13T06:56:14.098-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848575",
+                        "balance": 303500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:13.814-04:00",
+                        "createtime": "2025-08-13T06:56:13.598-04:00",
+                        "bettime": "2025-08-13T06:56:12.675-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848573",
+                        "balance": 369500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:12.314-04:00",
+                        "createtime": "2025-08-13T06:56:11.832-04:00",
+                        "bettime": "2025-08-13T06:56:10.879-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848572",
+                        "balance": 435500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:10.59-04:00",
+                        "createtime": "2025-08-13T06:56:10.379-04:00",
+                        "bettime": "2025-08-13T06:56:09.456-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848570",
+                        "balance": 501500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:08.939-04:00",
+                        "createtime": "2025-08-13T06:56:08.735-04:00",
+                        "bettime": "2025-08-13T06:56:07.812-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848568",
+                        "balance": 567500,
+                        "win": 24000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:07.032-04:00",
+                        "createtime": "2025-08-13T06:56:06.815-04:00",
+                        "bettime": "2025-08-13T06:56:04.686-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848567",
+                        "balance": 609500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:04.464-04:00",
+                        "createtime": "2025-08-13T06:56:04.057-04:00",
+                        "bettime": "2025-08-13T06:56:03.071-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848565",
+                        "balance": 675500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:02.899-04:00",
+                        "createtime": "2025-08-13T06:56:02.324-04:00",
+                        "bettime": "2025-08-13T06:56:00.744-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848562",
+                        "balance": 741500,
+                        "win": 60000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:56:00.381-04:00",
+                        "createtime": "2025-08-13T06:55:59.743-04:00",
+                        "bettime": "2025-08-13T06:55:57.818-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848561",
+                        "balance": 747500,
+                        "win": 48000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:55:57.246-04:00",
+                        "createtime": "2025-08-13T06:55:57.024-04:00",
+                        "bettime": "2025-08-13T06:55:54.893-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848558",
+                        "balance": 765500,
+                        "win": 60000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:55:54.192-04:00",
+                        "createtime": "2025-08-13T06:55:53.878-04:00",
+                        "bettime": "2025-08-13T06:55:51.953-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848556",
+                        "balance": 771500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:55:51.782-04:00",
+                        "createtime": "2025-08-13T06:55:51.577-04:00",
+                        "bettime": "2025-08-13T06:55:50.517-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848555",
+                        "balance": 837500,
+                        "win": 48000,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:55:49.711-04:00",
+                        "createtime": "2025-08-13T06:55:49.499-04:00",
+                        "bettime": "2025-08-13T06:55:47.591-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848554",
+                        "balance": 855500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:55:47.446-04:00",
+                        "createtime": "2025-08-13T06:55:47.247-04:00",
+                        "bettime": "2025-08-13T06:55:45.932-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      },
+                      {
+                        "gamehall": "cq9",
+                        "gametype": "slot",
+                        "gameplat": "web",
+                        "gamecode": "10",
+                        "account": "123456789",
+                        "round": "6659848551",
+                        "balance": 921500,
+                        "win": 0,
+                        "bet": 66000,
+                        "validbet": 0,
+                        "jackpot": 0,
+                        "jackpotcontribution": [],
+                        "jackpottype": "",
+                        "status": "complete",
+                        "endroundtime": "2025-08-13T06:55:45.429-04:00",
+                        "createtime": "2025-08-13T06:55:45.211-04:00",
+                        "bettime": "2025-08-13T06:55:44.067-04:00",
+                        "detail": [
+                          {
+                            "freegame": 0
+                          },
+                          {
+                            "luckydraw": 0
+                          },
+                          {
+                            "bonus": 0
+                          },
+                          {
+                            "respin": 0
+                          }
+                        ],
+                        "singlerowbet": false,
+                        "gamerole": "",
+                        "bankertype": "",
+                        "rake": 0,
+                        "roomfee": 0,
+                        "tabletype": "",
+                        "tableid": "",
+                        "roundnumber": "",
+                        "bettype": [],
+                        "gameresult": {},
+                        "currency": "IDR",
+                        "donate": 0,
+                        "isdonate": false
+                      }
+                    ]
+                  },
+                  "status": {
+                    "code": "0",
+                    "message": "Success",
+                    "datetime": "2025-08-14T10:41:01-04:00",
+                    "traceCode": "e7581io1IkBNYf",
+                    "latency": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/order/record": {
+      "get": {
+        "summary": "单一注单查询",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "gamecode",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "10",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gamehall",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "cq9",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roundid",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "6659848582",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "data": {
+                    "order": {
+                      "gamehall": "cq9",
+                      "gametype": "slot",
+                      "gameplat": "web",
+                      "gamecode": "10",
+                      "account": "123456789",
+                      "round": "6659848582",
+                      "indexid": "6659848582:cq9",
+                      "balance": 87500,
+                      "win": 48000,
+                      "bet": 66000,
+                      "validbet": 0,
+                      "jackpot": 0,
+                      "jackpotcontribution": [],
+                      "jackpottype": "",
+                      "detail": [
+                        {
+                          "freegame": 0
+                        },
+                        {
+                          "luckydraw": 0
+                        },
+                        {
+                          "bonus": 0
+                        },
+                        {
+                          "respin": 0
+                        }
+                      ],
+                      "singlerowbet": false,
+                      "status": "complete",
+                      "endroundtime": "2025-08-13T06:56:21.247-04:00",
+                      "createtime": "2025-08-13T06:56:21.045-04:00",
+                      "bettime": "2025-08-13T06:56:19.122-04:00",
+                      "gamerole": "",
+                      "bankertype": "",
+                      "rake": 0,
+                      "roomfee": 0,
+                      "tabletype": "",
+                      "tableid": "",
+                      "roundnumber": "",
+                      "bettype": [],
+                      "gameresult": {},
+                      "currency": "IDR",
+                      "donate": 0,
+                      "isdonate": false
+                    }
+                  },
+                  "status": {
+                    "code": "0",
+                    "message": "Success",
+                    "datetime": "2025-08-14T13:00:06-04:00",
+                    "traceCode": "e758cXSvQcYgmH",
+                    "latency": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/report/player": {
+      "get": {
+        "summary": "查询结算报表 By 玩家",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "starttime",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "2025-08-13T00:00:00-04:00",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endtime",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "2025-08-14T00:00:00-04:00",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "123456789",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagesize",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "20",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gametype",
+            "in": "query",
+            "description": "报表的游戏类别[slot|arcade|fish|table]\nslot：只有slot\narcade： 只有arcade\ntable：只有table\nfish ： 只有 fish\nlive：包含live （不含table）\n※若未带参数则默认为slot",
+            "required": false,
+            "example": "slot",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupby",
+            "in": "query",
+            "description": "计算单位\nday：以天为计算\nhour：以小时计算",
+            "required": true,
+            "example": "day",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalsize": {
+                          "type": "integer"
+                        },
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "parentid": {
+                                "type": "string"
+                              },
+                              "account": {
+                                "type": "string"
+                              },
+                              "gamecode": {
+                                "type": "string"
+                              },
+                              "gamehall": {
+                                "type": "string"
+                              },
+                              "rounds": {
+                                "type": "integer"
+                              },
+                              "jackpots": {
+                                "type": "integer",
+                                "title": "总彩池奖金"
+                              },
+                              "bets": {
+                                "type": "integer",
+                                "title": "总下注"
+                              },
+                              "validbet": {
+                                "type": "integer",
+                                "title": "有效投注 ",
+                                "description": "※此字段值用于牌桌及体彩类游戏"
+                              },
+                              "wins": {
+                                "type": "integer",
+                                "title": "总赢分（已包含总彩池奖金及总共从PC赢得的金额）"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "title": "币别"
+                              },
+                              "datetime": {
+                                "type": "string"
+                              },
+                              "rakes": {
+                                "type": "integer"
+                              },
+                              "roomfee": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "totalsize",
+                        "data"
+                      ]
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "traceCode": {
+                          "type": "string"
+                        },
+                        "latency": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "datetime",
+                        "traceCode",
+                        "latency"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/player/sw/mslink": {
+      "post": {
+        "summary": "取得会员系统链接",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "example": "123456789",
+                    "type": "string"
+                  },
+                  "lang": {
+                    "example": "zh-cn",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/gameboy/player/sw/token/{account}": {
+      "get": {
+        "summary": "查询玩家Token与状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "123456789",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "正式Getwiner001",
+            "required": false,
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2OGNiZDJhODdmMTI5ODU0ZmI2YzY3ZDciLCJhY2NvdW50IjoiR2V0d2luZXIwMDEiLCJvd25lciI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsInBhcmVudCI6IjY4Y2JhNTkyMmU3ZDBhMmUzNzNlN2Y1ZSIsImN1cnJlbmN5IjoiSURSIiwiYnJhbmQiOiJjcTkiLCJqdGkiOiI4MTk1NTQ0NDQiLCJpYXQiOjE3NTgxODgyMDAsImlzcyI6IkN5cHJlc3MiLCJzdWIiOiJTU1Rva2VuIn0.HShjYkxD5tydHGcXFsiBgaBSnUWNpmdfhxDGI5xFDso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "usertoken": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "usertoken",
+                        "status"
+                      ]
+                    },
+                    "status": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "datetime": {
+                          "type": "string"
+                        },
+                        "traceCode": {
+                          "type": "string"
+                        },
+                        "latency": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "datetime",
+                        "traceCode",
+                        "latency"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/pay/deposit": {
+      "post": {
+        "summary": "存款",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "example": "12000",
+                    "type": "string"
+                  },
+                  "remark": {
+                    "example": "test915",
+                    "type": "string"
+                  },
+                  "account": {
+                    "example": "123456",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "platRespCode": "FAIL",
+                  "platSign": "nYE+Jym2VyPjjPNvlydIUv01xja5DfLh/KIRYQkEDSFJ97e5sCJepPv6SB3aJ4oq6rVMQZpWAA/4ZwfzuflNDAdMTp2WMwrE4xGjo0af90anUX/rgoFYA55M2+GwhXTlEArXDeHZcGqCzBXArkhLLpRZ5ohM/7EdQtdnKMrWWoU=",
+                  "platRespMessage": "params : payMoney must be greater than 50"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/pay/withdraw": {
+      "post": {
+        "summary": "取款",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "description": "用户账号",
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "money": {
+                    "description": "提现金额",
+                    "example": "20000",
+                    "type": "string"
+                  },
+                  "number": {
+                    "description": "提现客户银行卡号",
+                    "example": "0060011643339",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "客户名称",
+                    "example": "Siswanto",
+                    "type": "string"
+                  },
+                  "bankCode": {
+                    "description": "银行编号",
+                    "example": "008",
+                    "type": "string"
+                  },
+                  "mobile": {
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account",
+                  "money",
+                  "number",
+                  "name",
+                  "bankCode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "1": {
+                    "summary": "异常示例",
+                    "value": {
+                      "code": 0,
+                      "msg": "toppay API返回错误:params : whitelist access denied",
+                      "data": {}
+                    }
+                  },
+                  "2": {
+                    "summary": "成功示例",
+                    "value": {
+                      "code": 1,
+                      "msg": "提款提交成功",
+                      "data": {}
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/pay/Toppaynotify": {
+      "post": {
+        "summary": "存款回调",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "msg": {
+                    "example": "SUCCESS",
+                    "type": "string"
+                  },
+                  "code": {
+                    "example": "00",
+                    "type": "string"
+                  },
+                  "method": {
+                    "example": "BNI",
+                    "type": "string"
+                  },
+                  "orderNum": {
+                    "example": "game202509141827378Cj65A",
+                    "type": "string"
+                  },
+                  "platOrderNum": {
+                    "example": "PRE1967173390917709863",
+                    "type": "string"
+                  },
+                  "payFee": {
+                    "example": "4940",
+                    "type": "string"
+                  },
+                  "payMoney": {
+                    "example": "10000",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "example": "082122965511",
+                    "type": "string"
+                  },
+                  "name": {
+                    "example": "jiahuibaby",
+                    "type": "string"
+                  },
+                  "status": {
+                    "example": "SUCCESS",
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "msg": "SUCCESS",
+                "code": "00",
+                "method": "BNI",
+                "orderNum": "game202509141827378Cj65A",
+                "platOrderNum": "PRE1967173390917709863",
+                "payFee": "4940",
+                "payMoney": "10000",
+                "phone": "082122965511",
+                "name": "jiahuibaby",
+                "platSign": "J+qfsJBJPFfo8wjyRXs4smIqJ5zwTvuodItMXnAoZ8LXgj/buGrRKu9F4iz3jbYBu+FsDKArBAbRYNgLhUnARc+hzq4oNoBp5ZZTvIoy3xz5CfgoLaINp48jUo8gf3QZT90J4B0w+3QCYZFucKuz0cRY67J+LZ9ZJkXR2+ashXg=",
+                "email": "Test@gmail.com",
+                "status": "SUCCESS"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/pay/cq9withdrawnotify": {
+      "post": {
+        "summary": "代付回调",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bankCode": {
+                    "example": "014",
+                    "type": "string"
+                  },
+                  "fee": {
+                    "example": "1560",
+                    "type": "string"
+                  },
+                  "description": {
+                    "example": "123456",
+                    "type": "string"
+                  },
+                  "orderNum": {
+                    "example": "Withdraw20250915150137LxO45r",
+                    "type": "string"
+                  },
+                  "feeType": {
+                    "example": "0",
+                    "type": "string"
+                  },
+                  "number": {
+                    "example": "123123",
+                    "type": "string"
+                  },
+                  "platOrderNum": {
+                    "example": "ZPXF1967604727835275351",
+                    "type": "string"
+                  },
+                  "money": {
+                    "example": "20000",
+                    "type": "string"
+                  },
+                  "statusMsg": {
+                    "example": "Invalid account number",
+                    "type": "string"
+                  },
+                  "name": {
+                    "example": "Allen",
+                    "type": "string"
+                  },
+                  "platSign": {
+                    "example": "3x0IfqSdVftNIj4AFrkHJfChT718YdvjzgYn/h6HOLlbU4oNITcVxgi9E+snUmGSWPGCfXD2Dpsn6kFw+OPIN7+KsyR3uP/yPsSUlHHd5ABcclV/eTSIMVTiMPWPCQhgJVOfcgY/HUXBlcXVtYmTOIkD65kBFZgxmi1AXlO+mw=",
+                    "type": "string"
+                  },
+                  "status": {
+                    "example": "2",
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "bankCode": "014",
+                "fee": "1560",
+                "description": "123456",
+                "orderNum": "Withdraw20250915150137LxO45r",
+                "feeType": "0",
+                "number": "123123",
+                "platOrderNum": "ZPXF1967604727835275351",
+                "money": "20000",
+                "statusMsg": "Invalid account number",
+                "name": "Allen",
+                "platSign": "AaNl8sACsgm//TseFMhweOpO3Wl5tEQjV7j8GjkDAdXk31Qckbz93vVehVwzOFdt6QyVwqL1OGtQVtK/wEPhcLtjhIFRp4Z/c+Bq0UQm1yakhre5AUQRyi6oTbx/UHTHuDhI6s4DjfpwxgJe6Pio8qP27lodYI0kAJ6Le40aRpY=",
+                "status": "4"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/send-sms-single": {
+      "post": {
+        "summary": "短信网关otptest",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sp_id": {
+                    "example": "345422",
+                    "type": "string"
+                  },
+                  "mobile": {
+                    "example": "6281234567890",
+                    "type": "string"
+                  },
+                  "content": {
+                    "example": "[getwinner]your verify code is 123",
+                    "type": "string"
+                  },
+                  "password": {
+                    "example": "464e3f3c382dc29c731aac6b59df35ec",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": "{\"code\":0,\"msg\":\"success\",\"msg_id\":102342394}"
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "webhooks": {},
+  "components": {
+    "schemas": {
+      "Pet": {
+        "required": [
+          "name",
+          "photoUrls",
+          "id",
+          "category",
+          "tags",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "宠物ID编号"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category",
+            "description": "分组"
+          },
+          "name": {
+            "type": "string",
+            "description": "名称",
+            "examples": [
+              "doggie"
+            ]
+          },
+          "photoUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "照片URL"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            },
+            "description": "标签"
+          },
+          "status": {
+            "type": "string",
+            "description": "宠物销售状态",
+            "enum": [
+              "available",
+              "pending",
+              "sold"
+            ]
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "分组ID编号"
+          },
+          "name": {
+            "type": "string",
+            "description": "分组名称"
+          }
+        },
+        "xml": {
+          "name": "Category"
+        }
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "标签ID编号"
+          },
+          "name": {
+            "type": "string",
+            "description": "标签名称"
+          }
+        },
+        "xml": {
+          "name": "Tag"
+        }
+      },
+      "bank_system.api.boss.CreateAdminReq": {
+        "properties": {
+          "avatar": {
+            "description": "头像",
+            "format": "string",
+            "type": "string"
+          },
+          "account": {
+            "description": "账号",
+            "format": "string",
+            "type": "string"
+          },
+          "nickname": {
+            "description": "昵称",
+            "format": "string",
+            "type": "string"
+          },
+          "pwd": {
+            "description": "密码",
+            "format": "string",
+            "type": "string"
+          },
+          "group_id": {
+            "description": "组id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "is_admin": {
+            "description": "是否是超级管理员",
+            "format": "uint",
+            "type": "integer"
+          },
+          "remark": {
+            "description": "备注",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "nickname",
+          "pwd"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.CreateAdminRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.DeleteAdminReq": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.DeleteAdminRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.AdminInfoReq": {
+        "properties": {},
+        "type": "object"
+      },
+      "bank_system.api.boss.AdminInfoRes": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "avatar": {
+            "description": "头像",
+            "format": "string",
+            "type": "string"
+          },
+          "nickname": {
+            "description": "昵称",
+            "format": "string",
+            "type": "string"
+          },
+          "account": {
+            "description": "账号",
+            "format": "string",
+            "type": "string"
+          },
+          "is_super_admin": {
+            "description": "是否是超级管理员",
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.AdminGetListReq": {
+        "properties": {
+          "page": {
+            "default": 1,
+            "description": "分页号码，默认1",
+            "format": "int",
+            "type": "integer"
+          },
+          "size": {
+            "default": 10,
+            "description": "分页数量，最大50",
+            "format": "int",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.AdminGetListRes": {
+        "properties": {
+          "list": {
+            "$ref": "#/components/schemas/interface"
+          },
+          "page": {
+            "description": "分页码",
+            "format": "int",
+            "type": "integer"
+          },
+          "size": {
+            "description": "分页数量",
+            "format": "int",
+            "type": "integer"
+          },
+          "total": {
+            "description": "数据总数",
+            "format": "int",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "interface": {
+        "properties": {},
+        "type": "object"
+      },
+      "bank_system.api.boss.UpdateAdminReq": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "avatar": {
+            "description": "头像",
+            "format": "string",
+            "type": "string"
+          },
+          "nickname": {
+            "description": "昵称",
+            "format": "string",
+            "type": "string"
+          },
+          "pwd": {
+            "description": "密码",
+            "format": "string",
+            "type": "string"
+          },
+          "group_id": {
+            "description": "组id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "is_super_admin": {
+            "description": "是否是超级管理员",
+            "format": "uint",
+            "type": "integer"
+          },
+          "remark": {
+            "description": "备注",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nickname",
+          "pwd"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.UpdateAdminRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.LoginBindTotpReq": {
+        "properties": {
+          "account": {
+            "description": "用户名",
+            "format": "string",
+            "type": "string"
+          },
+          "pwd": {
+            "description": "密码",
+            "format": "string",
+            "type": "string"
+          },
+          "totp": {
+            "description": "验证码",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "pwd",
+          "totp"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.LoginBindTotpRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.DataHeadReq": {
+        "properties": {},
+        "type": "object"
+      },
+      "bank_system.api.boss.DataHeadRes": {
+        "properties": {
+          "today_order_count": {
+            "format": "int",
+            "type": "integer"
+          },
+          "dso": {
+            "format": "int",
+            "type": "integer"
+          },
+          "conversation_rate": {
+            "format": "int",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.FileUploadReq": {
+        "properties": {
+          "file": {
+            "description": "请选择上传文件",
+            "format": "*ghttp.UploadFile",
+            "type": "file"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.FileUploadRes": {
+        "properties": {
+          "name": {
+            "description": "文件名",
+            "format": "string",
+            "type": "string"
+          },
+          "url": {
+            "description": "文件地址",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.hello.v1.HelloReq": {
+        "properties": {},
+        "type": "object"
+      },
+      "bank_system.api.hello.v1.HelloRes": {
+        "properties": {},
+        "type": "object",
+        "examples": [
+          "string"
+        ]
+      },
+      "bank_system.api.boss.CreateMerReq": {
+        "properties": {
+          "nickname": {
+            "description": "昵称",
+            "format": "string",
+            "type": "string"
+          },
+          "avatar": {
+            "description": "头像",
+            "format": "string",
+            "type": "string"
+          },
+          "products_link": {
+            "format": "string",
+            "type": "string"
+          },
+          "ip_switch": {
+            "description": "ip校验开关 1为校验，其他不校验",
+            "format": "uint",
+            "type": "integer"
+          },
+          "trust_ip": {
+            "description": "信任ip",
+            "format": "string",
+            "type": "string"
+          },
+          "payin_channels": {
+            "description": "代收通道：0=关闭，1=全局，other=指定",
+            "format": "string",
+            "type": "string"
+          },
+          "payout_channels": {
+            "description": "代付通道：0=关闭，1=全局，other=指定",
+            "format": "string",
+            "type": "string"
+          },
+          "payin_rates": {
+            "description": "代收费率",
+            "format": "string",
+            "type": "string"
+          },
+          "payout_rates": {
+            "description": "代付费率",
+            "format": "string",
+            "type": "string"
+          },
+          "single_payout_free": {
+            "description": "单笔代付手续费",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nickname",
+          "payin_channels",
+          "payout_channels",
+          "payin_rates",
+          "payout_rates",
+          "single_payout_free"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.CreateMerRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.DeleteMerReq": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.DeleteMerRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.UpdateMerReq": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "nickname": {
+            "description": "昵称",
+            "format": "string",
+            "type": "string"
+          },
+          "avatar": {
+            "description": "头像",
+            "format": "string",
+            "type": "string"
+          },
+          "products_link": {
+            "format": "string",
+            "type": "string"
+          },
+          "ip_switch": {
+            "description": "ip校验开关 1为校验，其他不校验",
+            "format": "uint",
+            "type": "integer"
+          },
+          "trust_ip": {
+            "description": "信任ip",
+            "format": "string",
+            "type": "string"
+          },
+          "payin_channels": {
+            "description": "代收通道：0=关闭，1=全局，other=指定",
+            "format": "string",
+            "type": "string"
+          },
+          "payout_channels": {
+            "description": "代付通道：0=关闭，1=全局，other=指定",
+            "format": "string",
+            "type": "string"
+          },
+          "payin_rates": {
+            "description": "代收费率",
+            "format": "string",
+            "type": "string"
+          },
+          "payout_rates": {
+            "description": "代付费率",
+            "format": "string",
+            "type": "string"
+          },
+          "single_payout_free": {
+            "description": "单笔代付手续费",
+            "format": "string",
+            "type": "string"
+          },
+          "remark": {
+            "description": "备注",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nickname",
+          "payin_channels",
+          "payout_channels",
+          "payin_rates",
+          "payout_rates",
+          "single_payout_free"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.UpdateMerRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.CreateRoleReq": {
+        "properties": {
+          "name": {
+            "description": "角色名",
+            "format": "string",
+            "type": "string"
+          },
+          "pid": {
+            "description": "父id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "rules": {
+            "description": "权限",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "pid",
+          "rules"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.CreateRoleRes": {
+        "properties": {
+          "role_id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.DeleteRoleReq": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.DeleteRoleRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.RoleIndexReq": {
+        "properties": {
+          "page": {
+            "default": 1,
+            "description": "分页号码，默认1",
+            "format": "int",
+            "type": "integer"
+          },
+          "size": {
+            "default": 10,
+            "description": "分页数量，最大50",
+            "format": "int",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.RoleIndexRes": {
+        "properties": {
+          "list": {
+            "$ref": "#/components/schemas/interface"
+          },
+          "page": {
+            "description": "分页码",
+            "format": "int",
+            "type": "integer"
+          },
+          "size": {
+            "description": "分页数量",
+            "format": "int",
+            "type": "integer"
+          },
+          "total": {
+            "description": "数据总数",
+            "format": "int",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.boss.UpdateRoleReq": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "name": {
+            "description": "角色名",
+            "format": "string",
+            "type": "string"
+          },
+          "pid": {
+            "description": "父id",
+            "format": "uint",
+            "type": "integer"
+          },
+          "rules": {
+            "description": "权限",
+            "format": "string",
+            "type": "string"
+          },
+          "status": {
+            "description": "状态",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "pid",
+          "rules",
+          "status"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.boss.UpdateRoleRes": {
+        "properties": {
+          "id": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "bank_system.api.core.PayinReq": {
+        "properties": {
+          "account": {
+            "description": "商户号",
+            "format": "string",
+            "type": "string"
+          },
+          "mer_callback_url": {
+            "description": "回调地址",
+            "format": "string",
+            "type": "string"
+          },
+          "amount": {
+            "description": "代收金额",
+            "format": "string",
+            "type": "string"
+          },
+          "product_type": {
+            "description": "产品类型",
+            "format": "string",
+            "type": "string"
+          },
+          "sign": {
+            "description": "签名",
+            "format": "string",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "mer_callback_url",
+          "amount",
+          "product_type",
+          "sign"
+        ],
+        "type": "object"
+      },
+      "bank_system.api.core.PayinRes": {
+        "properties": {
+          "orderid": {
+            "format": "uint",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "responses": {
+      "记录不存在": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ]
+            }
+          }
+        }
+      },
+      "参数不正确": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [],
+  "security": []
+}

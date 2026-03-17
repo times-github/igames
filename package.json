@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "failed": "^0.0.1",
+    "for": "^0.0.1-dev.0",
+    "openclaw": "^2026.3.2"
+  }
+}

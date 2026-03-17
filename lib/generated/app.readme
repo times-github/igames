@@ -1,0 +1,16 @@
+ // 部署 build/web 后将不再生成和注册 flutter_service_worker.js，浏览器不会离线缓存
+//flutter build web --release --pwa-strategy=none
+
+//上线后“临时自清理”方案（强制卸载已注册的 SW）
+//在 web/index.html 中临时加入这段脚本（放在 <body> 底部更安全），部署一次即可清掉客户端已有 SW 和缓存：
+//Apply to app.readme
+// <script>
+//   if ('serviceWorker' in navigator) {
+//     navigator.serviceWorker.getRegistrations().then(regs => {
+//       regs.forEach(r => r.unregister());
+//     });
+//     if (window.caches && caches.keys) {
+//       caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+//     }
+//   }
+// </script>

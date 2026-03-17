@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nc:*)",
+      "Bash(flutter run:*)",
+      "Bash(mkdir:*)",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__ide__getDiagnostics",
+      "Bash(flutter build apk --release --split-per-abi 2>&1)",
+      "Bash(java -version 2>&1 && /usr/libexec/java_home -V 2>&1 | head -5)",
+      "Bash(flutter config --jdk-dir /Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "outputStyle": "default"
+}
