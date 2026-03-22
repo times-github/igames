@@ -19,7 +19,7 @@ import 'app/utils/launch_params.dart';
 import 'app/utils/storage.dart';
 
 Locale _resolveStoredLocale(dynamic raw) {
-  if (raw is! String) return const Locale('id', 'ID');
+  if (raw is! String) return const Locale('zh', 'CN');
   final normalized = raw.toLowerCase();
   if (normalized == 'zh' || normalized == 'zh-cn' || normalized == 'zh_cn') {
     return const Locale('zh', 'CN');
@@ -33,7 +33,7 @@ Locale _resolveStoredLocale(dynamic raw) {
   if (normalized == 'id' || normalized == 'id-id' || normalized == 'id_id') {
     return const Locale('id', 'ID');
   }
-  return const Locale('id', 'ID');
+  return const Locale('zh', 'CN');
 }
 
 void main() async {
@@ -150,11 +150,11 @@ void main() async {
 
             // 按系统语言匹配，匹配不到则用 fallback
             localeResolutionCallback: (locale, supportedLocales) {
-              if (locale == null) return const Locale('id', 'ID');
+              if (locale == null) return const Locale('zh', 'CN');
               for (final l in supportedLocales) {
                 if (l.languageCode == locale.languageCode) return l;
               }
-              return const Locale('id', 'ID');
+              return const Locale('zh', 'CN');
             },
           ),
         );
