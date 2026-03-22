@@ -15,11 +15,11 @@ class AppConfig {
   static const int pageSize = 40;
 
   // / API基础URL
-  // static const String apiBaseUrl = 'https://api.getwiner.win';
+  // static const String apiBaseUrl = 'https://api.binguo168.com';
   static const String apiBaseUrl = 'http://127.0.0.1:8199';
 
   /// 游戏图标基础URL
-  // static const String gameIconBaseUrl = 'https://api.getwiner.win/';
+  // static const String gameIconBaseUrl = 'https://api.binguo168.com/';
   static const String gameIconBaseUrl = 'http://127.0.0.1:8199/';
 
 // flutter build apk --release --split-per-abi
@@ -37,16 +37,16 @@ class AppConfig {
 //   - build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
 //   - build/app/outputs/flutter-apk/app-x86_64-release.apk
   /// Web 应用地址（用于生成邀请链接等）
-  static const String appWebUrl = 'https://www.getwiner.win';
+  static const String appWebUrl = 'https://www.binguo168.com';
   // static const String appWebUrl = 'http://localhost:PORT'; // 本地开发时替换
 
   /// OTP 签名密钥
   static const String otpSecret = '7hygjitdsghyr475f6';
 
   /// Turnstile 站点公钥（Web 登录/注册）
-  
-  static const String turnstileSiteKey = '1x00000000000000000000AA'; //测试环境
-  // static const String turnstileSiteKey = '0x4AAAAAAnWJ5yLmBg0s6bL'; //正式环境
+
+  // static const String turnstileSiteKey = '1x00000000000000000000AA'; //测试环境
+  static const String turnstileSiteKey = '0x4AAAAAACug3hipXc6aYJlI'; //正式环境
 
   /// 默认充值金额选项（后端未返回时兜底）
   static const List<String> defaultDepositAmounts = [

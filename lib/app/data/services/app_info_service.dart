@@ -10,7 +10,7 @@ class AppInfoService extends GetxService {
 
   /// 站点名称，默认使用本地配置，拉取后更新
   final RxString appName = AppConfig.appName.obs;
-  final RxString appLogo = 'assets/images/getwiner.png'.obs;
+  final RxString appLogo = 'assets/images/binguo168.png'.obs;
   final RxList<String> depositAmountOptions = <String>[].obs;
   final RxList<AppBanner> banners = <AppBanner>[].obs;
 
