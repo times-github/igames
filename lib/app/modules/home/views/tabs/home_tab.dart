@@ -7,8 +7,8 @@ import 'package:get/get.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
+import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
-import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
 import 'package:igames/app/modules/widgets/common_header.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
@@ -680,6 +680,8 @@ class BannerCard extends StatelessWidget {
   final String? title;
   final VoidCallback? onTap;
 
+  bool get _isBrandBanner => imagePath == kDefaultAppLogoAsset;
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -690,18 +692,19 @@ class BannerCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             _BannerImage(imagePath: imagePath),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.35),
-                    Colors.black.withValues(alpha: 0.08),
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
+            if (!_isBrandBanner)
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.35),
+                      Colors.black.withValues(alpha: 0.08),
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
                 ),
               ),
-            ),
             if (title != null && title!.isNotEmpty)
               Positioned(
                 left: 14,
@@ -736,6 +739,10 @@ class _BannerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (imagePath == kDefaultAppLogoAsset) {
+      return const _BrandBannerArtwork();
+    }
+
     final isNetwork = imagePath.startsWith('http');
     final image = isNetwork
         ? Image.network(
@@ -758,6 +765,118 @@ class _BannerImage extends StatelessWidget {
           colors: [AppColors.primary, AppColors.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandBannerArtwork extends StatelessWidget {
+  const _BrandBannerArtwork();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF210B02), Color(0xFF4A1405), Color(0xFF7C2C06)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: -20,
+            top: -28,
+            child: _BrandBannerGlow(
+              size: 120,
+              color: const Color(0x55FFDA65),
+            ),
+          ),
+          Positioned(
+            right: -12,
+            bottom: -34,
+            child: _BrandBannerGlow(
+              size: 110,
+              color: const Color(0x33FFF0B2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(
+              children: [
+                const Expanded(
+                  flex: 4,
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: AppBrandLogo(
+                      logo: kDefaultAppLogoAsset,
+                      showBackground: false,
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'GETWINER.WIN',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'CASINO · SPORTS · SLOTS',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Color(0xFFFFD987),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BrandBannerGlow extends StatelessWidget {
+  const _BrandBannerGlow({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, color.withValues(alpha: 0)],
+          ),
         ),
       ),
     );

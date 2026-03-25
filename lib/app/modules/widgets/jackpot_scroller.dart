@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:igames/app/data/models/jackpot.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
+import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/config/app_config_export.dart';
@@ -146,9 +147,8 @@ class _JackpotScrollerState extends State<JackpotScroller> {
         return const SizedBox.shrink();
       }
 
-      final fallbackActive = records.isNotEmpty
-          ? _currentIndex % records.length
-          : 0;
+      final fallbackActive =
+          records.isNotEmpty ? _currentIndex % records.length : 0;
       if (_activeIndex < 0 || _activeIndex >= records.length) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -213,8 +213,7 @@ class _JackpotScrollerState extends State<JackpotScroller> {
           _itemExtent = cardWidth > 0 ? cardWidth + gap : 0;
 
           if (_scrollController.hasClients && records.length > 1) {
-            final maxOffset =
-                math.max(0.0, (records.length - 1) * _itemExtent);
+            final maxOffset = math.max(0.0, (records.length - 1) * _itemExtent);
             if (_scrollController.offset > maxOffset) {
               _scrollController.jumpTo(maxOffset);
             }
@@ -261,36 +260,36 @@ class _JackpotScrollerState extends State<JackpotScroller> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: records.length,
                       separatorBuilder: (_, __) => const SizedBox(width: gap),
-                    itemBuilder: (context, index) {
-                      final record = records[index];
-                      return SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                          child: InkWell(
+                      itemBuilder: (context, index) {
+                        final record = records[index];
+                        return SizedBox(
+                          width: cardWidth,
+                          height: cardHeight,
+                          child: Material(
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () => _showJackpotDetail(
-                              context,
-                              record,
-                              records,
-                              index,
-                            ),
-                            child: _JackpotRecordCard(
-                              key: ValueKey(
-                                '${record.eventTime}_${record.account}_${record.gamecode}_$index',
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () => _showJackpotDetail(
+                                context,
+                                record,
+                                records,
+                                index,
                               ),
-                              record: record,
-                              isActive: index == activeIndex,
-                              compact: cardWidth < 240,
+                              child: _JackpotRecordCard(
+                                key: ValueKey(
+                                  '${record.eventTime}_${record.account}_${record.gamecode}_$index',
+                                ),
+                                record: record,
+                                isActive: index == activeIndex,
+                                compact: cardWidth < 240,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
                 ),
               ],
             ),
@@ -324,8 +323,9 @@ class _LiveLabel extends StatelessWidget {
         );
         final availableHeight = (constraints.maxHeight - 12).clamp(0.0, 999.0);
         final charCount = math.max(1, displayLabel.runes.length);
-        final fittedFont =
-            math.min(baseFont, availableHeight / charCount).clamp(7.0, baseFont);
+        final fittedFont = math
+            .min(baseFont, availableHeight / charCount)
+            .clamp(7.0, baseFont);
         final textStyle = TextStyle(
           color: const Color(0xFF1A1C28),
           fontSize: fittedFont,
@@ -693,7 +693,6 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
     if (bet <= 0 || win <= 0) return null;
     return win / bet;
   }
-
 }
 
 class _AmountBox extends StatelessWidget {
@@ -742,8 +741,7 @@ class _AmountBox extends StatelessWidget {
                     blurRadius: glowBlur,
                   ),
                   Shadow(
-                    color:
-                        const Color(0xFFFF2A1A).withValues(alpha: glowAlpha),
+                    color: const Color(0xFFFF2A1A).withValues(alpha: glowAlpha),
                     blurRadius: glowBlur * 1.4,
                   ),
                 ],
@@ -920,7 +918,10 @@ class _JackpotDetailSheet extends StatelessWidget {
 
     final gamehall = record.gamehall;
     final gamecode = record.gamecode;
-    if (gamehall == null || gamehall.isEmpty || gamecode == null || gamecode.isEmpty) {
+    if (gamehall == null ||
+        gamehall.isEmpty ||
+        gamecode == null ||
+        gamecode.isEmpty) {
       Get.snackbar('错误', '游戏信息不完整', snackPosition: SnackPosition.TOP);
       return;
     }
@@ -1077,9 +1078,7 @@ class _DetailAmountBlock extends StatelessWidget {
               Expanded(
                 child: _DetailStatItem(
                   label: 'jackpotDetailBet'.tr,
-                  value: betText == '--'
-                      ? '--'
-                      : betText,
+                  value: betText == '--' ? '--' : betText,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1163,8 +1162,7 @@ class _DetailGameBlock extends StatelessWidget {
     final resolvedUrl = _resolveGameIconUrl(iconUrl);
     final media = MediaQuery.of(context);
     final availableWidth = media.size.width - 140;
-    final textWidth =
-        math.max(140.0, math.min(availableWidth, 240.0));
+    final textWidth = math.max(140.0, math.min(availableWidth, 240.0));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1502,7 +1500,6 @@ class _GameIcon extends StatelessWidget {
   Widget _fallback() {
     return _appLogoFallback(iconSize: size * 0.55);
   }
-
 }
 
 Widget _appLogoFallback({
@@ -1527,22 +1524,11 @@ Widget _appLogoFallback({
         iconOpacity: iconOpacity,
       );
     }
-    final isNetwork = logo.startsWith('http');
-    if (isNetwork) {
-      return Image.network(
-        logo,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _logoPlaceholder(
-          iconSize: iconSize,
-          withBackground: withBackground,
-          iconOpacity: iconOpacity,
-        ),
-      );
-    }
-    return Image.asset(
-      logo,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _logoPlaceholder(
+    return AppBrandLogo(
+      logo: logo,
+      showBackground: withBackground,
+      padding: const EdgeInsets.all(3),
+      placeholder: _logoPlaceholder(
         iconSize: iconSize,
         withBackground: withBackground,
         iconOpacity: iconOpacity,
@@ -1619,10 +1605,14 @@ bool _isSameJackpotRecord(JackpotRecord a, JackpotRecord b) {
   final otherGameCode = b.gamecode ?? '';
   final time = a.eventTime ?? '';
   final otherTime = b.eventTime ?? '';
-  if (account.isNotEmpty && otherAccount.isNotEmpty && account != otherAccount) {
+  if (account.isNotEmpty &&
+      otherAccount.isNotEmpty &&
+      account != otherAccount) {
     return false;
   }
-  if (gameCode.isNotEmpty && otherGameCode.isNotEmpty && gameCode != otherGameCode) {
+  if (gameCode.isNotEmpty &&
+      otherGameCode.isNotEmpty &&
+      gameCode != otherGameCode) {
     return false;
   }
   if (time.isNotEmpty && otherTime.isNotEmpty && time != otherTime) {

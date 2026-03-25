@@ -5,6 +5,7 @@ import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/widgets/language_selector/views/language_selector_view.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
+import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/config/app_config_export.dart';
 
@@ -54,20 +55,10 @@ Widget buildCommonHeader(
                   height: 40,
                   width: 40,
                   child: Obx(() {
-                    final logo = appInfo.appLogo.value;
-                    final isNetwork = logo.startsWith('http');
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: isNetwork
-                          ? Image.network(
-                              logo,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
-                                'assets/images/getwiner.png',
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : Image.asset(logo, fit: BoxFit.cover),
+                    return AppBrandLogo(
+                      logo: appInfo.appLogo.value,
+                      borderRadius: BorderRadius.circular(10),
+                      padding: const EdgeInsets.all(3),
                     );
                   }),
                 ),
@@ -80,14 +71,12 @@ Widget buildCommonHeader(
                         name.toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.1,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.1,
+                                ),
                       );
                     }),
                   ),

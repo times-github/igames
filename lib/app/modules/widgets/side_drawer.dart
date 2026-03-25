@@ -6,6 +6,7 @@ import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
+import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
 import 'package:igames/app/modules/widgets/language_selector/views/language_selector_view.dart';
@@ -160,26 +161,13 @@ class _DrawerHeader extends StatelessWidget {
             children: [
               // Logo
               Obx(() {
-                final logo = appInfo.appLogo.value;
-                final isNetwork = logo.startsWith('http');
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: isNetwork
-                        ? Image.network(
-                            logo,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/images/getwiner.png',
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Image.asset(
-                            logo,
-                            fit: BoxFit.cover,
-                          ),
+                return SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: AppBrandLogo(
+                    logo: appInfo.appLogo.value,
+                    borderRadius: BorderRadius.circular(12),
+                    padding: const EdgeInsets.all(4),
                   ),
                 );
               }),
@@ -862,18 +850,11 @@ class _SidebarGameIcon extends StatelessWidget {
     final appInfo = Get.find<AppInfoService>();
     return Obx(() {
       final logo = appInfo.appLogo.value;
-      final isNetwork = logo.startsWith('http');
-      if (isNetwork) {
-        return Image.network(
-          logo,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _iconPlaceholder(),
-        );
-      }
-      return Image.asset(
-        logo,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _iconPlaceholder(),
+      return AppBrandLogo(
+        logo: logo,
+        showBackground: false,
+        padding: const EdgeInsets.all(3),
+        placeholder: _iconPlaceholder(),
       );
     });
   }

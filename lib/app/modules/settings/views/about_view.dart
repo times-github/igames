@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 
 import '../../../../config/app_config_export.dart';
 
@@ -44,11 +45,14 @@ class AboutView extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Image.asset(
-                    'assets/images/getwiner.png',
-                    width: 180,
-                    height: 80,
-                    fit: BoxFit.contain,
+                  const SizedBox(
+                    width: 148,
+                    height: 148,
+                    child: AppBrandLogo(
+                      logo: kDefaultAppLogoAsset,
+                      showBackground: false,
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   const Text(

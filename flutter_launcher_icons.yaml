@@ -1,0 +1,27 @@
+flutter_launcher_icons:
+  image_path: "assets/images/getwiner.png"
+
+  android: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#2D1104"
+  adaptive_icon_foreground: "assets/images/getwiner.png"
+  adaptive_icon_foreground_inset: 12
+
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#2D1104"
+
+  web:
+    generate: true
+    image_path: "assets/images/getwiner.png"
+    background_color: "#2D1104"
+    theme_color: "#2D1104"
+
+  windows:
+    generate: true
+    image_path: "assets/images/getwiner.png"
+    icon_size: 256
+
+  macos:
+    generate: true
+    image_path: "assets/images/getwiner.png"
