@@ -45,14 +45,14 @@ class AboutView extends StatelessWidget {
               child: Column(
                 children: [
                   Image.asset(
-                    'assets/images/getwiner.png',
+                    'assets/images/binguo168.png',
                     width: 180,
                     height: 80,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'getwiner.win',
+                    'binguo168.com',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

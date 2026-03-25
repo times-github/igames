@@ -171,10 +171,13 @@ class LocaleKeys {
   static const errorWithdrawDailyCountLimit = 'errorWithdrawDailyCountLimit';
   static const errorWithdrawDailyAmountLimit = 'errorWithdrawDailyAmountLimit';
   static const errorWithdrawWalletFailed = 'errorWithdrawWalletFailed';
-  static const errorWithdrawInsufficientFunds = 'errorWithdrawInsufficientFunds';
+  static const errorWithdrawInsufficientFunds =
+      'errorWithdrawInsufficientFunds';
   static const errorWithdrawOutOfServiceTime = 'errorWithdrawOutOfServiceTime';
-  static const errorWithdrawCreateOrderFailed = 'errorWithdrawCreateOrderFailed';
-  static const errorWithdrawDeductBalanceFailed = 'errorWithdrawDeductBalanceFailed';
+  static const errorWithdrawCreateOrderFailed =
+      'errorWithdrawCreateOrderFailed';
+  static const errorWithdrawDeductBalanceFailed =
+      'errorWithdrawDeductBalanceFailed';
   static const cardNumber = 'cardNumber';
   static const pleaseEnterCardNumber = 'pleaseEnterCardNumber';
   static const bankCardTail = 'bankCardTail';
@@ -314,7 +317,8 @@ class LocaleKeys {
   static const errorLoginPasswordUserMissing = 'errorLoginPasswordUserMissing';
   static const errorLoginPasswordOldRequired = 'errorLoginPasswordOldRequired';
   static const errorLoginPasswordOldWrong = 'errorLoginPasswordOldWrong';
-  static const errorLoginPasswordUpdateFailed = 'errorLoginPasswordUpdateFailed';
+  static const errorLoginPasswordUpdateFailed =
+      'errorLoginPasswordUpdateFailed';
   static const oldPayPassword = 'oldPayPassword';
   static const newPayPassword = 'newPayPassword';
   static const confirmPayPassword = 'confirmPayPassword';
@@ -527,7 +531,7 @@ class Locales {
     'siteFotter_payment': 'Metode Pembayaran',
     'siteFotter_providers': 'Penyedia',
     'siteFotter_introduce':
-        'getwiner.win dioperasikan oleh Mamba Edge B.V., sebuah perusahaan yang didirikan di Curaçao, menurut hukum Curaçao, dengan nomor pendaftaran 166370 dan alamat pendaftaran Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao, dan anak perusahaan Mamba Edge B.V. Mamba Edge B.V. diatur dan diawasi oleh Gaming Services Provider N.V., nomor lisensi 365/JAZ. Ingat, perjudian bisa menjadi kecanduan. Bermain dengan bijak.',
+        'binguo168.com dioperasikan oleh Mamba Edge B.V., sebuah perusahaan yang didirikan di Curaçao, menurut hukum Curaçao, dengan nomor pendaftaran 166370 dan alamat pendaftaran Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao, dan anak perusahaan Mamba Edge B.V. Mamba Edge B.V. diatur dan diawasi oleh Gaming Services Provider N.V., nomor lisensi 365/JAZ. Ingat, perjudian bisa menjadi kecanduan. Bermain dengan bijak.',
     'siteFotter_help': 'Ada masalah?',
     'siteFotter_info': 'Informasi',
     'logout': 'Keluar',
@@ -969,11 +973,11 @@ class Locales {
     'siteFotter_support': '全天候技术支持',
     'siteFotter_email': '发送电子邮件',
     'siteFotter_tips': '谨慎自控娱乐。请记住，当您下注时，您是在承担风险。不要花费超过您能承受的损失。',
-    'siteFotter_copyright': '版权所有 © 2025 getwiner.win',
+    'siteFotter_copyright': '版权所有 © 2025 binguo168.com',
     'siteFotter_payment': '支付方式',
     'siteFotter_providers': '供应商',
     'siteFotter_introduce':
-        'getwiner.win 由 Mamba Edge B.V. 拥有和运营，是一家在库拉索注册并根据库拉索法律成立的公司，注册号为 166370，注册地址为 Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao ，其全资子公司。Mamba Edge B.V. 由 Gaming Services Provider N.V. 监管，许可证号为 365/JAZ。请记住，赌博可能成瘾。请负责任地玩。',
+        'binguo168.com 由 Mamba Edge B.V. 拥有和运营，是一家在库拉索注册并根据库拉索法律成立的公司，注册号为 166370，注册地址为 Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao ，其全资子公司。Mamba Edge B.V. 由 Gaming Services Provider N.V. 监管，许可证号为 365/JAZ。请记住，赌博可能成瘾。请负责任地玩。',
     'siteFotter_help': '有任何问题?',
     'siteFotter_info': '信息',
     'logout': '注销',
@@ -1403,7 +1407,7 @@ class Locales {
     'siteFotter_payment': 'Payment Methods',
     'siteFotter_providers': 'Providers',
     'siteFotter_introduce':
-        'getwiner.win is owned and operated by Mamba Edge B.V., a company registered and established under the laws of Curaçao, with registration number 166370 and registered address at Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao, and its wholly-owned subsidiary. Mamba Edge B.V. is licensed and regulated by Gaming Services Provider N.V., license No. 365/JAZ. Remember that gambling can be addictive. Play responsibly.',
+        'binguo168.com is owned and operated by Mamba Edge B.V., a company registered and established under the laws of Curaçao, with registration number 166370 and registered address at Abraham Mendez Chumaceiro Boulevard 03, Willemstad, Curaçao, and its wholly-owned subsidiary. Mamba Edge B.V. is licensed and regulated by Gaming Services Provider N.V., license No. 365/JAZ. Remember that gambling can be addictive. Play responsibly.',
     'siteFotter_help': 'Have any questions?',
     'siteFotter_info': 'Information',
     'logout': 'Logout',
@@ -1502,7 +1506,8 @@ class Locales {
     'errorWithdrawDailyAmountLimit': 'Daily withdraw amount limit reached',
     'errorWithdrawWalletFailed': 'Failed to get wallet info',
     'errorWithdrawInsufficientFunds': 'Insufficient withdrawable balance',
-    'errorWithdrawOutOfServiceTime': 'Withdraw service unavailable at this time',
+    'errorWithdrawOutOfServiceTime':
+        'Withdraw service unavailable at this time',
     'errorWithdrawCreateOrderFailed': 'Submit withdraw failed',
     'errorWithdrawDeductBalanceFailed': 'Deduct balance failed',
     'cardNumber': 'Card number',

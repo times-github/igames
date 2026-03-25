@@ -172,7 +172,7 @@ class _DrawerHeader extends StatelessWidget {
                             logo,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/images/getwiner.png',
+                              'assets/images/binguo168.png',
                               fit: BoxFit.cover,
                             ),
                           )

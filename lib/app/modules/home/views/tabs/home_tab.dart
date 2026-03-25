@@ -568,7 +568,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
 
   final List<AppBanner> _fallback = const [
     AppBanner(
-      img: 'assets/images/getwiner.png',
+      img: 'assets/images/binguo168.png',
       link: null,
       title: null,
       weight: 0,

@@ -15,12 +15,12 @@ class AppConfig {
   static const int pageSize = 40;
 
   // / API基础URL
-  // static const String apiBaseUrl = 'https://api.binguo168.com';
-  static const String apiBaseUrl = 'http://127.0.0.1:8199';
+  static const String apiBaseUrl = 'https://api.binguo168.com';
+  // static const String apiBaseUrl = 'http://127.0.0.1:8199';
 
   /// 游戏图标基础URL
-  // static const String gameIconBaseUrl = 'https://api.binguo168.com/';
-  static const String gameIconBaseUrl = 'http://127.0.0.1:8199/';
+  static const String gameIconBaseUrl = 'https://api.binguo168.com/';
+  // static const String gameIconBaseUrl = 'http://127.0.0.1:8199/';
 
 // flutter build apk --release --split-per-abi
 
