@@ -167,7 +167,6 @@ class _DrawerHeader extends StatelessWidget {
                   child: AppBrandLogo(
                     logo: appInfo.appLogo.value,
                     borderRadius: BorderRadius.circular(12),
-                    padding: const EdgeInsets.all(4),
                   ),
                 );
               }),

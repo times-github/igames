@@ -1527,7 +1527,6 @@ Widget _appLogoFallback({
     return AppBrandLogo(
       logo: logo,
       showBackground: withBackground,
-      padding: const EdgeInsets.all(3),
       placeholder: _logoPlaceholder(
         iconSize: iconSize,
         withBackground: withBackground,

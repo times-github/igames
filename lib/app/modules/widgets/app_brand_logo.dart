@@ -6,11 +6,11 @@ class AppBrandLogo extends StatelessWidget {
   const AppBrandLogo({
     super.key,
     required this.logo,
-    this.padding = const EdgeInsets.all(4),
+    this.padding = EdgeInsets.zero,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
-    this.showBackground = true,
+    this.showBackground = false,
     this.backgroundColor = const Color(0x16000000),
     this.borderColor = const Color(0x24FFFFFF),
     this.placeholder,

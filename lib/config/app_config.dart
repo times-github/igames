@@ -44,7 +44,7 @@ class AppConfig {
   static const String otpSecret = '7hygjitdsghyr475f6';
 
   /// Turnstile 站点公钥（Web 登录/注册）
-  
+
   static const String turnstileSiteKey = '1x00000000000000000000AA'; //测试环境
   // static const String turnstileSiteKey = '0x4AAAAAAnWJ5yLmBg0s6bL'; //正式环境
 

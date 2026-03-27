@@ -68,6 +68,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.4
+  package_rename: ^1.10.1
   
 
 # For information on the generic Dart part of this file, see the
@@ -118,3 +119,35 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+package_rename_config:
+  android:
+    app_name: "getwiner"
+    package_name: "co.getwiner.igames"
+    lang: "kotlin"
+
+  ios:
+    app_name: "Igames"
+    bundle_name: "igames"
+    package_name: "co.getwiner.igames"
+
+  linux:
+    app_name: "igames"
+    package_name: "co.getwiner.igames"
+    exe_name: "igames"
+
+  macos:
+    app_name: "igames"
+    package_name: "co.getwiner.igames"
+    copyright_notice: "Copyright © 2025 co.getwiner. All rights reserved."
+
+  web:
+    app_name: "getwiner.win"
+    short_app_name: "igames7"
+    description: "best online casino"
+
+  windows:
+    app_name: "igames"
+    organization: "co.getwiner"
+    copyright_notice: "Copyright (C) 2025 co.getwiner. All rights reserved."
+    exe_name: "igames"
