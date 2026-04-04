@@ -364,12 +364,13 @@ class _DrawerLanguageItem extends StatelessWidget {
   const _DrawerLanguageItem();
 
   void _openLanguageMenu(BuildContext context) {
-    final overlayContext = Get.overlayContext ?? Get.context ?? context;
-    if (!Get.isRegistered<LanguageSelectorController>()) {
-      Get.put(LanguageSelectorController());
-    }
-    Get.find<LanguageSelectorController>().toggleLanguageMenu(overlayContext);
-    Navigator.pop(context);
+    final languageController = Get.isRegistered<LanguageSelectorController>()
+        ? Get.find<LanguageSelectorController>()
+        : Get.put(LanguageSelectorController());
+    Navigator.of(context).pop();
+    languageController.openLanguageMenu(
+      fallbackContext: Get.context,
+    );
   }
 
   @override

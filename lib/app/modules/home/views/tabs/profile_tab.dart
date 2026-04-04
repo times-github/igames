@@ -109,13 +109,13 @@ class ProfileTab extends StatelessWidget {
                   label: 'language'.tr,
                   icon: Icons.language,
                   onTap: () {
-                    final overlayContext =
-                        Get.overlayContext ?? Get.context ?? context;
-                    if (!Get.isRegistered<LanguageSelectorController>()) {
-                      Get.put(LanguageSelectorController());
-                    }
-                    Get.find<LanguageSelectorController>()
-                        .toggleLanguageMenu(overlayContext);
+                    final languageController =
+                        Get.isRegistered<LanguageSelectorController>()
+                            ? Get.find<LanguageSelectorController>()
+                            : Get.put(LanguageSelectorController());
+                    languageController.openLanguageMenu(
+                      fallbackContext: context,
+                    );
                   },
                   trailing: IgnorePointer(
                     child: LanguageSelectorView(compact: false),
@@ -1017,11 +1017,12 @@ class _LanguageSelectorTile extends StatelessWidget {
   const _LanguageSelectorTile();
 
   void _openLanguageMenu(BuildContext context) {
-    final overlayContext = Get.overlayContext ?? Get.context ?? context;
-    if (!Get.isRegistered<LanguageSelectorController>()) {
-      Get.put(LanguageSelectorController());
-    }
-    Get.find<LanguageSelectorController>().toggleLanguageMenu(overlayContext);
+    final languageController = Get.isRegistered<LanguageSelectorController>()
+        ? Get.find<LanguageSelectorController>()
+        : Get.put(LanguageSelectorController());
+    languageController.openLanguageMenu(
+      fallbackContext: context,
+    );
   }
 
   @override

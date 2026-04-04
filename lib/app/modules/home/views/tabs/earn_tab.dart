@@ -257,7 +257,8 @@ class _EarnTabState extends State<EarnTab> {
     );
 
     return Container(
-      decoration: const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
+      decoration:
+          const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
       child: SafeArea(bottom: false, child: content),
     );
   }
@@ -568,22 +569,11 @@ class _PromoLinkCard extends StatelessWidget {
   final List<String> langOptions;
   final ValueChanged<String> onSelectLang;
 
-  String _langLabel(String code) {
-    switch (code) {
-      case 'id':
-        return 'lang_id'.tr;
-      case 'en':
-        return 'lang_en'.tr;
-      case 'zh':
-        return 'lang_zh'.tr;
-      default:
-        return code.toUpperCase();
-    }
-  }
-
   static void _openUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(uri)) {
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   static void _showQr(BuildContext context, String link) {
@@ -597,7 +587,11 @@ class _PromoLinkCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('扫码分享', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              const Text('扫码分享',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
               QrImageView(data: link, size: 200, backgroundColor: Colors.white),
               const SizedBox(height: 12),
@@ -612,20 +606,40 @@ class _PromoLinkCard extends StatelessWidget {
     );
   }
 
+  void _copyLink() {
+    if (loading || link.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: link));
+    Get.snackbar(
+      '已复制',
+      '推广链接已复制到剪贴板',
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
   List<_SocialChannel> _buildChannels(BuildContext context) {
     final encoded = Uri.encodeComponent(link);
     return [
-      _SocialChannel(Icons.chat, 'WhatsApp', (_) => _openUrl('https://wa.me/?text=$encoded'), iconColor: const Color(0xFF25D366)),
-      _SocialChannel(Icons.facebook, 'Facebook', (_) => _openUrl('https://www.facebook.com/sharer/sharer.php?u=$encoded'), iconColor: const Color(0xFF1877F2)),
-      _SocialChannel(Icons.send, 'Telegram', (_) => _openUrl('https://t.me/share/url?url=$encoded'), iconColor: const Color(0xFF2AABEE)),
-      _SocialChannel(Icons.link, '复制链接', (_) {
-        Clipboard.setData(ClipboardData(text: link));
-        Get.snackbar('已复制', '推广链接已复制到剪贴板', snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
-      }),
+      _SocialChannel(
+        Icons.chat,
+        'WhatsApp',
+        (_) => _openUrl('https://wa.me/?text=$encoded'),
+        iconWidget: const _WhatsAppIcon(),
+      ),
+      _SocialChannel(
+          Icons.facebook,
+          'Facebook',
+          (_) =>
+              _openUrl('https://www.facebook.com/sharer/sharer.php?u=$encoded'),
+          iconColor: const Color(0xFF1877F2)),
+      _SocialChannel(Icons.send, 'Telegram',
+          (_) => _openUrl('https://t.me/share/url?url=$encoded'),
+          iconColor: const Color(0xFF2AABEE)),
+      _SocialChannel(Icons.link, '复制链接', (_) => _copyLink(),
+          backgroundColor: _kPurple1, iconColor: Colors.white),
       _SocialChannel(Icons.qr_code, '二维码', (_) => _showQr(context, link)),
       _SocialChannel(Icons.more_horiz, '更多', (_) {
-        Clipboard.setData(ClipboardData(text: link));
-        Get.snackbar('已复制', '推广链接已复制到剪贴板', snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
+        _copyLink();
       }),
     ];
   }
@@ -654,22 +668,40 @@ class _PromoLinkCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.07),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
                     borderRadius: BorderRadius.circular(8),
+                    onTap: loading || link.isEmpty ? null : _copyLink,
+                    child: Ink(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: loading
+                          ? const SizedBox(
+                              height: 14,
+                              child: LinearProgressIndicator(
+                                backgroundColor: Colors.transparent,
+                                color: _kPurple1,
+                              ),
+                            )
+                          : Text(
+                              link.isEmpty ? '暂无邀请链接' : link,
+                              style: TextStyle(
+                                color: link.isEmpty
+                                    ? Colors.white38
+                                    : Colors.white70,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
                   ),
-                  child: loading
-                      ? const SizedBox(
-                          height: 14,
-                          child: LinearProgressIndicator(backgroundColor: Colors.transparent, color: _kPurple1),
-                        )
-                      : Text(
-                          link.isEmpty ? '暂无邀请链接' : link,
-                          style: TextStyle(color: link.isEmpty ? Colors.white38 : Colors.white70, fontSize: 12),
-                          overflow: TextOverflow.ellipsis,
-                        ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -690,7 +722,7 @@ class _PromoLinkCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _langLabel(code),
+                            _inviteLangLabel(code),
                             style: const TextStyle(color: Colors.white),
                           ),
                           if (isActive) const SizedBox(width: 8),
@@ -703,20 +735,9 @@ class _PromoLinkCard extends StatelessWidget {
                   }).toList();
                 },
                 child: _ActionBtn(
-                  label: 'language'.tr,
+                  label: _shareLanguageLabel(currentLang),
                   icon: Icons.language,
                 ),
-              ),
-              const SizedBox(width: 6),
-              _ActionBtn(
-                label: '复制',
-                icon: Icons.copy,
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: link));
-                  Get.snackbar('已复制', '推广链接已复制到剪贴板',
-                      snackPosition: SnackPosition.BOTTOM,
-                      duration: const Duration(seconds: 2));
-                },
               ),
             ],
           ),
@@ -737,8 +758,17 @@ class _SocialChannel {
   final IconData icon;
   final String label;
   final Color? iconColor;
+  final Color? backgroundColor;
+  final Widget? iconWidget;
   final void Function(String link) onTap;
-  const _SocialChannel(this.icon, this.label, this.onTap, {this.iconColor});
+  const _SocialChannel(
+    this.icon,
+    this.label,
+    this.onTap, {
+    this.iconColor,
+    this.backgroundColor,
+    this.iconWidget,
+  });
 }
 
 class _SocialChannelItem extends StatelessWidget {
@@ -756,10 +786,18 @@ class _SocialChannelItem extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: channel.backgroundColor ??
+                  Colors.white.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(channel.icon, color: channel.iconColor ?? Colors.white70, size: 20),
+            child: Center(
+              child: channel.iconWidget ??
+                  Icon(
+                    channel.icon,
+                    color: channel.iconColor ?? Colors.white70,
+                    size: 20,
+                  ),
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -772,15 +810,40 @@ class _SocialChannelItem extends StatelessWidget {
   }
 }
 
-class _ActionBtn extends StatelessWidget {
-  const _ActionBtn({required this.label, required this.icon, this.onTap});
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
+class _WhatsAppIcon extends StatelessWidget {
+  const _WhatsAppIcon();
 
   @override
   Widget build(BuildContext context) {
-    final button = Container(
+    return Stack(
+      alignment: Alignment.center,
+      children: const [
+        Icon(
+          Icons.chat_bubble_rounded,
+          color: Color(0xFF25D366),
+          size: 21,
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: 1),
+          child: Icon(
+            Icons.call_rounded,
+            color: Colors.white,
+            size: 10,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({required this.label, required this.icon});
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [_kPurple1, _kPurple2]),
@@ -790,15 +853,36 @@ class _ActionBtn extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.white, size: 14),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
         ],
       ),
     );
-    if (onTap == null) return button;
-    return GestureDetector(
-      onTap: onTap,
-      child: button,
-    );
+  }
+}
+
+String _shareLanguageLabel(String currentLang) {
+  final current = _inviteLangLabel(currentLang);
+  switch ((Get.locale?.languageCode ?? 'zh').toLowerCase()) {
+    case 'id':
+      return 'Bahasa bagikan: $current';
+    case 'en':
+      return 'Current share language: $current';
+    default:
+      return '当前分享语言: $current';
+  }
+}
+
+String _inviteLangLabel(String code) {
+  switch (code) {
+    case 'id':
+      return 'lang_id'.tr;
+    case 'en':
+      return 'lang_en'.tr;
+    case 'zh':
+      return 'lang_zh'.tr;
+    default:
+      return code.toUpperCase();
   }
 }
 
@@ -886,8 +970,14 @@ class _WeeklyCommissionSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              _WeekTab(label: '本周', active: selectedWeek == 0, onTap: () => onWeekChanged(0)),
-              _WeekTab(label: '上周', active: selectedWeek == 1, onTap: () => onWeekChanged(1)),
+              _WeekTab(
+                  label: '本周',
+                  active: selectedWeek == 0,
+                  onTap: () => onWeekChanged(0)),
+              _WeekTab(
+                  label: '上周',
+                  active: selectedWeek == 1,
+                  onTap: () => onWeekChanged(1)),
             ],
           ),
           Padding(
@@ -898,7 +988,9 @@ class _WeeklyCommissionSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('预计佣金', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      const Text('预计佣金',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(
                         data.estimatedCommission.toStringAsFixed(2),
@@ -915,17 +1007,21 @@ class _WeeklyCommissionSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('下一档奖励', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      const Text('下一档奖励',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 12)),
                       const SizedBox(height: 4),
                       RichText(
                         text: TextSpan(
                           children: [
                             TextSpan(
                               text: '再邀 ${data.friendsNeededForNext} 人 ',
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 13),
                             ),
                             TextSpan(
-                              text: '+${data.nextTierBonus.toStringAsFixed(2)}%',
+                              text:
+                                  '+${data.nextTierBonus.toStringAsFixed(2)}%',
                               style: const TextStyle(
                                 color: _kOrange,
                                 fontSize: 14,
@@ -948,7 +1044,8 @@ class _WeeklyCommissionSection extends StatelessWidget {
 }
 
 class _WeekTab extends StatelessWidget {
-  const _WeekTab({required this.label, required this.active, required this.onTap});
+  const _WeekTab(
+      {required this.label, required this.active, required this.onTap});
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -1041,7 +1138,8 @@ class _CommissionTierCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${tier.requiredActive}人',
-                        style: const TextStyle(color: Colors.white54, fontSize: 11),
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 11),
                       ),
                     ],
                   ),

@@ -42,12 +42,50 @@ class LanguageSelectorController extends GetxController {
     if (_entry != null) {
       close();
     } else {
-      open(context);
+      openLanguageMenu(fallbackContext: context);
     }
   }
 
-  void open(BuildContext context) {
+  void openLanguageMenu({BuildContext? fallbackContext}) {
     if (_entry != null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_entry != null) return;
+      final overlayState = _resolveOverlayState(fallbackContext);
+      final overlayContext = overlayState?.context;
+      if (overlayState == null || overlayContext == null) {
+        debugPrint(
+            'LanguageSelectorController: unable to find a root overlay context.');
+        return;
+      }
+      open(overlayContext, overlayState: overlayState);
+    });
+  }
+
+  OverlayState? _resolveOverlayState([BuildContext? fallbackContext]) {
+    final rootOverlay = Get.key.currentState?.overlay;
+    if (rootOverlay != null) {
+      return rootOverlay;
+    }
+
+    final overlayContext = Get.overlayContext ?? Get.context ?? fallbackContext;
+    if (overlayContext == null) {
+      return null;
+    }
+
+    return Overlay.maybeOf(overlayContext, rootOverlay: true);
+  }
+
+  void open(BuildContext context, {OverlayState? overlayState}) {
+    if (_entry != null) return;
+
+    final targetOverlay =
+        overlayState ?? Overlay.maybeOf(context, rootOverlay: true);
+    if (targetOverlay == null) {
+      debugPrint(
+          'LanguageSelectorController: unable to open language menu without overlay.');
+      return;
+    }
 
     final Size screen = MediaQuery.of(context).size;
     final double panelWidth = math.min(screen.width - 48, 980);
@@ -64,8 +102,8 @@ class LanguageSelectorController extends GetxController {
               child: Container(
                 color: Colors.black.withValues(alpha: 0.35),
               ),
+            ),
           ),
-        ),
         ),
         // 居中弹窗面板
         Center(
@@ -93,14 +131,14 @@ class LanguageSelectorController extends GetxController {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 16),
                     child: Row(
-                            children: [
-                              Text(
+                      children: [
+                        Text(
                           'language'.tr,
                           style: const TextStyle(
-                                  color: Colors.white,
+                              color: Colors.white,
                               fontSize: 22,
                               fontWeight: FontWeight.w800),
-                              ),
+                        ),
                         const Spacer(),
                         InkWell(
                           onTap: close,
@@ -143,7 +181,7 @@ class LanguageSelectorController extends GetxController {
       ]),
     );
 
-    Overlay.of(context).insert(_entry!);
+    targetOverlay.insert(_entry!);
     isOpen.value = true;
   }
 
