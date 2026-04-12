@@ -9,6 +9,7 @@
         "cancel": "Cancel"
     },
     "language": "Language",
+    "turnstileRequired": "Please complete the human verification first",
     "login": "Login",
     "register": "Register",
     "email": "Email",
@@ -41,6 +42,11 @@
     "pleaseEnterAllInformation": "Please enter all information",
     "contactCustomerService": "Contact customer service",
     "customerService": "Customer service",
+    "supportCenterSubtitle": "Choose a channel and we'll reply shortly.",
+    "supportOpenNow": "Contact now",
+    "supportNotConfigured": "Not configured",
+    "supportWhatsAppDesc": "Priority replies via WhatsApp",
+    "supportTelegramDesc": "Official Telegram online support",
     "userProfile": "User profile",
     "gamestype":{
         "all": "All",
@@ -161,8 +167,19 @@
     "shrink": "Shrink",
     "expand": "Expand",
     "close": "Close",
+    "helpCenter": "Customer Service Center",
     "loadingGame": "Loading game...",
-    "loadingGameFailed": "Loading game failed"
+    "loadingGameFailed": "Loading game failed",
+    "turnstileLoading": "Loading security verification...",
+    "turnstileLoadFailed": "Verification failed to load. Please refresh and try again.",
+    "authAccountOrPhoneRequired": "Please enter an account or phone number",
+    "authOtpLengthInvalid": "Invalid verification code length",
+    "authPhoneFormatInvalid": "Invalid phone number format. Please use an Indonesian number",
+    "authAccountQueryFailed": "Failed to query account. Please try again later",
+    "authOtpVerifyFailed": "Verification code check failed. Please try again",
+    "authRegisterAutoFailed": "Registration failed. Please try again later",
+    "authPasswordOrCodeRequired": "Please enter a password or verification code",
+    "authUnknownError": "Login failed. Please try again later"
 
 
 

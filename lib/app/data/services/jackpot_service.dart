@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/storage.dart';
 import '../models/jackpot.dart';
 import '../../utils/api_client.dart';
@@ -38,8 +39,7 @@ class JackpotService extends GetxService {
           Map<String, dynamic>.from(response.data as Map),
         );
 
-        if (jackpotResponse.code == 1 &&
-            jackpotResponse.data?.list != null) {
+        if (jackpotResponse.code == 1 && jackpotResponse.data?.list != null) {
           jackpotList.value = jackpotResponse.data!.list!;
         }
       }
@@ -69,22 +69,6 @@ class JackpotService extends GetxService {
     if (lang.isEmpty) {
       lang = Get.locale?.languageCode ?? 'id';
     }
-    final normalized = lang.toLowerCase();
-    if (normalized == 'zh' ||
-        normalized == 'zh-cn' ||
-        normalized == 'zh_cn') {
-      return 'zh-cn';
-    }
-    if (normalized == 'id' ||
-        normalized == 'id-id' ||
-        normalized == 'id_id') {
-      return 'id';
-    }
-    if (normalized == 'en' ||
-        normalized == 'en-us' ||
-        normalized == 'en_us') {
-      return 'en';
-    }
-    return normalized;
+    return normalizeApiLang(lang);
   }
 }

@@ -7,6 +7,7 @@ import 'package:igames/app/modules/home/bindings/home_binding.dart';
 import 'package:igames/app/modules/home/views/home.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/api_client.dart';
 
 import 'app/routes/app_pages.dart';
@@ -66,12 +67,14 @@ void main() async {
   // 全局服务
   Get.put(ApiClient(), permanent: true); // 先注册 ApiClient
   final appInfo = Get.put(AppInfoService(), permanent: true);
-  final jackpotService = Get.put(JackpotService(), permanent: true);
+  Get.put(JackpotService(), permanent: true);
   // 异步拉取站点名称（不阻塞启动）
   appInfo.fetchAppName();
   appInfo.fetchAppLogo();
   appInfo.fetchDepositAmounts();
-  appInfo.fetchAppBanners(lang: initialLocale.languageCode);
+  appInfo.fetchAppBanners(
+    lang: normalizeApiLang(initialLocale.toLanguageTag()),
+  );
 
   // 注册 WebView 平台实现（Web 平台）
 

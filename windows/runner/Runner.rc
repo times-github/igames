@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "co.getwiner" "\0"
+            VALUE "CompanyName", "win.getwiner" "\0"
             VALUE "FileDescription", "igames" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "igames" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 co.getwiner. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 win.getwiner. All rights reserved." "\0"
             VALUE "OriginalFilename", "igames.exe" "\0"
             VALUE "ProductName", "igames" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

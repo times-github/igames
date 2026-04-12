@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/utils/api_client.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/config/app_config.dart';
 import 'dart:convert';
 
@@ -115,7 +116,7 @@ class AppInfoService extends GetxService {
         withAuth: false,
         queryParameters: {
           'scene_code': sceneCode,
-          'lang': lang,
+          'lang': normalizeApiLang(lang),
           'platform': platform ?? (kIsWeb ? 'h5' : 'app'),
         },
       );
@@ -181,25 +182,28 @@ class AppInfoService extends GetxService {
   }
 
   List<AppBanner> _mapBannerList(List<dynamic> source) {
-    return source.map<AppBanner>((item) {
-      if (item is Map) {
-        final img = item['image_url']?.toString() ??
-            item['img']?.toString() ??
-            item['image']?.toString() ??
-            '';
-        final link =
-            item['link_value']?.toString() ?? item['link']?.toString();
-        final title = item['title']?.toString();
-        final weight = int.tryParse(item['weight']?.toString() ?? '') ?? 0;
-        return AppBanner(
-          img: _normalizeUrl(img),
-          link: link,
-          title: title,
-          weight: weight,
-        );
-      }
-      return AppBanner(img: '', link: null, title: null, weight: 0);
-    }).where((e) => e.img.isNotEmpty).toList()
+    return source
+        .map<AppBanner>((item) {
+          if (item is Map) {
+            final img = item['image_url']?.toString() ??
+                item['img']?.toString() ??
+                item['image']?.toString() ??
+                '';
+            final link =
+                item['link_value']?.toString() ?? item['link']?.toString();
+            final title = item['title']?.toString();
+            final weight = int.tryParse(item['weight']?.toString() ?? '') ?? 0;
+            return AppBanner(
+              img: _normalizeUrl(img),
+              link: link,
+              title: title,
+              weight: weight,
+            );
+          }
+          return AppBanner(img: '', link: null, title: null, weight: 0);
+        })
+        .where((e) => e.img.isNotEmpty)
+        .toList()
       ..sort((a, b) => b.weight.compareTo(a.weight));
   }
 
@@ -216,6 +220,5 @@ class AppBanner {
   final String? title;
   final int weight;
 
-  const AppBanner(
-      {required this.img, this.link, this.title, this.weight = 0});
+  const AppBanner({required this.img, this.link, this.title, this.weight = 0});
 }

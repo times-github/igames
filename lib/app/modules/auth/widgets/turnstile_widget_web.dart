@@ -6,17 +6,21 @@ import 'dart:ui_web' as ui;
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
+const bool supportsTurnstileChallenge = true;
+
 class TurnstileWidget extends StatefulWidget {
   const TurnstileWidget({
     super.key,
     required this.siteKey,
     required this.onToken,
     this.theme = 'dark',
+    this.language = 'auto',
   });
 
   final String siteKey;
   final ValueChanged<String> onToken;
   final String theme;
+  final String language;
 
   @override
   State<TurnstileWidget> createState() => _TurnstileWidgetState();
@@ -41,7 +45,8 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
   void didUpdateWidget(covariant TurnstileWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.siteKey != widget.siteKey ||
-        oldWidget.theme != widget.theme) {
+        oldWidget.theme != widget.theme ||
+        oldWidget.language != widget.language) {
       _reset();
       _render();
     }
@@ -79,16 +84,20 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         ..async = true
         ..defer = true
         ..setAttribute('data-cf-turnstile', 'true');
-      script.addEventListener('error', ((web.Event _) {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      }).toJS);
-      script.addEventListener('load', ((web.Event _) {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      }).toJS);
+      script.addEventListener(
+          'error',
+          ((web.Event _) {
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          }).toJS);
+      script.addEventListener(
+          'load',
+          ((web.Event _) {
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          }).toJS);
       web.document.head?.appendChild(script);
     }
     _scriptFuture = completer.future;
@@ -103,6 +112,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
     final options = JSObject()
       ..['sitekey'] = widget.siteKey.toJS
       ..['theme'] = widget.theme.toJS
+      ..['language'] = widget.language.toJS
       ..['callback'] = ((JSString token) {
         final tokenStr = token.toDart;
         if (tokenStr.isNotEmpty) {

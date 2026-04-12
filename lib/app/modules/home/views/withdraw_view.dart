@@ -5,6 +5,7 @@ import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
 import 'package:igames/app/utils/api_client.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/storage.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/config/app_config_export.dart';
@@ -143,8 +144,9 @@ class _WithdrawViewState extends State<WithdrawView> {
           _cryptoAddresses = cryptoList;
           _selectedBankCard = selectedCard;
           _selectedCryptoAddress = selectedCrypto;
-          _selectedBankCode =
-              selectedCard == null ? '' : _resolveBankCodeFromCard(selectedCard);
+          _selectedBankCode = selectedCard == null
+              ? ''
+              : _resolveBankCodeFromCard(selectedCard);
           _selectedCardNumber =
               selectedCard == null ? '' : _resolveCardNumber(selectedCard);
           _selectedHolderName =
@@ -174,9 +176,7 @@ class _WithdrawViewState extends State<WithdrawView> {
   }
 
   String _resolveBankNameFromCard(Map<String, dynamic> card) {
-    return card['bank_name']?.toString() ??
-        card['bankName']?.toString() ??
-        '';
+    return card['bank_name']?.toString() ?? card['bankName']?.toString() ?? '';
   }
 
   String _resolveBankShortFromCard(Map<String, dynamic> card) {
@@ -208,23 +208,17 @@ class _WithdrawViewState extends State<WithdrawView> {
 
   String _resolveCryptoAddress(Map<String, dynamic>? item) {
     if (item == null) return '';
-    return item['address']?.toString() ??
-        item['addr']?.toString() ??
-        '';
+    return item['address']?.toString() ?? item['addr']?.toString() ?? '';
   }
 
   String _resolveCryptoChain(Map<String, dynamic>? item) {
     if (item == null) return '';
-    return item['chain']?.toString() ??
-        item['network']?.toString() ??
-        '';
+    return item['chain']?.toString() ?? item['network']?.toString() ?? '';
   }
 
   String _resolveCryptoToken(Map<String, dynamic>? item) {
     if (item == null) return '';
-    return item['token']?.toString() ??
-        item['coin']?.toString() ??
-        '';
+    return item['token']?.toString() ?? item['coin']?.toString() ?? '';
   }
 
   String _resolveCryptoId(Map<String, dynamic>? item) {
@@ -243,10 +237,8 @@ class _WithdrawViewState extends State<WithdrawView> {
 
   String _extractCardTail(String raw) {
     if (raw.isEmpty) return '';
-    final digits = RegExp(r'\d')
-        .allMatches(raw)
-        .map((m) => m.group(0) ?? '')
-        .join();
+    final digits =
+        RegExp(r'\d').allMatches(raw).map((m) => m.group(0) ?? '').join();
     if (digits.isEmpty) return '';
     if (digits.length <= 4) return digits;
     return digits.substring(digits.length - 4);
@@ -299,8 +291,8 @@ class _WithdrawViewState extends State<WithdrawView> {
         if (data['code'] == 1) {
           final inner = data['data'];
           if (inner is Map) {
-            value = inner['value']?.toString() ??
-                inner['config_value']?.toString();
+            value =
+                inner['value']?.toString() ?? inner['config_value']?.toString();
           } else {
             value = inner?.toString();
           }
@@ -342,8 +334,7 @@ class _WithdrawViewState extends State<WithdrawView> {
           final maxVal = value['max_amount'] ?? value['maxAmount'];
           _withdrawMinAmount = minVal?.toString() ?? '';
           _withdrawMaxAmount = maxVal?.toString() ?? '';
-          if (_withdrawMinAmount.isNotEmpty &&
-              _withdrawMaxAmount.isNotEmpty) {
+          if (_withdrawMinAmount.isNotEmpty && _withdrawMaxAmount.isNotEmpty) {
             _amountRangeHint = '$_withdrawMinAmount-$_withdrawMaxAmount';
           } else if (_withdrawMinAmount.isNotEmpty) {
             _amountRangeHint = _withdrawMinAmount;
@@ -385,23 +376,7 @@ class _WithdrawViewState extends State<WithdrawView> {
     if (lang.isEmpty) {
       lang = Get.locale?.languageCode ?? 'id';
     }
-    final normalized = lang.toLowerCase();
-    if (normalized == 'zh' ||
-        normalized == 'zh-cn' ||
-        normalized == 'zh_cn') {
-      return 'zh-cn';
-    }
-    if (normalized == 'id' ||
-        normalized == 'id-id' ||
-        normalized == 'id_id') {
-      return 'id';
-    }
-    if (normalized == 'en' ||
-        normalized == 'en-us' ||
-        normalized == 'en_us') {
-      return 'en';
-    }
-    return normalized;
+    return normalizeApiLang(lang);
   }
 
   String _composeBankCardTitle(Map<String, dynamic> card) {
@@ -420,10 +395,8 @@ class _WithdrawViewState extends State<WithdrawView> {
     final tail = _extractAddressTail(address);
     final tailLabel =
         tail.isEmpty ? '' : ' ${'bankCardTail'.trParams({'tail': tail})}';
-    final tokenLabel =
-        token.isEmpty ? 'USDT' : token;
-    final chainLabel =
-        chain.isEmpty ? 'TRC20' : chain;
+    final tokenLabel = token.isEmpty ? 'USDT' : token;
+    final chainLabel = chain.isEmpty ? 'TRC20' : chain;
     return '$tokenLabel/$chainLabel$tailLabel';
   }
 
@@ -562,8 +535,7 @@ class _WithdrawViewState extends State<WithdrawView> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     Get.back();
-                    final result =
-                        await Get.toNamed(Routes.CRYPTO_ADDRESS_ADD);
+                    final result = await Get.toNamed(Routes.CRYPTO_ADDRESS_ADD);
                     if (result == true) {
                       await _refreshWithdrawAccounts(keepSelection: false);
                     }
@@ -973,8 +945,7 @@ class _WithdrawViewState extends State<WithdrawView> {
                   color: const Color(0xFFF5A646).withValues(alpha: 0.8),
                 ),
               ),
-              child: const Icon(Icons.add,
-                  color: Color(0xFFF5A646), size: 18),
+              child: const Icon(Icons.add, color: Color(0xFFF5A646), size: 18),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1016,8 +987,7 @@ class _WithdrawViewState extends State<WithdrawView> {
                   color: const Color(0xFFF5A646).withValues(alpha: 0.8),
                 ),
               ),
-              child: const Icon(Icons.add,
-                  color: Color(0xFFF5A646), size: 18),
+              child: const Icon(Icons.add, color: Color(0xFFF5A646), size: 18),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1137,9 +1107,8 @@ class _WithdrawViewState extends State<WithdrawView> {
 
   Widget _buildWithdrawForm() {
     final bankCard = _selectedBankCard;
-    final bankLabel = bankCard == null
-        ? 'bankCard'.tr
-        : _composeBankCardTitle(bankCard);
+    final bankLabel =
+        bankCard == null ? 'bankCard'.tr : _composeBankCardTitle(bankCard);
 
     return Container(
       padding: const EdgeInsets.all(12),

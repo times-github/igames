@@ -1,4 +1,4 @@
-package co.getwiner.igames
+package win.getwiner
 
 import io.flutter.embedding.android.FlutterActivity
 

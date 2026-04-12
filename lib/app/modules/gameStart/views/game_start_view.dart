@@ -27,7 +27,8 @@ class GameStartView extends GetView<GameStartController> {
         return Stack(
           children: [
             Positioned.fill(child: content),
-            if (controller.gameUrl.isNotEmpty)
+            if (controller.gameUrl.isNotEmpty &&
+                controller.errorMessage.isEmpty)
               _FloatingMenuButton(onTap: _openMenu),
           ],
         );
@@ -125,8 +126,7 @@ class GameStartView extends GetView<GameStartController> {
           onLoadStop: controller.onLoadStop,
           onProgressChanged: controller.onProgressChanged, // 加载进度
           onReceivedError: (webViewController, request, error) {
-            controller.errorMessage.value = '加载失败: ${error.description}';
-            controller.isLoading.value = false;
+            controller.handleWebResourceError(error.description);
           },
           shouldOverrideUrlLoading: (c, action) async {
             //
@@ -229,10 +229,7 @@ class GameStartView extends GetView<GameStartController> {
                                 label: 'withdraw'.tr,
                                 onTap: () {
                                   Get.back();
-                                  Get.offAllNamed(
-                                    AppPages.INITIAL,
-                                    arguments: {'initialTab': 2},
-                                  );
+                                  Get.offNamed(Routes.WITHDRAW);
                                 },
                               ),
                             ],
@@ -247,7 +244,8 @@ class GameStartView extends GetView<GameStartController> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF7C3AED),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -276,7 +274,8 @@ class GameStartView extends GetView<GameStartController> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white54, width: 2),
                         ),
-                        child: const Icon(Icons.close, color: Colors.white54, size: 20),
+                        child: const Icon(Icons.close,
+                            color: Colors.white54, size: 20),
                       ),
                     ),
                   ],

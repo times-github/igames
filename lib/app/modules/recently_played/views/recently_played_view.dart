@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/models/gametype.dart';
+import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
-import 'package:igames/config/app_colors.dart';
 import 'package:igames/config/app_config_export.dart';
 import '../controllers/recently_played_controller.dart';
 
@@ -114,19 +114,13 @@ class _RecentGameCard extends StatelessWidget {
             children: [
               Container(
                 color: AppColors.cardBackgroundDark,
-                child: resolvedUrl != null
+                child: resolvedUrl != null && resolvedUrl.isNotEmpty
                     ? Image.network(
                         resolvedUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.casino,
-                            color: Colors.white38,
-                            size: 40,
-                          );
-                        },
+                        errorBuilder: (_, __, ___) => _gameCardLogoFallback(),
                       )
-                    : const Icon(Icons.casino, color: Colors.white38, size: 40),
+                    : _gameCardLogoFallback(),
               ),
               if ((game.gamehall ?? '').isNotEmpty)
                 Positioned(
@@ -162,8 +156,8 @@ class _RecentGameCard extends StatelessWidget {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                     child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.25),
                       ),
@@ -188,6 +182,15 @@ class _RecentGameCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _gameCardLogoFallback() {
+  return Image.asset(
+    kDefaultAppLogoAsset,
+    fit: BoxFit.cover,
+    errorBuilder: (_, __, ___) =>
+        const Icon(Icons.casino, color: Colors.white38, size: 40),
+  );
 }
 
 String? _resolveGameIconUrl(String? url) {

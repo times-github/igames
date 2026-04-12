@@ -45,6 +45,7 @@ class SideDrawer extends StatelessWidget {
                     label: 'myFavorites'.tr,
                     onTap: () async {
                       final ok = await auth.ensureAuthenticated(context);
+                      if (!context.mounted) return;
                       if (ok) {
                         Navigator.pop(context);
                         Future.microtask(() {
@@ -58,6 +59,7 @@ class SideDrawer extends StatelessWidget {
                     label: 'recentlyPlayed'.tr,
                     onTap: () async {
                       final ok = await auth.ensureAuthenticated(context);
+                      if (!context.mounted) return;
                       if (ok) {
                         Navigator.pop(context);
                         Future.microtask(() {
@@ -77,15 +79,8 @@ class SideDrawer extends StatelessWidget {
                     },
                   ),
                   _DrawerMenuItem(
-                    icon: Icons.help_outline,
+                    icon: Icons.support_agent_rounded,
                     label: 'helpCenter'.tr,
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  _DrawerMenuItem(
-                    icon: Icons.headset_mic,
-                    label: 'customerService'.tr,
                     onTap: () {
                       Navigator.pop(context);
                       auth.openCustomerService();
@@ -577,15 +572,13 @@ class _JackpotListState extends State<_JackpotList> {
     int index,
   ) {
     final hostContext = Get.context ?? context;
-    Future.microtask(() {
-      showJackpotDetailSheet(
-        context: hostContext,
-        parentContext: hostContext,
-        record: record,
-        records: records,
-        index: index,
-      );
-    });
+    showJackpotDetailSheet(
+      context: hostContext,
+      parentContext: hostContext,
+      record: record,
+      records: records,
+      index: index,
+    );
   }
 }
 

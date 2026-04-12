@@ -1027,17 +1027,13 @@ Widget _mobileGameCard(
               color: AppColors.cardBackgroundDark,
               child: () {
                 final resolvedUrl = _resolveGameIconUrl(game.iconUrl);
-                if (resolvedUrl == null) {
-                  return const Icon(Icons.casino,
-                      color: Colors.white38, size: 40);
+                if (resolvedUrl == null || resolvedUrl.isEmpty) {
+                  return _gameCardLogoFallback();
                 }
                 return Image.network(
                   resolvedUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.casino,
-                        color: Colors.white38, size: 40);
-                  },
+                  errorBuilder: (_, __, ___) => _gameCardLogoFallback(),
                 );
               }(),
             ),
@@ -1133,6 +1129,15 @@ Widget _mobileGameCard(
         ),
       ),
     ),
+  );
+}
+
+Widget _gameCardLogoFallback() {
+  return Image.asset(
+    kDefaultAppLogoAsset,
+    fit: BoxFit.cover,
+    errorBuilder: (_, __, ___) =>
+        const Icon(Icons.casino, color: Colors.white38, size: 40),
   );
 }
 

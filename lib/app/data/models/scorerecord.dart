@@ -81,10 +81,10 @@ class GameScoreRecord {
 
   GameScoreRecord.fromJson(Map<String, dynamic> json) {
     id = json['Id'];
-    balanceBefore = json['BalanceBefore'];
+    balanceBefore = _toDouble(json['BalanceBefore']);
     changeType = json['ChangeType'];
-    changeAmount = json['ChangeAmount'];
-    balanceAfter = json['BalanceAfter'];
+    changeAmount = _toDouble(json['ChangeAmount']);
+    balanceAfter = _toDouble(json['BalanceAfter']);
     eventType = json['EventType'];
     eventId = json['EventId'];
     remark = json['Remark'];
@@ -106,6 +106,12 @@ class GameScoreRecord {
     data['UpdatedAt'] = this.updatedAt;
     return data;
   }
+}
+
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
 }
 
 String _formatTimeValue(dynamic value) {

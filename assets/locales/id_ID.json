@@ -7,6 +7,7 @@
         "cancel": "Batal"
     },
     "language": "Bahasa",
+    "turnstileRequired": "Silakan selesaikan verifikasi keamanan manusia terlebih dahulu",
     "moneySymbol": "Rp",
     "login": "Masuk",
     "register": "Daftar",
@@ -39,6 +40,11 @@
     "pleaseEnterAllInformation": "Silakan masukkan semua informasi",
     "contactCustomerService": "Hubungi layanan pelanggan",
     "customerService": "Layanan pelanggan",
+    "supportCenterSubtitle": "Pilih saluran kontak, tim kami akan segera membalas.",
+    "supportOpenNow": "Hubungi sekarang",
+    "supportNotConfigured": "Belum dikonfigurasi",
+    "supportWhatsAppDesc": "Balasan prioritas via WhatsApp",
+    "supportTelegramDesc": "Dukungan Telegram resmi",
     "userProfile": "Profil pengguna",
     
     "gamestype": {
@@ -155,8 +161,19 @@
     "shrink": "Perkecil",
     "expand": "Perbesar",
     "close": "Tutup",
+    "helpCenter": "Pusat Layanan Pelanggan",
     "loadingGame": "Memuat permainan...",
-    "loadingGameFailed": "Gagal memuat permainan"
+    "loadingGameFailed": "Gagal memuat permainan",
+    "turnstileLoading": "Memuat verifikasi keamanan...",
+    "turnstileLoadFailed": "Verifikasi gagal dimuat, silakan muat ulang",
+    "authAccountOrPhoneRequired": "Silakan masukkan akun atau nomor telepon",
+    "authOtpLengthInvalid": "Panjang kode verifikasi tidak valid",
+    "authPhoneFormatInvalid": "Format nomor telepon tidak valid, gunakan nomor Indonesia",
+    "authAccountQueryFailed": "Gagal memeriksa akun, silakan coba lagi nanti",
+    "authOtpVerifyFailed": "Verifikasi kode gagal, silakan coba lagi",
+    "authRegisterAutoFailed": "Pendaftaran gagal, silakan coba lagi nanti",
+    "authPasswordOrCodeRequired": "Silakan masukkan kata sandi atau kode verifikasi",
+    "authUnknownError": "Login gagal, silakan coba lagi nanti"
 
     
     

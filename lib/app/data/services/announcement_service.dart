@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:igames/app/utils/api_client.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/data/services/userServices.dart';
 
@@ -42,16 +43,14 @@ class Announcement {
     if (value is int || value is num) {
       final numValue = value is num ? value : (value as int);
       final ms = numValue > 100000000000 ? numValue : numValue * 1000;
-      return DateTime.fromMillisecondsSinceEpoch(ms.toInt())
-          .toIso8601String();
+      return DateTime.fromMillisecondsSinceEpoch(ms.toInt()).toIso8601String();
     }
     final text = value.toString().trim();
     if (text.isEmpty) return '';
     final asNum = num.tryParse(text);
     if (asNum != null) {
       final ms = asNum > 100000000000 ? asNum : asNum * 1000;
-      return DateTime.fromMillisecondsSinceEpoch(ms.toInt())
-          .toIso8601String();
+      return DateTime.fromMillisecondsSinceEpoch(ms.toInt()).toIso8601String();
     }
     return text;
   }
@@ -141,7 +140,8 @@ class AnnouncementService extends GetxService {
       if (tab != null && tab.isNotEmpty) params['tab'] = tab;
 
       final isLoggedIn = await _isLoggedIn();
-      final resp = await _apiClient.get('/user/announcements', queryParameters: params, withAuth: isLoggedIn);
+      final resp = await _apiClient.get('/user/announcements',
+          queryParameters: params, withAuth: isLoggedIn);
       if (resp.statusCode == 200 && resp.data != null) {
         if (resp.data['msg'] == 'unauthorized') {
           _handleUnauthorized();
@@ -169,10 +169,10 @@ class AnnouncementService extends GetxService {
 
   String _resolveLangParam() {
     final locale = Get.locale;
-    final lang = (locale?.languageCode ?? 'en').toLowerCase();
-    if (lang == 'zh') return 'zh-cn';
-    if (lang == 'id') return 'id';
-    return 'en';
+    return normalizeApiLang(
+      locale?.toLanguageTag() ?? locale?.languageCode,
+      fallback: 'en',
+    );
   }
 
   /// 获取未读数量

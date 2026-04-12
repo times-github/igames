@@ -7,6 +7,7 @@
         "cancel": "取消"
     },
     "language": "语言",
+    "turnstileRequired": "请先完成人机安全校验",
     "moneySymbol": "¥",
     "login": "登录",
     "register": "注册",
@@ -40,6 +41,11 @@
     "pleaseEnterAllInformation": "请填写完整信息",
     "contactCustomerService": "联系客服",
     "customerService": "客服",
+    "supportCenterSubtitle": "选择一个联系方式，我们会尽快回复你",
+    "supportOpenNow": "立即联系",
+    "supportNotConfigured": "暂未配置",
+    "supportWhatsAppDesc": "优先通过 WhatsApp 回复",
+    "supportTelegramDesc": "官方 Telegram 在线支持",
     "userProfile": "个人中心",
 
     
@@ -161,8 +167,19 @@
     "shrink": "缩小",
     "expand": "放大",
     "close": "关闭",
+    "helpCenter": "客服中心",
     "loadingGame": "正在加载游戏...",
-    "loadingGameFailed": "加载游戏失败"
+    "loadingGameFailed": "加载游戏失败",
+    "turnstileLoading": "正在加载安全验证...",
+    "turnstileLoadFailed": "安全验证加载失败，请点击刷新重试",
+    "authAccountOrPhoneRequired": "请输入账号或手机号",
+    "authOtpLengthInvalid": "验证码长度错误",
+    "authPhoneFormatInvalid": "手机号格式错误，请输入印尼手机号",
+    "authAccountQueryFailed": "查询账号失败，请稍后重试",
+    "authOtpVerifyFailed": "验证码校验失败，请重试",
+    "authRegisterAutoFailed": "注册失败，请稍后再试",
+    "authPasswordOrCodeRequired": "请输入密码或验证码",
+    "authUnknownError": "登录失败，请稍后重试"
 
 
 }   

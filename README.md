@@ -5,6 +5,8 @@ Flutter 项目说明，包含 Android / Web 打包、应用图标生成、应用
 ## 快速目录
 
 - [打包发布](#打包发布)
+- [Android 单架构 APK 打包](#android-单架构-apk-打包)
+- [Android 通用 APK 打包](#android-通用-apk-打包)
 - [Android 拆分 APK 打包](#android-拆分-apk-打包)
 - [Web 打包](#web-打包)
 - [品牌与命名](#品牌与命名)
@@ -12,6 +14,69 @@ Flutter 项目说明，包含 Android / Web 打包、应用图标生成、应用
 - [更新应用名称和包名](#更新应用名称和包名)
 
 ## 打包发布
+
+### Android 单架构 APK 打包
+
+适合明确只给 64 位 ARM 安卓真机安装的场景，例如大多数近年的安卓手机。
+
+#### 打包命令
+
+先清理并拉依赖：
+
+```bash
+flutter clean
+flutter pub get
+```
+
+再执行 arm64 单架构打包：
+
+```bash
+flutter build apk --release --target-platform android-arm64
+```
+
+#### 输出文件
+
+生成文件：
+
+- `build/app/outputs/flutter-apk/app-release.apk`
+
+#### 说明
+
+- 这个包只包含 `arm64-v8a`。
+- 适合大多数现代安卓真机。
+- 体积比通用 APK 更小。
+- 本质上等同于只打出一份 `arm64-v8a` 包，只是文件名默认叫 `app-release.apk`。
+
+### Android 通用 APK 打包
+
+适合不想区分手机架构，想直接生成一份通用安装包时使用。
+
+#### 打包命令
+
+先清理并拉依赖：
+
+```bash
+flutter clean
+flutter pub get
+```
+
+再执行通用 APK 打包：
+
+```bash
+flutter build apk --release
+```
+
+#### 输出文件
+
+生成文件：
+
+- `build/app/outputs/flutter-apk/app-release.apk`
+
+#### 说明
+
+- 这是通用 APK，会包含多种 ABI。
+- 安装最省事，不需要区分用户手机架构。
+- 缺点是包体积通常比拆分包更大。
 
 ### Android 拆分 APK 打包
 
@@ -59,6 +124,12 @@ flutter build apk --release --split-per-abi
 - 单个 APK 更小，因为只包含对应 CPU 架构的原生库。
 - 安装包体积比通用 `app-release.apk` 更小。
 - 手工分发时需要给用户发对架构的那一份 APK。
+
+#### 三种打包方式怎么选
+
+- `flutter build apk --release --target-platform android-arm64`：只给大多数现代安卓真机用，体积更小。
+- `flutter build apk --release`：想省事，直接出一份通用包。
+- `flutter build apk --release --split-per-abi`：想把包尽量做小，并且可以按机型分别发包。
 
 ### Web 打包
 
@@ -129,7 +200,7 @@ flutter run -d chrome
 flutter pub get
 ```
 
-3. 生成全部平台图标：
+1. 生成全部平台图标：
 
 ```bash
 dart run flutter_launcher_icons -f flutter_launcher_icons.yaml
@@ -165,23 +236,24 @@ dart run flutter_launcher_icons -f flutter_launcher_icons.yaml
 package_rename_config:
   android:
     app_name: "getwiner"
-    package_name: "co.getwiner.igames"
+    package_name: "win.getwiner"
+    override_old_package: "co.getwiner.igames"
     lang: "kotlin"
 
   ios:
     app_name: "Igames"
     bundle_name: "igames"
-    package_name: "co.getwiner.igames"
+    package_name: "win.getwiner"
 
   linux:
     app_name: "igames"
-    package_name: "co.getwiner.igames"
+    package_name: "win.getwiner"
     exe_name: "igames"
 
   macos:
     app_name: "igames"
-    package_name: "co.getwiner.igames"
-    copyright_notice: "Copyright © 2025 co.getwiner. All rights reserved."
+    package_name: "win.getwiner"
+    copyright_notice: "Copyright © 2025 win.getwiner. All rights reserved."
 
   web:
     app_name: "getwiner.win"
@@ -190,8 +262,8 @@ package_rename_config:
 
   windows:
     app_name: "igames"
-    organization: "co.getwiner"
-    copyright_notice: "Copyright (C) 2025 co.getwiner. All rights reserved."
+    organization: "win.getwiner"
+    copyright_notice: "Copyright (C) 2025 win.getwiner. All rights reserved."
     exe_name: "igames"
 ```
 
@@ -216,7 +288,7 @@ package_rename_config:
 flutter pub get
 ```
 
-3. 执行改名：
+1. 执行改名：
 
 ```bash
 dart run package_rename
@@ -249,4 +321,4 @@ android:
 - 然后重新运行对应平台
 
 参考插件文档：
-https://pub.dev/packages/package_rename
+[https://pub.dev/packages/package_rename](https://pub.dev/packages/package_rename)

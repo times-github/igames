@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:igames/app/data/services/userServices.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/utils/api_client.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/app/utils/launch_params.dart';
 import 'package:igames/config/app_config.dart';
@@ -26,6 +27,7 @@ class AuthController extends GetxController {
 
   final ApiClient _apiClient = Get.find<ApiClient>();
   String? _customerServiceContact;
+  String? _whatsAppSupportContact;
   String? _downloadAppUrl;
 
   static String _resolveAuthChannel() {
@@ -167,6 +169,7 @@ class AuthController extends GetxController {
       required String phone,
       required String otpCode,
       String? turnstileToken}) async {
+    final loginAccount = account.isNotEmpty ? account : phone;
     try {
       isLoading.value = true;
       final inviteCode = LaunchParams.registerCode;
@@ -175,30 +178,26 @@ class AuthController extends GetxController {
         'pwd': password,
         'phone': phone,
         'otp_code': otpCode,
+        'turnstile_token': turnstileToken?.trim() ?? '',
         'channel': _resolveAuthChannel(),
         if (inviteCode != null && inviteCode.isNotEmpty)
           'invite_code': inviteCode,
-        if (turnstileToken != null && turnstileToken.isNotEmpty)
-          'turnstile_token': turnstileToken,
       };
       final resp = await _apiClient.post(
         '/user/auth',
         data: payload,
         withAuth: false,
       );
-      return _processAuthResponse(
-          resp.data, account.isNotEmpty ? account : phone);
+      return _processAuthResponse(resp.data, loginAccount);
     } catch (e) {
-      isLoggedIn.value = false;
-      String msg = 'networkError'.tr;
       if (e is http.DioException) {
-        final data = e.response?.data;
-        final serverMsg = data is Map ? data['msg']?.toString() : null;
-        if (serverMsg != null && serverMsg.isNotEmpty) {
-          msg = serverMsg;
+        final responseMap = _asStringKeyedMap(e.response?.data);
+        if (responseMap.isNotEmpty) {
+          return _processAuthResponse(responseMap, loginAccount);
         }
       }
-      Get.snackbar('loginFailed'.tr, msg, snackPosition: SnackPosition.TOP);
+      isLoggedIn.value = false;
+      _showAuthFailure();
       return false;
     } finally {
       isLoading.value = false;
@@ -206,16 +205,21 @@ class AuthController extends GetxController {
   }
 
   bool _processAuthResponse(dynamic raw, String account) {
-    if (raw is! Map) {
-      Get.snackbar('loginFailed'.tr, 'networkError'.tr,
-          snackPosition: SnackPosition.TOP);
+    final response = _asStringKeyedMap(raw);
+    if (response.isEmpty) {
+      _showAuthFailure();
       return false;
     }
-    final code = raw['code'];
-    final msg = raw['msg']?.toString() ?? '';
-    if (code == 1) {
-      final data = (raw['data'] ?? {}) as Map;
+
+    final code = response['code']?.toString();
+    if (code == '1') {
+      final data = _asStringKeyedMap(response['data']);
       final token = data['token']?.toString() ?? '';
+      if (token.isEmpty) {
+        isLoggedIn.value = false;
+        _showAuthFailure(code: 'unknown');
+        return false;
+      }
       final avatar = data['avatar']?.toString() ?? '';
       final nickname = data['nickname']?.toString() ?? '';
       UserServices.setUserInfo(
@@ -239,10 +243,70 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppPages.INITIAL);
       return true;
     }
+
     isLoggedIn.value = false;
-    Get.snackbar('loginFailed'.tr, msg.isEmpty ? 'networkError'.tr : msg,
-        snackPosition: SnackPosition.TOP);
+    _showAuthFailure(code: code);
     return false;
+  }
+
+  void _showAuthFailure({String? code}) {
+    final messageKey = _authErrorMessageKey(code);
+    final message = messageKey.tr;
+    Get.snackbar(
+      'loginFailed'.tr,
+      message,
+      snackPosition: SnackPosition.TOP,
+    );
+  }
+
+  String _authErrorMessageKey(String? code) {
+    switch (code) {
+      case '3001':
+        return 'authAccountOrPhoneRequired';
+      case '3002':
+        return 'authOtpLengthInvalid';
+      case '3003':
+        return 'authPhoneFormatInvalid';
+      case '3004':
+        return 'authAccountQueryFailed';
+      case '3005':
+        return 'authOtpVerifyFailed';
+      case '3006':
+        return 'authRegisterAutoFailed';
+      case '3007':
+        return 'passwordError';
+      case '3008':
+        return 'authPasswordOrCodeRequired';
+      case '3009':
+        return 'turnstileRequired';
+      case null:
+        return 'networkError';
+      default:
+        return 'authUnknownError';
+    }
+  }
+
+  Map<String, dynamic> _asStringKeyedMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) {
+      return raw;
+    }
+    if (raw is Map) {
+      return Map<String, dynamic>.from(raw);
+    }
+    if (raw is String && raw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+        if (decoded is Map) {
+          return Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {
+        return const <String, dynamic>{};
+      }
+    }
+    return const <String, dynamic>{};
   }
 
   void _closeAuthDialogs() {
@@ -292,33 +356,57 @@ class AuthController extends GetxController {
 
   /// 打开客服
   Future<void> openCustomerService() async {
-    final contact = await _getCustomerServiceContact();
-    if (contact == null || contact.isEmpty) {
+    final telegramContact = await _getCustomerServiceContact();
+    final whatsAppContact = await _getWhatsAppSupportContact();
+    if ((telegramContact == null || telegramContact.isEmpty) &&
+        (whatsAppContact == null || whatsAppContact.isEmpty)) {
       Get.snackbar('tip'.tr, 'networkError'.tr,
           snackPosition: SnackPosition.TOP);
       return;
     }
 
-    final webUri = _buildTelegramWebUri(contact);
-    final appUri = _buildTelegramAppUri(contact);
-
-    try {
-      if (kIsWeb) {
-        await launchUrl(webUri, webOnlyWindowName: '_blank');
-        return;
-      }
-
-      if (await canLaunchUrl(appUri)) {
-        final launched =
-            await launchUrl(appUri, mode: LaunchMode.externalApplication);
-        if (launched) return;
-      }
-
-      await launchUrl(webUri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      Get.snackbar('tip'.tr, 'networkError'.tr,
-          snackPosition: SnackPosition.TOP);
-    }
+    await Get.generalDialog(
+      barrierDismissible: true,
+      barrierLabel: 'support_center',
+      barrierColor: Colors.black.withValues(alpha: 0.58),
+      transitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return _SupportCenterDialog(
+          whatsAppContact: whatsAppContact,
+          telegramContact: telegramContact,
+          onOpenWhatsApp: whatsAppContact == null || whatsAppContact.isEmpty
+              ? null
+              : () {
+                  if (Get.isDialogOpen ?? false) {
+                    Get.back();
+                  }
+                  unawaited(_openWhatsAppContact(whatsAppContact));
+                },
+          onOpenTelegram: telegramContact == null || telegramContact.isEmpty
+              ? null
+              : () {
+                  if (Get.isDialogOpen ?? false) {
+                    Get.back();
+                  }
+                  unawaited(_openTelegramContact(telegramContact));
+                },
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.94, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 
   Future<String?> _getCustomerServiceContact() async {
@@ -332,8 +420,10 @@ class AuthController extends GetxController {
 
   Future<String?> _fetchCustomerServiceContact() async {
     try {
-      final response = await _apiClient.get('/user/config/customer-service',
-          withAuth: false);
+      final response = await _apiClient.get(
+        '/user/config/customer_service_tg',
+        withAuth: false,
+      );
       if (response.statusCode == 200) {
         final value = _extractConfigValue(response.data)?.toString();
         if (value != null && value.isNotEmpty) {
@@ -342,6 +432,33 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       debugPrint('获取客服联系方式失败: $e');
+    }
+    return null;
+  }
+
+  Future<String?> _getWhatsAppSupportContact() async {
+    if (_whatsAppSupportContact?.isNotEmpty == true) {
+      return _whatsAppSupportContact;
+    }
+
+    _whatsAppSupportContact = await _fetchWhatsAppSupportContact();
+    return _whatsAppSupportContact;
+  }
+
+  Future<String?> _fetchWhatsAppSupportContact() async {
+    try {
+      final response = await _apiClient.get(
+        '/user/config/customer_service_whatsapp',
+        withAuth: false,
+      );
+      if (response.statusCode == 200) {
+        final value = _extractConfigValue(response.data)?.toString().trim();
+        if (value != null && value.isNotEmpty) {
+          return value;
+        }
+      }
+    } catch (e) {
+      debugPrint('获取 WhatsApp 客服联系方式失败: $e');
     }
     return null;
   }
@@ -376,6 +493,79 @@ class AuthController extends GetxController {
     }
     final handle = _extractTelegramHandle(trimmed);
     return Uri.parse('tg://resolve?domain=$handle');
+  }
+
+  String _normalizeWhatsAppPhone(String contact) {
+    final trimmed = contact.trim();
+    if (trimmed.startsWith('http') || trimmed.startsWith('whatsapp://')) {
+      final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+      return digits;
+    }
+    return trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  Uri _buildWhatsAppWebUri(String contact) {
+    final trimmed = contact.trim();
+    if (trimmed.startsWith('http')) {
+      return Uri.parse(trimmed);
+    }
+    final phone = _normalizeWhatsAppPhone(trimmed);
+    return Uri.parse('https://wa.me/$phone');
+  }
+
+  Uri _buildWhatsAppAppUri(String contact) {
+    final trimmed = contact.trim();
+    if (trimmed.startsWith('whatsapp://')) {
+      return Uri.parse(trimmed);
+    }
+    final phone = _normalizeWhatsAppPhone(trimmed);
+    return Uri.parse('whatsapp://send?phone=$phone');
+  }
+
+  Future<void> _openTelegramContact(String contact) async {
+    final webUri = _buildTelegramWebUri(contact);
+    final appUri = _buildTelegramAppUri(contact);
+
+    try {
+      if (kIsWeb) {
+        await launchUrl(webUri, webOnlyWindowName: '_blank');
+        return;
+      }
+
+      if (await canLaunchUrl(appUri)) {
+        final launched =
+            await launchUrl(appUri, mode: LaunchMode.externalApplication);
+        if (launched) return;
+      }
+
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      Get.snackbar('tip'.tr, 'networkError'.tr,
+          snackPosition: SnackPosition.TOP);
+    }
+  }
+
+  Future<void> _openWhatsAppContact(String contact) async {
+    final webUri = _buildWhatsAppWebUri(contact);
+    final appUri = _buildWhatsAppAppUri(contact);
+
+    try {
+      if (kIsWeb) {
+        await launchUrl(webUri, webOnlyWindowName: '_blank');
+        return;
+      }
+
+      if (await canLaunchUrl(appUri)) {
+        final launched =
+            await launchUrl(appUri, mode: LaunchMode.externalApplication);
+        if (launched) return;
+      }
+
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      Get.snackbar('tip'.tr, 'networkError'.tr,
+          snackPosition: SnackPosition.TOP);
+    }
   }
 
   Future<String?> _getDownloadUrl() async {
@@ -416,6 +606,406 @@ class AuthController extends GetxController {
       if (data.containsKey('value')) return data['value'];
     }
     return data;
+  }
+}
+
+class _SupportCenterDialog extends StatelessWidget {
+  const _SupportCenterDialog({
+    required this.whatsAppContact,
+    required this.telegramContact,
+    required this.onOpenWhatsApp,
+    required this.onOpenTelegram,
+  });
+
+  final String? whatsAppContact;
+  final String? telegramContact;
+  final VoidCallback? onOpenWhatsApp;
+  final VoidCallback? onOpenTelegram;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final dialogWidth = size.width < 600 ? size.width : 420.0;
+
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: dialogWidth,
+                minWidth: min(size.width - 40, 320.0).toDouble(),
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF171A29),
+                      Color(0xFF111C2E),
+                      Color(0xFF101522),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.42),
+                      blurRadius: 36,
+                      offset: const Offset(0, 20),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    const Positioned(
+                      top: -56,
+                      right: -36,
+                      child: _SupportGlow(
+                        diameter: 180,
+                        colors: [Color(0x3341E38D), Color(0x0041E38D)],
+                      ),
+                    ),
+                    const Positioned(
+                      bottom: -90,
+                      left: -24,
+                      child: _SupportGlow(
+                        diameter: 220,
+                        colors: [Color(0x333497FF), Color(0x003497FF)],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF7F5CFF),
+                                      Color(0xFF4F8DFF),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4F8DFF)
+                                          .withValues(alpha: 0.28),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.support_agent_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'helpCenter'.tr,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'supportCenterSubtitle'.tr,
+                                      style: TextStyle(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.72),
+                                        fontSize: 13,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: Get.back,
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.06),
+                                  foregroundColor:
+                                      Colors.white.withValues(alpha: 0.82),
+                                ),
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          _SupportActionCard(
+                            delay: 0.0,
+                            title: 'WhatsApp',
+                            description: 'supportWhatsAppDesc'.tr,
+                            contactLabel: _formatWhatsAppContact(
+                              whatsAppContact,
+                            ),
+                            onTap: onOpenWhatsApp,
+                            icon: Icons.chat_rounded,
+                            colors: const [
+                              Color(0xFF27D367),
+                              Color(0xFF14934D),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _SupportActionCard(
+                            delay: 0.14,
+                            title: 'Telegram',
+                            description: 'supportTelegramDesc'.tr,
+                            contactLabel: _formatTelegramContact(
+                              telegramContact,
+                            ),
+                            onTap: onOpenTelegram,
+                            icon: Icons.send_rounded,
+                            colors: const [
+                              Color(0xFF33A4FF),
+                              Color(0xFF276BFF),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatTelegramContact(String? contact) {
+    if (contact == null || contact.trim().isEmpty) {
+      return 'supportNotConfigured'.tr;
+    }
+
+    final trimmed = contact.trim();
+    if (trimmed.startsWith('http')) {
+      final uri = Uri.tryParse(trimmed);
+      final segments =
+          uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ??
+              const [];
+      if (segments.isNotEmpty) {
+        final handle = segments.first.replaceAll('@', '');
+        return '@$handle';
+      }
+    }
+
+    return trimmed.startsWith('@') ? trimmed : '@$trimmed';
+  }
+
+  String _formatWhatsAppContact(String? contact) {
+    if (contact == null || contact.trim().isEmpty) {
+      return 'supportNotConfigured'.tr;
+    }
+
+    final trimmed = contact.trim();
+    final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) {
+      return trimmed;
+    }
+    return '+$digits';
+  }
+}
+
+class _SupportActionCard extends StatelessWidget {
+  const _SupportActionCard({
+    required this.delay,
+    required this.title,
+    required this.description,
+    required this.contactLabel,
+    required this.onTap,
+    required this.icon,
+    required this.colors,
+  });
+
+  final double delay;
+  final String title;
+  final String description;
+  final String contactLabel;
+  final VoidCallback? onTap;
+  final IconData icon;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        final interval = Interval(delay, 1, curve: Curves.easeOutCubic);
+        final eased = interval.transform(value);
+        return Opacity(
+          opacity: eased,
+          child: Transform.translate(
+            offset: Offset(0, (1 - eased) * 26),
+            child: child,
+          ),
+        );
+      },
+      child: Opacity(
+        opacity: enabled ? 1 : 0.56,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(24),
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  colors: [
+                    colors.first.withValues(alpha: 0.20),
+                    colors.last.withValues(alpha: 0.10),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(
+                  color: colors.first.withValues(alpha: 0.34),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.first.withValues(alpha: 0.18),
+                    blurRadius: 20,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: colors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            description,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.78),
+                              fontSize: 12,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            contactLabel,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.90),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Text(
+                        enabled
+                            ? 'supportOpenNow'.tr
+                            : 'supportNotConfigured'.tr,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportGlow extends StatelessWidget {
+  const _SupportGlow({
+    required this.diameter,
+    required this.colors,
+  });
+
+  final double diameter;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: diameter,
+        height: diameter,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(colors: colors),
+        ),
+      ),
+    );
   }
 }
 
@@ -485,6 +1075,7 @@ class _LoginFormState extends State<_LoginForm> {
   List<_LoginBanner> _loginBanners = [];
   int _bannerIndex = 0;
   String _bannerLang = '';
+  String _turnstileLang = 'auto';
   bool _loadingBanners = true;
   bool _usePhone = false;
   bool _remember = true;
@@ -498,6 +1089,7 @@ class _LoginFormState extends State<_LoginForm> {
     super.initState();
     _bannerController.addListener(_handleBannerPageChange);
     _bannerLang = _resolveBannerLang();
+    _turnstileLang = _resolveTurnstileLanguage();
     _loadLoginBanners();
   }
 
@@ -517,20 +1109,16 @@ class _LoginFormState extends State<_LoginForm> {
   Future<void> _submit() async {
     final auth = Get.find<AuthController>();
     if (auth.isLoading.value) return;
-    final useTurnstile = kIsWeb && AppConfig.turnstileSiteKey.isNotEmpty;
-    if (useTurnstile && _turnstileToken.isEmpty) {
-      Get.snackbar('tip'.tr, 'turnstileRequired'.tr,
-          snackPosition: SnackPosition.TOP);
-      return;
-    }
     if (_formKey.currentState!.validate()) {
       final account = _account.text.trim();
       final credential = _usePhone ? _smsCode.text.trim() : _password.text;
-      final token = _turnstileToken;
-      setState(() {
-        _turnstileToken = '';
-        _turnstileEpoch += 1;
-      });
+      final token = _turnstileToken.trim();
+      if (token.isNotEmpty) {
+        setState(() {
+          _turnstileToken = '';
+          _turnstileEpoch += 1;
+        });
+      }
       await auth.loginOrRegister(account, credential,
           isPhone: _usePhone, turnstileToken: token);
     }
@@ -544,13 +1132,28 @@ class _LoginFormState extends State<_LoginForm> {
       _bannerLang = lang;
       _loadLoginBanners();
     }
+    final turnstileLang = _resolveTurnstileLanguage();
+    if (turnstileLang != _turnstileLang && mounted) {
+      setState(() {
+        _turnstileLang = turnstileLang;
+        _turnstileToken = '';
+        _turnstileEpoch += 1;
+      });
+    }
   }
 
   String _resolveBannerLang() {
+    return normalizeApiLang(
+      Get.locale?.toLanguageTag() ?? Get.locale?.languageCode,
+    );
+  }
+
+  String _resolveTurnstileLanguage() {
     final raw = (Get.locale?.languageCode ?? 'id').toLowerCase();
     if (raw == 'zh') return 'zh-cn';
     if (raw == 'en') return 'en';
-    return 'id';
+    if (raw == 'id') return 'id';
+    return 'auto';
   }
 
   Future<void> _loadLoginBanners() async {
@@ -769,14 +1372,18 @@ class _LoginFormState extends State<_LoginForm> {
                       ),
                     ],
                   ),
-                  if (kIsWeb && AppConfig.turnstileSiteKey.isNotEmpty) ...[
+                  if (supportsTurnstileChallenge &&
+                      AppConfig.turnstileSiteKey.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Center(
                       child: SizedBox(
                         width: 300,
                         child: TurnstileWidget(
-                          key: ValueKey('turnstile-$_turnstileEpoch'),
+                          key: ValueKey(
+                            'turnstile-$_turnstileLang-$_turnstileEpoch',
+                          ),
                           siteKey: AppConfig.turnstileSiteKey,
+                          language: _turnstileLang,
                           onToken: (token) {
                             if (!mounted) return;
                             setState(() => _turnstileToken = token);
@@ -824,9 +1431,11 @@ class _LoginFormState extends State<_LoginForm> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 16),
-                  _DownloadButtons(),
+                  if (kIsWeb) ...[
+                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
+                    _DownloadButtons(),
+                  ],
                 ],
               ),
             ),
@@ -986,8 +1595,7 @@ class _LoginFormState extends State<_LoginForm> {
     }
   }
 
-  String _buildOtpSign(
-      String phone, String nonce, String timestamp) {
+  String _buildOtpSign(String phone, String nonce, String timestamp) {
     final payload = '${phone.toLowerCase()}|$nonce|$timestamp';
     return md5
         .convert(utf8.encode(payload + AppConfig.otpSecret))
@@ -1303,7 +1911,7 @@ class _DownloadButtons extends StatelessWidget {
       children: [
         const SizedBox(height: 14),
         _GradientButton(
-          text: 'downloadAppBonus'.tr,
+          text: 'downloadAppNow'.tr,
           height: 44,
           colors: const [Color(0xFF31C46C), Color(0xFF57E287)],
           fontSize: 13,

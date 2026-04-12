@@ -123,23 +123,24 @@ flutter:
 package_rename_config:
   android:
     app_name: "getwiner"
-    package_name: "co.getwiner.igames"
+    package_name: "win.getwiner"
+    override_old_package: "co.getwiner.igames"
     lang: "kotlin"
 
   ios:
     app_name: "Igames"
     bundle_name: "igames"
-    package_name: "co.getwiner.igames"
+    package_name: "win.getwiner"
 
   linux:
     app_name: "igames"
-    package_name: "co.getwiner.igames"
+    package_name: "win.getwiner"
     exe_name: "igames"
 
   macos:
     app_name: "igames"
-    package_name: "co.getwiner.igames"
-    copyright_notice: "Copyright © 2025 co.getwiner. All rights reserved."
+    package_name: "win.getwiner"
+    copyright_notice: "Copyright © 2025 win.getwiner. All rights reserved."
 
   web:
     app_name: "getwiner.win"
@@ -148,6 +149,6 @@ package_rename_config:
 
   windows:
     app_name: "igames"
-    organization: "co.getwiner"
-    copyright_notice: "Copyright (C) 2025 co.getwiner. All rights reserved."
+    organization: "win.getwiner"
+    copyright_notice: "Copyright (C) 2025 win.getwiner. All rights reserved."
     exe_name: "igames"

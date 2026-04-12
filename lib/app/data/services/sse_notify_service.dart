@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/userServices.dart';
 import 'package:igames/app/utils/api_client.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/config/app_config_export.dart';
 import 'package:igames/app/data/models/notification_item.dart';
 import 'package:igames/app/data/services/notification_center_service.dart';
@@ -180,10 +181,10 @@ class SseNotifyService extends GetxService {
 
   String _currentLang() {
     final locale = Get.locale;
-    final lang = (locale?.languageCode ?? 'en').toLowerCase();
-    if (lang == 'zh') return 'zh-cn';
-    if (lang == 'id') return 'id';
-    return 'en';
+    return normalizeApiLang(
+      locale?.toLanguageTag() ?? locale?.languageCode,
+      fallback: 'en',
+    );
   }
 
   String _fallbackTitle(String type) {

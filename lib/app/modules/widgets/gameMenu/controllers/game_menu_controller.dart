@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'dart:ui';
 import 'package:igames/app/routes/app_pages.dart';
 import '../../../../data/models/gametype.dart';
@@ -34,11 +35,22 @@ class GameMenuController extends GetxController {
 
   // API客户端
   final ApiClient _apiClient = Get.find<ApiClient>();
+  Worker? _authWorker;
 
   @override
   void onInit() {
     super.onInit();
+    final authController = Get.find<AuthController>();
+    _authWorker = ever<bool>(authController.isLoggedIn, (_) {
+      refreshGames();
+    });
     _loadGameCategories();
+  }
+
+  @override
+  void onClose() {
+    _authWorker?.dispose();
+    super.onClose();
   }
 
   /// 通过 Overlay 打开一个带毛玻璃背景的居中弹层
@@ -146,11 +158,9 @@ class GameMenuController extends GetxController {
       loadError.value = false;
     }
 
-    // 获取语言如果是zh 转成zh-cn
-    String lang = Get.locale?.languageCode ?? 'id';
-    if (lang == 'zh') {
-      lang = 'zh-cn';
-    }
+    final lang = normalizeApiLang(
+      Get.locale?.toLanguageTag() ?? Get.locale?.languageCode,
+    );
 
     // 检查是否登录，决定是否传 Authorization
     final authController = Get.find<AuthController>();

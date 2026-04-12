@@ -19,6 +19,16 @@ class LocaleKeys {
   static const button_cancel = 'button_cancel';
   static const language = 'language';
   static const turnstileRequired = 'turnstileRequired';
+  static const turnstileLoading = 'turnstileLoading';
+  static const turnstileLoadFailed = 'turnstileLoadFailed';
+  static const authAccountOrPhoneRequired = 'authAccountOrPhoneRequired';
+  static const authOtpLengthInvalid = 'authOtpLengthInvalid';
+  static const authPhoneFormatInvalid = 'authPhoneFormatInvalid';
+  static const authAccountQueryFailed = 'authAccountQueryFailed';
+  static const authOtpVerifyFailed = 'authOtpVerifyFailed';
+  static const authRegisterAutoFailed = 'authRegisterAutoFailed';
+  static const authPasswordOrCodeRequired = 'authPasswordOrCodeRequired';
+  static const authUnknownError = 'authUnknownError';
   static const lang_id = 'lang_id';
   static const lang_en = 'lang_en';
   static const lang_zh = 'lang_zh';
@@ -63,6 +73,11 @@ class LocaleKeys {
   static const pleaseEnterAllInformation = 'pleaseEnterAllInformation';
   static const contactCustomerService = 'contactCustomerService';
   static const customerService = 'customerService';
+  static const supportCenterSubtitle = 'supportCenterSubtitle';
+  static const supportOpenNow = 'supportOpenNow';
+  static const supportNotConfigured = 'supportNotConfigured';
+  static const supportWhatsAppDesc = 'supportWhatsAppDesc';
+  static const supportTelegramDesc = 'supportTelegramDesc';
   static const userProfile = 'userProfile';
   static const gamestype_all = 'gamestype_all';
   static const gamestype_slot = 'gamestype_slot';
@@ -171,10 +186,13 @@ class LocaleKeys {
   static const errorWithdrawDailyCountLimit = 'errorWithdrawDailyCountLimit';
   static const errorWithdrawDailyAmountLimit = 'errorWithdrawDailyAmountLimit';
   static const errorWithdrawWalletFailed = 'errorWithdrawWalletFailed';
-  static const errorWithdrawInsufficientFunds = 'errorWithdrawInsufficientFunds';
+  static const errorWithdrawInsufficientFunds =
+      'errorWithdrawInsufficientFunds';
   static const errorWithdrawOutOfServiceTime = 'errorWithdrawOutOfServiceTime';
-  static const errorWithdrawCreateOrderFailed = 'errorWithdrawCreateOrderFailed';
-  static const errorWithdrawDeductBalanceFailed = 'errorWithdrawDeductBalanceFailed';
+  static const errorWithdrawCreateOrderFailed =
+      'errorWithdrawCreateOrderFailed';
+  static const errorWithdrawDeductBalanceFailed =
+      'errorWithdrawDeductBalanceFailed';
   static const cardNumber = 'cardNumber';
   static const pleaseEnterCardNumber = 'pleaseEnterCardNumber';
   static const bankCardTail = 'bankCardTail';
@@ -269,7 +287,6 @@ class LocaleKeys {
   static const agreeTerms = 'agreeTerms';
   static const registerNow = 'registerNow';
   static const hasAccountLogin = 'hasAccountLogin';
-  static const downloadAppBonus = 'downloadAppBonus';
   static const downloadAppNow = 'downloadAppNow';
   static const aboutUs = 'aboutUs';
   static const fairAndJust = 'fairAndJust';
@@ -314,7 +331,8 @@ class LocaleKeys {
   static const errorLoginPasswordUserMissing = 'errorLoginPasswordUserMissing';
   static const errorLoginPasswordOldRequired = 'errorLoginPasswordOldRequired';
   static const errorLoginPasswordOldWrong = 'errorLoginPasswordOldWrong';
-  static const errorLoginPasswordUpdateFailed = 'errorLoginPasswordUpdateFailed';
+  static const errorLoginPasswordUpdateFailed =
+      'errorLoginPasswordUpdateFailed';
   static const oldPayPassword = 'oldPayPassword';
   static const newPayPassword = 'newPayPassword';
   static const confirmPayPassword = 'confirmPayPassword';
@@ -450,7 +468,20 @@ class Locales {
     'button_submit': 'Kirim',
     'button_cancel': 'Batal',
     'language': 'Bahasa',
-    'turnstileRequired': 'Silakan selesaikan verifikasi',
+    'turnstileRequired':
+        'Silakan selesaikan verifikasi keamanan manusia terlebih dahulu',
+    'turnstileLoading': 'Memuat verifikasi keamanan...',
+    'turnstileLoadFailed': 'Verifikasi gagal dimuat, silakan muat ulang',
+    'authAccountOrPhoneRequired': 'Silakan masukkan akun atau nomor telepon',
+    'authOtpLengthInvalid': 'Panjang kode verifikasi tidak valid',
+    'authPhoneFormatInvalid':
+        'Format nomor telepon tidak valid, gunakan nomor Indonesia',
+    'authAccountQueryFailed': 'Gagal memeriksa akun, silakan coba lagi nanti',
+    'authOtpVerifyFailed': 'Verifikasi kode gagal, silakan coba lagi',
+    'authRegisterAutoFailed': 'Pendaftaran gagal, silakan coba lagi nanti',
+    'authPasswordOrCodeRequired':
+        'Silakan masukkan kata sandi atau kode verifikasi',
+    'authUnknownError': 'Login gagal, silakan coba lagi nanti',
     'lang_id': 'Indonesia',
     'lang_en': 'Inggris',
     'lang_zh': 'Tionghoa',
@@ -498,6 +529,12 @@ class Locales {
     'pleaseEnterAllInformation': 'Silakan masukkan semua informasi',
     'contactCustomerService': 'Hubungi layanan pelanggan',
     'customerService': 'Layanan pelanggan',
+    'supportCenterSubtitle':
+        'Pilih saluran kontak, tim kami akan segera membalas.',
+    'supportOpenNow': 'Hubungi sekarang',
+    'supportNotConfigured': 'Belum dikonfigurasi',
+    'supportWhatsAppDesc': 'Balasan prioritas via WhatsApp',
+    'supportTelegramDesc': 'Dukungan Telegram resmi',
     'userProfile': 'Profil pengguna',
     'gamestype_all': 'Semua',
     'gamestype_slot': 'Slot',
@@ -725,7 +762,6 @@ class Locales {
     'agreeTerms': 'Setuju dengan ketentuan',
     'registerNow': 'Daftar Sekarang',
     'hasAccountLogin': 'Sudah punya akun? Masuk',
-    'downloadAppBonus': 'Unduh APP dapat bonus 188',
     'downloadAppNow': 'Unduh APP sekarang',
     'aboutUs': 'Tentang Kami',
     'fairAndJust': 'Adil & Jujur',
@@ -840,7 +876,7 @@ class Locales {
     'setDefault': 'Jadikan default',
     'createdAt': 'Waktu dibuat',
     'needHelp': 'Butuh bantuan?',
-    'helpCenter': 'Pusat Bantuan',
+    'helpCenter': 'Pusat Layanan Pelanggan',
     'loggedInUser': 'Pengguna masuk',
     'errorBankNotLogin': 'Belum login',
     'errorBankQueryUserFailed': 'Gagal mengambil data pengguna',
@@ -901,7 +937,17 @@ class Locales {
     'button_submit': '提交',
     'button_cancel': '取消',
     'language': '语言',
-    'turnstileRequired': '请完成验证',
+    'turnstileRequired': '请先完成人机安全校验',
+    'turnstileLoading': '正在加载安全验证...',
+    'turnstileLoadFailed': '安全验证加载失败，请点击刷新重试',
+    'authAccountOrPhoneRequired': '请输入账号或手机号',
+    'authOtpLengthInvalid': '验证码长度错误',
+    'authPhoneFormatInvalid': '手机号格式错误，请输入印尼手机号',
+    'authAccountQueryFailed': '查询账号失败，请稍后重试',
+    'authOtpVerifyFailed': '验证码校验失败，请重试',
+    'authRegisterAutoFailed': '注册失败，请稍后再试',
+    'authPasswordOrCodeRequired': '请输入密码或验证码',
+    'authUnknownError': '登录失败，请稍后重试',
     'lang_id': '印尼语',
     'lang_en': '英语',
     'lang_zh': '中文',
@@ -945,6 +991,11 @@ class Locales {
     'pleaseEnterAllInformation': '请填写完整信息',
     'contactCustomerService': '联系客服',
     'customerService': '客服',
+    'supportCenterSubtitle': '选择一个联系方式，我们会尽快回复你',
+    'supportOpenNow': '立即联系',
+    'supportNotConfigured': '暂未配置',
+    'supportWhatsAppDesc': '优先通过 WhatsApp 回复',
+    'supportTelegramDesc': '官方 Telegram 在线支持',
     'userProfile': '个人中心',
     'gamestype_all': '全部',
     'gamestype_slot': '老虎机',
@@ -1166,7 +1217,6 @@ class Locales {
     'agreeTerms': '同意并遵守平台协议',
     'registerNow': '立即注册',
     'hasAccountLogin': '已有账号？立即登录',
-    'downloadAppBonus': '立即下载APP领取188彩金',
     'downloadAppNow': '立即下载APP',
     'aboutUs': '关于我们',
     'fairAndJust': '公平公正',
@@ -1274,7 +1324,7 @@ class Locales {
     'cryptoAddressLength': '地址长度需在10-128字符之间',
     'cryptoAddressAdded': '虚拟币地址添加成功',
     'needHelp': '如需帮助，请',
-    'helpCenter': '帮助中心',
+    'helpCenter': '客服中心',
     'loggedInUser': '已登录用户',
     'errorBankNotLogin': '未登录',
     'errorBankQueryUserFailed': '查询用户失败',
@@ -1328,7 +1378,20 @@ class Locales {
     'button_submit': 'Submit',
     'button_cancel': 'Cancel',
     'language': 'Language',
-    'turnstileRequired': 'Please complete verification',
+    'turnstileRequired': 'Please complete the human verification first',
+    'turnstileLoading': 'Loading security verification...',
+    'turnstileLoadFailed':
+        'Verification failed to load. Please refresh and try again.',
+    'authAccountOrPhoneRequired': 'Please enter an account or phone number',
+    'authOtpLengthInvalid': 'Invalid verification code length',
+    'authPhoneFormatInvalid':
+        'Invalid phone number format. Please use an Indonesian number',
+    'authAccountQueryFailed': 'Failed to query account. Please try again later',
+    'authOtpVerifyFailed': 'Verification code check failed. Please try again',
+    'authRegisterAutoFailed': 'Registration failed. Please try again later',
+    'authPasswordOrCodeRequired':
+        'Please enter a password or verification code',
+    'authUnknownError': 'Login failed. Please try again later',
     'lang_id': 'Indonesian',
     'lang_en': 'English',
     'lang_zh': 'Chinese',
@@ -1374,6 +1437,11 @@ class Locales {
     'pleaseEnterAllInformation': 'Please enter all information',
     'contactCustomerService': 'Contact customer service',
     'customerService': 'Customer service',
+    'supportCenterSubtitle': 'Choose a channel and we\'ll reply shortly.',
+    'supportOpenNow': 'Contact now',
+    'supportNotConfigured': 'Not configured',
+    'supportWhatsAppDesc': 'Priority replies via WhatsApp',
+    'supportTelegramDesc': 'Official Telegram online support',
     'userProfile': 'User profile',
     'gamestype_all': 'All',
     'gamestype_slot': 'Slot',
@@ -1502,7 +1570,8 @@ class Locales {
     'errorWithdrawDailyAmountLimit': 'Daily withdraw amount limit reached',
     'errorWithdrawWalletFailed': 'Failed to get wallet info',
     'errorWithdrawInsufficientFunds': 'Insufficient withdrawable balance',
-    'errorWithdrawOutOfServiceTime': 'Withdraw service unavailable at this time',
+    'errorWithdrawOutOfServiceTime':
+        'Withdraw service unavailable at this time',
     'errorWithdrawCreateOrderFailed': 'Submit withdraw failed',
     'errorWithdrawDeductBalanceFailed': 'Deduct balance failed',
     'cardNumber': 'Card number',
@@ -1599,7 +1668,6 @@ class Locales {
     'agreeTerms': 'Agree to terms',
     'registerNow': 'Register Now',
     'hasAccountLogin': 'Have account? Login',
-    'downloadAppBonus': 'Download APP to get 188 bonus',
     'aboutUs': 'About Us',
     'fairAndJust': 'Fair & Just',
     'safeAndReliable': 'Safe & Reliable',
@@ -1712,7 +1780,7 @@ class Locales {
     'cryptoAddressLength': 'Address length must be 10-128 characters',
     'cryptoAddressAdded': 'Crypto address added',
     'needHelp': 'Need help?',
-    'helpCenter': 'Help Center',
+    'helpCenter': 'Customer Service Center',
     'loggedInUser': 'Logged in user',
     'errorBankNotLogin': 'Not logged in',
     'errorBankQueryUserFailed': 'Failed to query user',

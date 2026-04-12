@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/api_client.dart';
 
 class RecentlyPlayedController extends GetxController {
@@ -20,11 +21,9 @@ class RecentlyPlayedController extends GetxController {
   }
 
   String _resolveLang() {
-    var lang = Get.locale?.languageCode ?? 'id';
-    if (lang == 'zh') {
-      lang = 'zh-cn';
-    }
-    return lang;
+    return normalizeApiLang(
+      Get.locale?.toLanguageTag() ?? Get.locale?.languageCode,
+    );
   }
 
   Future<void> fetchRecentlyPlayed() async {
@@ -52,8 +51,9 @@ class RecentlyPlayedController extends GetxController {
 
       if (response.statusCode == 200 && responseData['code'] == 1) {
         final data = responseData['data'];
-        final listRaw =
-            data is Map && data['list'] is List ? data['list'] as List : <dynamic>[];
+        final listRaw = data is Map && data['list'] is List
+            ? data['list'] as List
+            : <dynamic>[];
         final items = listRaw
             .whereType<Map>()
             .map((item) => _mapToGame(Map<String, dynamic>.from(item)))
