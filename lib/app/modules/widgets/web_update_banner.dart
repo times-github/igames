@@ -25,111 +25,155 @@ class WebUpdateBanner extends GetView<WebUpdateService> {
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
               offset: visible ? Offset.zero : const Offset(0, -1),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 560),
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF171D2E),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.45),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.28),
-                      blurRadius: 28,
-                      offset: const Offset(0, 14),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 560;
+
+                  return Container(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161B2A),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10),
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.system_update_alt_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'webUpdateAvailableTitle'.tr,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            applying
-                                ? 'webUpdateApplying'.tr
-                                : 'webUpdateAvailableMessage'.tr,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.74),
-                              fontSize: 12,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    TextButton(
-                      onPressed:
-                          applying ? null : controller.dismissUpdate,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white.withValues(alpha: 0.8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Text('webUpdateLater'.tr),
-                    ),
-                    ElevatedButton(
-                      onPressed: applying ? null : controller.applyUpdate,
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: const Color(0xFF7C3AED),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            AppColors.primary.withValues(alpha: 0.42),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        applying ? 'webUpdateApplying'.tr : 'webUpdateNow'.tr,
-                      ),
-                    ),
-                  ],
-                ),
+                    child: compact
+                        ? _buildCompactLayout(applying)
+                        : _buildWideLayout(applying),
+                  );
+                },
               ),
             ),
           ),
         ),
       );
     });
+  }
+
+  Widget _buildWideLayout(bool applying) {
+    return Row(
+      children: [
+        _buildLeadingIcon(),
+        const SizedBox(width: 12),
+        Expanded(child: _buildTextContent(applying, maxLines: 1)),
+        const SizedBox(width: 12),
+        _buildLaterButton(applying),
+        const SizedBox(width: 8),
+        _buildUpdateButton(applying),
+      ],
+    );
+  }
+
+  Widget _buildCompactLayout(bool applying) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            _buildLeadingIcon(),
+            const SizedBox(width: 12),
+            Expanded(child: _buildTextContent(applying, maxLines: 2)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildLaterButton(applying)),
+            const SizedBox(width: 8),
+            Expanded(child: _buildUpdateButton(applying)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLeadingIcon() {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: const Color(0xFF7C3AED).withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        Icons.system_update_alt_rounded,
+        color: Color(0xFFA855F7),
+        size: 18,
+      ),
+    );
+  }
+
+  Widget _buildTextContent(bool applying, {required int maxLines}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'webUpdateAvailableTitle'.tr,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          applying ? 'webUpdateApplying'.tr : 'webUpdateAvailableMessage'.tr,
+          maxLines: maxLines,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.68),
+            fontSize: 12,
+            height: 1.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLaterButton(bool applying) {
+    return TextButton(
+      onPressed: applying ? null : controller.dismissUpdate,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white.withValues(alpha: 0.78),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Text('webUpdateLater'.tr),
+    );
+  }
+
+  Widget _buildUpdateButton(bool applying) {
+    return ElevatedButton(
+      onPressed: applying ? null : controller.applyUpdate,
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        backgroundColor: const Color(0xFF7C3AED),
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.42),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Text(
+        applying ? 'webUpdateApplying'.tr : 'webUpdateNow'.tr,
+      ),
+    );
   }
 }

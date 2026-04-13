@@ -542,7 +542,7 @@ class Locales {
     'supportTelegramDesc': 'Dukungan Telegram resmi',
     'webUpdateAvailableTitle': 'Versi baru tersedia',
     'webUpdateAvailableMessage':
-        'Versi baru siap digunakan. Tekan perbarui sekarang untuk memakai versi terbaru.',
+        'Tekan perbarui untuk memakai versi terbaru',
     'webUpdateLater': 'Nanti',
     'webUpdateNow': 'Perbarui sekarang',
     'webUpdateApplying': 'Memperbarui...',
@@ -1007,8 +1007,8 @@ class Locales {
     'supportNotConfigured': '暂未配置',
     'supportWhatsAppDesc': '优先通过 WhatsApp 回复',
     'supportTelegramDesc': '官方 Telegram 在线支持',
-    'webUpdateAvailableTitle': '检测到新版本',
-    'webUpdateAvailableMessage': '页面已准备好更新，点击立即更新切换到最新版本。',
+    'webUpdateAvailableTitle': '发现新版本',
+    'webUpdateAvailableMessage': '点击立即更新切换到最新版本',
     'webUpdateLater': '稍后',
     'webUpdateNow': '立即更新',
     'webUpdateApplying': '更新中...',
@@ -1460,7 +1460,7 @@ class Locales {
     'supportTelegramDesc': 'Official Telegram online support',
     'webUpdateAvailableTitle': 'New version available',
     'webUpdateAvailableMessage':
-        'A new version is ready. Update now to switch to the latest build.',
+        'Tap update to switch to the latest build',
     'webUpdateLater': 'Later',
     'webUpdateNow': 'Update now',
     'webUpdateApplying': 'Updating...',
