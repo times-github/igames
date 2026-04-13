@@ -226,6 +226,41 @@ flutter run -d chrome
 
 或者直接部署 `build/web/` 到测试环境再验收。
 
+#### 本地调试 SW / 缓存时的清理方法
+
+当前项目本地 `localhost` 也会注册自定义 `sw.js`。如果你在本地测试 Web 更新、缓存策略时遇到这些情况：
+
+- 明明改了代码，但页面行为还是旧的
+- 更新提示没有按预期出现
+- `main.dart.js` 或静态资源像是一直在吃旧缓存
+
+优先按下面方式清一次浏览器缓存环境。
+
+Chrome DevTools 操作：
+
+1. 打开页面后按 `F12`
+2. 进入 `Application`
+3. 打开 `Service Workers`
+4. 点击 `Unregister`
+5. 再打开 `Storage`
+6. 点击 `Clear site data`
+
+如果你只想清缓存，也可以重点清：
+
+- `Application -> Cache Storage`
+- `Application -> Service Workers`
+
+清完后再刷新页面，当前项目会重新注册新的 `sw.js`。
+
+#### 本地测试建议
+
+- 调试普通页面逻辑时，如果怀疑缓存干扰，先清一次 `Service Worker` 和 `Cache Storage`。
+- 调试更新提示时，建议保持两个标签页或两次构建：
+  1. 先打开旧版本页面
+  2. 再重新构建或重新运行
+  3. 刷新后观察是否出现“发现新版本”提示
+- 如果只是改 Flutter 页面逻辑，不涉及 SW 行为，也可以直接热重载；但如果改了 `web/sw.js` 或 `web/flutter_bootstrap.js`，最好重新跑一次并清缓存环境。
+
 ### Web 关键文件说明
 
 下面这些文件是当前项目 Web 打包后最关键的部分。

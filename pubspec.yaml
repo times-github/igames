@@ -91,6 +91,7 @@ flutter:
     - assets/images/usdttrc20icon.png
     - assets/images/rpicon.png
     - assets/images/avator.png
+    - assets/images/provider/
 
 
 

@@ -204,6 +204,19 @@ class _HomeTabState extends State<HomeTab> {
               height: 56,
             ),
           ),
+          Obx(() {
+            if (!menuController.showSlotProviderFilter) {
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
+            }
+            return SliverPersistentHeader(
+              pinned: true,
+              floating: false,
+              delegate: SlotProviderHeaderDelegate(
+                menuController: menuController,
+                height: 88,
+              ),
+            );
+          }),
           const SliverToBoxAdapter(child: SizedBox(height: 8)),
           _buildGameGridSliver(context, menuController),
           SliverToBoxAdapter(child: SizedBox(height: bottomSpacer)),
@@ -997,6 +1010,140 @@ class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant CategoryHeaderDelegate oldDelegate) {
+    return oldDelegate.height != height ||
+        oldDelegate.menuController != menuController;
+  }
+}
+
+class _SlotProviderFilterBar extends StatelessWidget {
+  const _SlotProviderFilterBar({required this.menuController});
+
+  final GameMenuController menuController;
+
+  @override
+  Widget build(BuildContext context) {
+    final providers = menuController.slotProviders;
+    final selectedId = menuController.selectedSlotProvider.value;
+
+    return Container(
+      height: 84,
+      margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 0),
+        child: Row(
+          children: providers.map((provider) {
+            final isSelected = provider.id == selectedId;
+            final label =
+                provider.translateLabel ? provider.label.tr : provider.label;
+            return Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: GestureDetector(
+                onTap: () => menuController.selectSlotProvider(provider.id),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 80,
+                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? const LinearGradient(
+                            colors: [Color(0xFF8A6CFF), Color(0xFF5A6DFF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    color: isSelected
+                        ? null
+                        : Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF9B86FF)
+                          : Colors.white.withValues(alpha: 0.08),
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF7E66FF)
+                                  .withValues(alpha: 0.24),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 44,
+                        child: Center(
+                          child: Image.asset(
+                            provider.assetPath,
+                            width: 42,
+                            height: 42,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.casino_rounded,
+                              color: Colors.white54,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+class SlotProviderHeaderDelegate extends SliverPersistentHeaderDelegate {
+  SlotProviderHeaderDelegate({
+    required this.menuController,
+    required this.height,
+  });
+
+  final GameMenuController menuController;
+  final double height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppColors.backgroundDark,
+      padding: EdgeInsets.zero,
+      alignment: Alignment.topCenter,
+      child: _SlotProviderFilterBar(menuController: menuController),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SlotProviderHeaderDelegate oldDelegate) {
     return oldDelegate.height != height ||
         oldDelegate.menuController != menuController;
   }

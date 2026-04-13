@@ -16,18 +16,38 @@ import 'package:igames/app/utils/sse_client.dart';
 
 typedef SseEventHandler = void Function(Map<String, dynamic> payload);
 
-class SseNotifyService extends GetxService {
-  final ApiClient _apiClient = ApiClient();
+class SseNotifyService extends GetxService with WidgetsBindingObserver {
+  static const Duration _defaultReconnectDelay = Duration(seconds: 3);
+  static const Duration _maxReconnectDelay = Duration(seconds: 30);
+
+  final http.Dio _sseDio = http.Dio(
+    http.BaseOptions(
+      baseUrl: ApiClient.baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: null,
+      headers: const {'Accept': 'text/event-stream'},
+    ),
+  );
   final StreamController<String> _controller =
       StreamController<String>.broadcast();
 
   Stream<String> get stream => _controller.stream;
 
+  bool _wantConnection = false;
+  bool _isConnecting = false;
   bool _connected = false;
+  bool _appInForeground = true;
+  int _connectionGeneration = 0;
+  int _reconnectAttempt = 0;
+  int? _serverRetryMs;
+  Timer? _reconnectTimer;
   StreamSubscription<String>? _nativeSub;
+  http.CancelToken? _nativeCancelToken;
   SseClient? _webClient;
   final Map<String, SseEventHandler> _handlers = {};
-  String _currentEvent = '';
+  final List<String> _pendingDataLines = <String>[];
+  String _pendingEvent = '';
+  String _lastEventId = '';
 
   void registerHandler(String event, SseEventHandler handler) {
     if (event.isEmpty) return;
@@ -35,72 +55,162 @@ class SseNotifyService extends GetxService {
   }
 
   Future<void> connect() async {
-    if (_connected) return;
-    _connected = true; // 先占位，防止并发调用
-    final token = await UserServices.getToken();
-    if (token == null || token.isEmpty) {
-      _connected = false;
+    _wantConnection = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    await _startConnection();
+  }
+
+  Future<void> _startConnection() async {
+    if (_isConnecting || _connected || !_canMaintainConnection()) {
       return;
     }
+
+    final token = await UserServices.getToken();
+    if (!_canMaintainConnection()) {
+      return;
+    }
+    if (token == null || token.isEmpty) {
+      _wantConnection = false;
+      return;
+    }
+
+    _isConnecting = true;
+    final generation = ++_connectionGeneration;
+    final headers = _buildSseHeaders(token);
+    _resetPendingEvent();
 
     if (kIsWeb) {
       _webClient ??= createSseClient();
       _webClient!.connect(
         url: '${ApiClient.baseUrl}/user/sse/notify',
-        headers: {'AuthorizationU': 'Bearer $token'},
+        headers: headers,
         onData: _handleLine,
+        onOpen: () => _handleConnectionOpen(generation),
+        onDone: () => _handleConnectionEnded(generation),
         onError: (err) => debugPrint('SSE error: $err'),
       );
       return;
     }
 
     try {
-      final response = await _apiClient.dio.get<http.ResponseBody>(
+      final cancelToken = http.CancelToken();
+      _nativeCancelToken = cancelToken;
+      final response = await _sseDio.get<http.ResponseBody>(
         '/user/sse/notify',
+        cancelToken: cancelToken,
         options: http.Options(
           responseType: http.ResponseType.stream,
-          headers: {'AuthorizationU': 'Bearer $token'},
+          headers: headers,
         ),
       );
-      final stream = response.data?.stream;
-      if (response.statusCode == 200 && stream != null) {
-        debugPrint('SSE connected');
+      if (generation != _connectionGeneration || !_canMaintainConnection()) {
+        cancelToken.cancel('Discard stale SSE connection');
+        return;
       }
-      if (stream == null) return;
+
+      final stream = response.data?.stream;
+      if (response.statusCode != 200 || stream == null) {
+        _handleConnectionEnded(
+          generation,
+          error: 'SSE request failed with status ${response.statusCode ?? 0}',
+        );
+        return;
+      }
+
+      _handleConnectionOpen(generation);
+      var terminated = false;
+
+      void finish({Object? error}) {
+        if (terminated) return;
+        terminated = true;
+        _handleConnectionEnded(generation, error: error);
+      }
+
       _nativeSub = stream
           .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())
-          .listen(_handleLine, onError: (e) {
-        debugPrint('SSE error: $e');
-      });
+          .listen(
+            _handleLine,
+            onDone: () => finish(),
+            onError: (error) {
+              if (!_isExpectedCancel(error)) {
+                debugPrint('SSE error: $error');
+              }
+              finish(error: error);
+            },
+            cancelOnError: true,
+          );
     } catch (e) {
+      if (_isExpectedCancel(e)) {
+        _resetConnectionFlags();
+        return;
+      }
       debugPrint('SSE connect failed: $e');
+      _handleConnectionEnded(generation, error: e);
     }
   }
 
   void _handleLine(String line) {
-    final trimmed = line.trim();
-    if (trimmed.isEmpty) {
-      _currentEvent = '';
+    final normalized =
+        line.endsWith('\r') ? line.substring(0, line.length - 1) : line;
+
+    if (normalized.isEmpty) {
+      _dispatchPendingEvent();
       return;
     }
-    if (trimmed.startsWith(':')) {
+    if (normalized.startsWith(':')) {
       return;
     }
-    if (trimmed.startsWith('retry:')) {
+
+    final separatorIndex = normalized.indexOf(':');
+    final field = separatorIndex >= 0
+        ? normalized.substring(0, separatorIndex)
+        : normalized;
+    var value =
+        separatorIndex >= 0 ? normalized.substring(separatorIndex + 1) : '';
+    if (value.startsWith(' ')) {
+      value = value.substring(1);
+    }
+
+    switch (field) {
+      case 'event':
+        _pendingEvent = value;
+        return;
+      case 'data':
+        _pendingDataLines.add(value);
+        return;
+      case 'id':
+        if (!value.contains('\u0000')) {
+          _lastEventId = value;
+        }
+        return;
+      case 'retry':
+        final retryMs = int.tryParse(value);
+        if (retryMs != null && retryMs >= 0) {
+          _serverRetryMs = retryMs;
+        }
+        return;
+      default:
+        return;
+    }
+  }
+
+  void _dispatchPendingEvent() {
+    if (_pendingDataLines.isEmpty) {
+      _pendingEvent = '';
       return;
     }
-    if (trimmed.startsWith('event:')) {
-      _currentEvent = trimmed.substring(6).trim();
-      return;
-    }
-    if (trimmed.startsWith('data:')) {
-      final data = trimmed.substring(5).trim();
-      if (data.isNotEmpty) {
-        _handleMessage(data, _currentEvent);
-      }
-    }
+    final payload = _pendingDataLines.join('\n');
+    final eventName = _pendingEvent;
+    _resetPendingEvent();
+    _handleMessage(payload, eventName);
+  }
+
+  void _resetPendingEvent() {
+    _pendingEvent = '';
+    _pendingDataLines.clear();
   }
 
   void _handleMessage(String raw, String eventName) {
@@ -119,6 +229,117 @@ class SseNotifyService extends GetxService {
       return jsonDecode(raw);
     } catch (_) {
       return null;
+    }
+  }
+
+  Map<String, String> _buildSseHeaders(String token) {
+    return {
+      'AuthorizationU': 'Bearer $token',
+      if (_lastEventId.isNotEmpty) 'Last-Event-ID': _lastEventId,
+    };
+  }
+
+  bool _canMaintainConnection() {
+    return _wantConnection && (kIsWeb || _appInForeground);
+  }
+
+  bool _isExpectedCancel(Object error) {
+    return error is http.DioException &&
+        error.type == http.DioExceptionType.cancel;
+  }
+
+  void _handleConnectionOpen(int generation) {
+    if (generation != _connectionGeneration) {
+      return;
+    }
+    _connected = true;
+    _isConnecting = false;
+    _reconnectAttempt = 0;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    debugPrint('SSE connected');
+  }
+
+  void _handleConnectionEnded(int generation, {Object? error}) {
+    if (generation != _connectionGeneration) {
+      return;
+    }
+    final wasActive = _connected || _isConnecting;
+    _nativeSub = null;
+    _nativeCancelToken = null;
+    _resetConnectionFlags();
+    _resetPendingEvent();
+
+    if (error != null && !_isExpectedCancel(error)) {
+      debugPrint('SSE disconnected with error: $error');
+    } else if (wasActive) {
+      debugPrint('SSE disconnected');
+    }
+
+    if (_canMaintainConnection()) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _resetConnectionFlags() {
+    _connected = false;
+    _isConnecting = false;
+  }
+
+  void _scheduleReconnect() {
+    if (_reconnectTimer != null || !_canMaintainConnection()) {
+      return;
+    }
+
+    final delay = _nextReconnectDelay();
+    debugPrint(
+      'SSE reconnect scheduled in ${delay.inMilliseconds}ms',
+    );
+    _reconnectTimer = Timer(delay, () {
+      _reconnectTimer = null;
+      unawaited(_startConnection());
+    });
+  }
+
+  Duration _nextReconnectDelay() {
+    const factors = <int>[1, 2, 4, 8, 10];
+    final index = _reconnectAttempt < factors.length
+        ? _reconnectAttempt
+        : factors.length - 1;
+    final baseMs = _serverRetryMs ?? _defaultReconnectDelay.inMilliseconds;
+    final delayMs = (baseMs * factors[index]).clamp(
+      _defaultReconnectDelay.inMilliseconds,
+      _maxReconnectDelay.inMilliseconds,
+    );
+    _reconnectAttempt += 1;
+    return Duration(milliseconds: delayMs);
+  }
+
+  Future<void> _stopConnection({
+    bool clearIntent = true,
+    bool preserveCursor = false,
+  }) async {
+    if (clearIntent) {
+      _wantConnection = false;
+    }
+    _connectionGeneration += 1;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _resetConnectionFlags();
+    _resetPendingEvent();
+
+    _nativeCancelToken?.cancel('SSE disconnected');
+    _nativeCancelToken = null;
+    final nativeSub = _nativeSub;
+    _nativeSub = null;
+    await nativeSub?.cancel();
+
+    _webClient?.disconnect();
+
+    if (!preserveCursor) {
+      _lastEventId = '';
+      _serverRetryMs = null;
+      _reconnectAttempt = 0;
     }
   }
 
@@ -198,12 +419,6 @@ class SseNotifyService extends GetxService {
       default:
         return type;
     }
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    _registerDefaultHandlers();
   }
 
   void _showAnnouncementDialog(NotificationItem item, String eventType) {
@@ -382,18 +597,48 @@ class SseNotifyService extends GetxService {
     );
   }
 
-  void disconnect() {
-    _connected = false;
-    _nativeSub?.cancel();
-    _nativeSub = null;
-    _webClient?.disconnect();
-    _currentEvent = '';
+  @override
+  void onInit() {
+    super.onInit();
+    WidgetsBinding.instance.addObserver(this);
+    _registerDefaultHandlers();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (kIsWeb) {
+      return;
+    }
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _appInForeground = true;
+        if (_wantConnection) {
+          unawaited(connect());
+        }
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _appInForeground = false;
+        unawaited(
+          _stopConnection(clearIntent: false, preserveCursor: true),
+        );
+        break;
+    }
+  }
+
+  Future<void> disconnect() async {
+    await _stopConnection(clearIntent: true, preserveCursor: false);
   }
 
   @override
   void onClose() {
-    disconnect();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_stopConnection(clearIntent: true, preserveCursor: false));
     _controller.close();
+    _sseDio.close(force: true);
     super.onClose();
   }
 }

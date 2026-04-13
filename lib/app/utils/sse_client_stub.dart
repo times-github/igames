@@ -8,6 +8,8 @@ class _StubSseClient implements SseClient {
     required String url,
     required Map<String, String> headers,
     required SseDataHandler onData,
+    SseOpenHandler? onOpen,
+    SseDoneHandler? onDone,
     SseErrorHandler? onError,
   }) {}
 

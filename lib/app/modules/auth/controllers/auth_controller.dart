@@ -322,7 +322,7 @@ class AuthController extends GetxController {
     UserServices.loginOut();
     isLoggedIn.value = false;
     if (Get.isRegistered<SseNotifyService>()) {
-      Get.find<SseNotifyService>().disconnect();
+      await Get.find<SseNotifyService>().disconnect();
     }
   }
 

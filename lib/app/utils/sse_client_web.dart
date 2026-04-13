@@ -8,7 +8,11 @@ class _WebSseClient implements SseClient {
   int _lastIndex = 0;
   String _buffer = '';
   bool _connectedLogged = false;
+  bool _isDisconnecting = false;
+  bool _didComplete = false;
   late SseDataHandler _onData;
+  SseOpenHandler? _onOpen;
+  SseDoneHandler? _onDone;
   SseErrorHandler? _onError;
 
   @override
@@ -16,14 +20,20 @@ class _WebSseClient implements SseClient {
     required String url,
     required Map<String, String> headers,
     required SseDataHandler onData,
+    SseOpenHandler? onOpen,
+    SseDoneHandler? onDone,
     SseErrorHandler? onError,
   }) {
     disconnect();
     _onData = onData;
+    _onOpen = onOpen;
+    _onDone = onDone;
     _onError = onError;
     _lastIndex = 0;
     _buffer = '';
     _connectedLogged = false;
+    _isDisconnecting = false;
+    _didComplete = false;
     final request = HttpRequest();
     _request = request;
     request
@@ -50,24 +60,41 @@ class _WebSseClient implements SseClient {
       if (request.readyState >= HttpRequest.HEADERS_RECEIVED &&
           request.status == 200) {
         _connectedLogged = true;
-        print('SSE connected');
+        _onOpen?.call();
       }
     });
 
     request.onError.listen((event) {
+      if (_didComplete || _isDisconnecting) return;
+      _didComplete = true;
       _onError?.call(event);
+      _onDone?.call();
     });
 
     request.onAbort.listen((event) {
-      _onError?.call(event);
+      if (_didComplete || _isDisconnecting) return;
+      _didComplete = true;
+      _onDone?.call();
+    });
+
+    request.onLoadEnd.listen((_) {
+      if (_didComplete || _isDisconnecting) return;
+      _didComplete = true;
+      _flushBuffer(flushAll: true);
+      if (request.status != 200) {
+        _onError?.call(
+          'SSE request failed with status ${request.status}: ${request.statusText}',
+        );
+      }
+      _onDone?.call();
     });
 
     request.send();
   }
 
-  void _flushBuffer() {
+  void _flushBuffer({bool flushAll = false}) {
     final lines = _buffer.split('\n');
-    if (!_buffer.endsWith('\n')) {
+    if (!flushAll && !_buffer.endsWith('\n')) {
       _buffer = lines.removeLast();
     } else {
       _buffer = '';
@@ -79,9 +106,12 @@ class _WebSseClient implements SseClient {
 
   @override
   void disconnect() {
+    _isDisconnecting = true;
+    _didComplete = true;
     _request?.abort();
     _request = null;
     _lastIndex = 0;
     _buffer = '';
+    _connectedLogged = false;
   }
 }

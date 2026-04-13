@@ -8,12 +8,99 @@ import '../../../../data/models/gametype.dart';
 import '../../../../utils/api_client.dart';
 import 'dart:convert'; // Added for jsonDecode
 
+class SlotProviderOption {
+  const SlotProviderOption({
+    required this.id,
+    required this.label,
+    required this.assetPath,
+    this.requestValue,
+    this.translateLabel = false,
+  });
+
+  final String id;
+  final String label;
+  final String assetPath;
+  final String? requestValue;
+  final bool translateLabel;
+}
+
 class GameMenuController extends GetxController {
+  static const String _allProviderId = 'all';
+  static const List<SlotProviderOption> _slotProviderOptions = [
+    SlotProviderOption(
+      id: _allProviderId,
+      label: 'all',
+      assetPath: 'assets/images/provider/all.png',
+      translateLabel: true,
+    ),
+    SlotProviderOption(
+      id: 'pg',
+      label: 'PG',
+      assetPath: 'assets/images/provider/pg.webp',
+      requestValue: 'pg',
+    ),
+    SlotProviderOption(
+      id: 'jdb',
+      label: 'JDB',
+      assetPath: 'assets/images/provider/JDB.webp',
+      requestValue: 'jdb',
+    ),
+    SlotProviderOption(
+      id: 'jili',
+      label: 'JILI',
+      assetPath: 'assets/images/provider/jili.webp',
+      requestValue: 'jili',
+    ),
+    SlotProviderOption(
+      id: 'pp',
+      label: 'PP',
+      assetPath: 'assets/images/provider/pragmatic.webp',
+      requestValue: 'pp',
+    ),
+    SlotProviderOption(
+      id: 'bg',
+      label: 'BG',
+      assetPath: 'assets/images/provider/bg.png',
+      requestValue: 'bg',
+    ),
+    SlotProviderOption(
+      id: 'fc',
+      label: 'FC',
+      assetPath: 'assets/images/provider/fachai.webp',
+      requestValue: 'fc',
+    ),
+    SlotProviderOption(
+      id: 'hsd',
+      label: 'HSD',
+      assetPath: 'assets/images/provider/hsd.png',
+      requestValue: 'hsd',
+    ),
+    SlotProviderOption(
+      id: 'tada',
+      label: 'TADA',
+      assetPath: 'assets/images/provider/tada.webp',
+      requestValue: 'tada',
+    ),
+    SlotProviderOption(
+      id: 'wg',
+      label: 'WG',
+      assetPath: 'assets/images/provider/wg_games.png',
+      requestValue: 'wg',
+    ),
+    SlotProviderOption(
+      id: 'cq9',
+      label: 'CQ9',
+      assetPath: 'assets/images/provider/CQ9.webp',
+      requestValue: 'cq9',
+    ),
+  ];
+
   // 游戏分类数据
   final gameCategories = <Map<String, dynamic>>[].obs;
 
   // 当前选中的分类
   final selectedCategory = 'HOME_TOP'.obs;
+  final selectedSlotProvider = _allProviderId.obs;
 
   // 游戏列表数据
   final gameList = <GameList>[].obs;
@@ -36,6 +123,16 @@ class GameMenuController extends GetxController {
   // API客户端
   final ApiClient _apiClient = Get.find<ApiClient>();
   Worker? _authWorker;
+
+  List<SlotProviderOption> get slotProviders => _slotProviderOptions;
+
+  bool get showSlotProviderFilter => _isSlotCategory(selectedCategory.value);
+
+  SlotProviderOption get currentSlotProvider =>
+      _slotProviderOptions.firstWhereOrNull(
+        (provider) => provider.id == selectedSlotProvider.value,
+      ) ??
+      _slotProviderOptions.first;
 
   @override
   void onInit() {
@@ -140,6 +237,26 @@ class GameMenuController extends GetxController {
     if (categoryType.isEmpty) return;
 
     selectedCategory.value = categoryType;
+    selectedSlotProvider.value = _allProviderId;
+    currentPage.value = 1;
+    gameList.clear();
+    expandedGames.clear();
+    hasMoreData.value = true;
+    loadError.value = false;
+    _loadGames();
+  }
+
+  void selectSlotProvider(String providerId) {
+    if (!showSlotProviderFilter || providerId.isEmpty) {
+      return;
+    }
+    if (selectedSlotProvider.value == providerId &&
+        currentPage.value == 1 &&
+        gameList.isNotEmpty) {
+      return;
+    }
+
+    selectedSlotProvider.value = providerId;
     currentPage.value = 1;
     gameList.clear();
     expandedGames.clear();
@@ -167,17 +284,25 @@ class GameMenuController extends GetxController {
     final bool isLoggedIn = authController.isLoggedIn.value;
 
     try {
+      final requestData = <String, String>{
+        'lang': lang,
+        'game_type': selectedCategory.value.isNotEmpty
+            ? selectedCategory.value
+            : 'HOME_TOP',
+        'platform_type': 'h5',
+        'page': currentPage.value.toString(),
+        'size': pageSize.value.toString(),
+      };
+      final selectedProviderValue = currentSlotProvider.requestValue;
+      if (showSlotProviderFilter &&
+          selectedProviderValue != null &&
+          selectedProviderValue.isNotEmpty) {
+        requestData['gamehall'] = selectedProviderValue;
+      }
+
       final response = await _apiClient.post(
         '/user/games/type',
-        data: {
-          'lang': lang,
-          'game_type': selectedCategory.value.isNotEmpty
-              ? selectedCategory.value
-              : 'HOME_TOP',
-          'platform_type': 'h5',
-          'page': currentPage.value.toString(),
-          'size': pageSize.value.toString(),
-        },
+        data: requestData,
         withAuth: isLoggedIn, // 根据登录状态决定是否传 Authorization
       );
 
@@ -307,6 +432,8 @@ class GameMenuController extends GetxController {
         gameCategories.firstWhereOrNull((cat) => cat['type'] == type);
     return category?['icon'] ?? '🎮';
   }
+
+  bool _isSlotCategory(String type) => type.trim().toLowerCase() == 'slot';
 
   /// 切换游戏收藏状态
   Future<void> toggleFavorite(GameList game) async {
