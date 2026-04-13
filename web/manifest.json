@@ -1,6 +1,6 @@
 {
     "name": "getwiner.win",
-    "short_name": "igames7",
+    "short_name": "getwiner",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2D1104",

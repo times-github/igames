@@ -78,6 +78,11 @@ class LocaleKeys {
   static const supportNotConfigured = 'supportNotConfigured';
   static const supportWhatsAppDesc = 'supportWhatsAppDesc';
   static const supportTelegramDesc = 'supportTelegramDesc';
+  static const webUpdateAvailableTitle = 'webUpdateAvailableTitle';
+  static const webUpdateAvailableMessage = 'webUpdateAvailableMessage';
+  static const webUpdateLater = 'webUpdateLater';
+  static const webUpdateNow = 'webUpdateNow';
+  static const webUpdateApplying = 'webUpdateApplying';
   static const userProfile = 'userProfile';
   static const gamestype_all = 'gamestype_all';
   static const gamestype_slot = 'gamestype_slot';
@@ -535,6 +540,12 @@ class Locales {
     'supportNotConfigured': 'Belum dikonfigurasi',
     'supportWhatsAppDesc': 'Balasan prioritas via WhatsApp',
     'supportTelegramDesc': 'Dukungan Telegram resmi',
+    'webUpdateAvailableTitle': 'Versi baru tersedia',
+    'webUpdateAvailableMessage':
+        'Versi baru siap digunakan. Tekan perbarui sekarang untuk memakai versi terbaru.',
+    'webUpdateLater': 'Nanti',
+    'webUpdateNow': 'Perbarui sekarang',
+    'webUpdateApplying': 'Memperbarui...',
     'userProfile': 'Profil pengguna',
     'gamestype_all': 'Semua',
     'gamestype_slot': 'Slot',
@@ -996,6 +1007,11 @@ class Locales {
     'supportNotConfigured': '暂未配置',
     'supportWhatsAppDesc': '优先通过 WhatsApp 回复',
     'supportTelegramDesc': '官方 Telegram 在线支持',
+    'webUpdateAvailableTitle': '检测到新版本',
+    'webUpdateAvailableMessage': '页面已准备好更新，点击立即更新切换到最新版本。',
+    'webUpdateLater': '稍后',
+    'webUpdateNow': '立即更新',
+    'webUpdateApplying': '更新中...',
     'userProfile': '个人中心',
     'gamestype_all': '全部',
     'gamestype_slot': '老虎机',
@@ -1442,6 +1458,12 @@ class Locales {
     'supportNotConfigured': 'Not configured',
     'supportWhatsAppDesc': 'Priority replies via WhatsApp',
     'supportTelegramDesc': 'Official Telegram online support',
+    'webUpdateAvailableTitle': 'New version available',
+    'webUpdateAvailableMessage':
+        'A new version is ready. Update now to switch to the latest build.',
+    'webUpdateLater': 'Later',
+    'webUpdateNow': 'Update now',
+    'webUpdateApplying': 'Updating...',
     'userProfile': 'User profile',
     'gamestype_all': 'All',
     'gamestype_slot': 'Slot',

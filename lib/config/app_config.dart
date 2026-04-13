@@ -14,12 +14,12 @@ class AppConfig {
   /// 分页大小
   static const int pageSize = 40;
   // / API基础URL
-  // static const String apiBaseUrl = 'https://api.getwiner.win';
-  static const String apiBaseUrl = 'http://127.0.0.1:8199';
+  static const String apiBaseUrl = 'https://api.getwiner.win';
+  // static const String apiBaseUrl = 'http://127.0.0.1:8199';
 
   /// 游戏图标基础URL
-  // static const String gameIconBaseUrl = 'https://api.getwiner.win/';
-  static const String gameIconBaseUrl = 'http://127.0.0.1:8199/';
+  static const String gameIconBaseUrl = 'https://api.getwiner.win/';
+  // static const String gameIconBaseUrl = 'http://127.0.0.1:8199/';
 
   /// Web 应用地址（用于生成邀请链接等）
   static const String appWebUrl = 'https://www.getwiner.win';

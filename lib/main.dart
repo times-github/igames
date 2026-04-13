@@ -7,6 +7,8 @@ import 'package:igames/app/modules/home/bindings/home_binding.dart';
 import 'package:igames/app/modules/home/views/home.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
+import 'package:igames/app/data/services/web_update_service.dart';
+import 'package:igames/app/modules/widgets/web_update_banner.dart';
 import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/api_client.dart';
 
@@ -68,6 +70,7 @@ void main() async {
   Get.put(ApiClient(), permanent: true); // 先注册 ApiClient
   final appInfo = Get.put(AppInfoService(), permanent: true);
   Get.put(JackpotService(), permanent: true);
+  Get.put(WebUpdateService(), permanent: true);
   // 异步拉取站点名称（不阻塞启动）
   appInfo.fetchAppName();
   appInfo.fetchAppLogo();
@@ -91,6 +94,14 @@ void main() async {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system, // 系统主题
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  Positioned.fill(child: child ?? const SizedBox.shrink()),
+                  const WebUpdateBanner(),
+                ],
+              );
+            },
 
             defaultTransition: Transition.rightToLeftWithFade, //全局动画
             initialRoute: AppPages.INITIAL, // 初始路由

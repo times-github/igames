@@ -9,6 +9,7 @@ Flutter 项目说明，包含 Android / Web 打包、应用图标生成、应用
 - [Android 通用 APK 打包](#android-通用-apk-打包)
 - [Android 拆分 APK 打包](#android-拆分-apk-打包)
 - [Web 打包](#web-打包)
+- [Web 关键文件说明](#web-关键文件说明)
 - [品牌与命名](#品牌与命名)
 - [更新应用图标](#更新应用图标)
 - [更新应用名称和包名](#更新应用名称和包名)
@@ -133,6 +134,20 @@ flutter build apk --release --split-per-abi
 
 ### Web 打包
 
+#### 推荐命令
+
+当前项目 Web 正式构建推荐使用：
+
+```bash
+flutter build web --release --pwa-strategy=none
+```
+
+原因：
+
+- 当前项目已经使用自定义 `web/flutter_bootstrap.js` 和 `web/sw.js` 处理“检测新版本 -> Flutter 弹更新提示 -> 用户点击更新”这套流程。
+- 不再依赖 Flutter 默认的 `flutter_service_worker.js` 更新方案。
+- 这样更新链路更清晰，不容易和 Flutter 默认 PWA 缓存逻辑冲突。
+
 #### 打包命令
 
 先清理并拉依赖：
@@ -148,6 +163,34 @@ flutter pub get
 flutter build web
 ```
 
+或者显式写成：
+
+```bash
+flutter build web --release
+```
+
+如果按当前项目推荐方式打正式包，使用：
+
+```bash
+flutter build web --release --pwa-strategy=none
+```
+
+#### 三种命令区别
+
+- `flutter build web`
+  当前 Flutter 版本下默认就是 `release` 模式，适合快速出一份正式 Web 包。
+- `flutter build web --release`
+  和上面本质一样，只是把正式构建写明。
+- `flutter build web --release --pwa-strategy=none`
+  仍然是正式包，但关闭 Flutter 默认 PWA / `flutter_service_worker.js` 方案，改由项目自己的 `web/sw.js` 负责更新提示与版本切换。
+
+#### 关于缓存
+
+- `--pwa-strategy=none` 不是“完全没有缓存”。
+- 它关闭的是 Flutter 默认那套 PWA / Service Worker 缓存方案。
+- 浏览器正常的 HTTP 缓存仍然存在。
+- 当前项目自己的 `web/sw.js` 仍然会参与“检测更新 / 提示更新 / 切换版本”，只是它现在不负责做大规模静态资源预缓存。
+
 #### 输出目录
 
 Web 构建产物会生成到：
@@ -159,13 +202,18 @@ Web 构建产物会生成到：
 - `build/web/index.html`
 - `build/web/main.dart.js`
 - `build/web/flutter_bootstrap.js`
+- `build/web/sw.js`
+- `build/web/version.json`
+- `build/web/manifest.json`
 - `build/web/assets/`
 - `build/web/icons/`
+- `build/web/canvaskit/`
 
 #### 部署说明
 
 - 把 `build/web/` 整个目录上传到 Web 服务器即可。
 - 如果服务器开启了强缓存，更新后可能需要清理缓存或刷新 CDN。
+- 如果想让新版本检测更稳，建议服务器给 `main.dart.js` 返回 `ETag` 或 `Last-Modified`。
 - 如果项目后面改成前端路由模式，需要服务器把未知路径回退到 `index.html`。
 
 #### 本地验证
@@ -177,6 +225,70 @@ flutter run -d chrome
 ```
 
 或者直接部署 `build/web/` 到测试环境再验收。
+
+### Web 关键文件说明
+
+下面这些文件是当前项目 Web 打包后最关键的部分。
+
+#### 入口与页面壳
+
+- `build/web/index.html`
+  整个网站入口 HTML。浏览器先打开它，再去加载 `flutter_bootstrap.js`、`main.dart.js` 和其他静态资源。
+- `build/web/flutter_bootstrap.js`
+  Flutter Web 启动脚本。当前项目还在这里接入了自定义更新逻辑：
+  - 注册 `sw.js`
+  - 检测新版本
+  - 通过浏览器事件通知 Flutter 显示更新提示条
+
+#### Flutter 主程序
+
+- `build/web/main.dart.js`
+  Flutter 应用真正的前端主程序。你的页面、路由、GetX 状态、API 请求、业务逻辑最终都会编译到这里。
+- `build/web/assets/`
+  Flutter 运行时资源目录，比如图片、字体、配置资源等。
+- `build/web/canvaskit/`
+  Flutter Web CanvasKit 渲染相关资源。浏览器用它来渲染 Flutter 画面。
+
+#### 更新与版本
+
+- `build/web/sw.js`
+  当前项目自己的轻量 Service Worker。它的职责不是离线缓存整站，而是：
+  - 接收“立即更新”消息
+  - 执行 `skipWaiting()`
+  - 在激活后接管当前页面
+- `build/web/flutter_service_worker.js`
+  Flutter 默认生成的 Service Worker 文件。当前项目不再依赖它做更新逻辑；在 `--pwa-strategy=none` 下它通常只是占位文件，不是当前方案核心。
+- `build/web/version.json`
+  Web 构建版本信息。当前项目的更新检测优先看 `main.dart.js` 的响应头，拿不到时才退回这里做兜底。
+
+#### PWA 与图标
+
+- `build/web/manifest.json`
+  Web 应用清单文件，包含应用名、描述、图标等 PWA 元数据。
+- `build/web/icons/`
+  Web 图标资源目录，浏览器安装到桌面或显示站点图标时会用到。
+- `build/web/favicon.png`
+  浏览器标签页小图标。
+
+#### 当前项目加载链路
+
+正常访问时，大致流程如下：
+
+1. 浏览器先打开 `index.html`。
+2. `index.html` 加载 `flutter_bootstrap.js`。
+3. `flutter_bootstrap.js` 注册当前项目自己的 `sw.js`，并准备 Flutter 启动环境。
+4. 然后加载 `main.dart.js`。
+5. `main.dart.js` 跑起来后，Flutter 渲染首帧，页面进入正式界面。
+
+#### 版本更新链路
+
+当前项目 Web 更新不是靠 Flutter 默认 `flutter_service_worker.js`，而是这套：
+
+1. `flutter_bootstrap.js` 定时检查更新。
+2. 检测到新版本后，通知 Flutter。
+3. Flutter 顶部显示“发现新版本”的更新提示条。
+4. 用户点击“立即更新”。
+5. `sw.js` 接管新版本并触发页面刷新。
 
 ## 品牌与命名
 
