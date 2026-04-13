@@ -128,17 +128,17 @@ package_rename_config:
     lang: "kotlin"
 
   ios:
-    app_name: "Igames"
+    app_name: "getwiner"
     bundle_name: "igames"
     package_name: "win.getwiner"
 
   linux:
-    app_name: "igames"
+    app_name: "getwiner"
     package_name: "win.getwiner"
     exe_name: "igames"
 
   macos:
-    app_name: "igames"
+    app_name: "getwiner"
     package_name: "win.getwiner"
     copyright_notice: "Copyright © 2025 win.getwiner. All rights reserved."
 
@@ -148,7 +148,7 @@ package_rename_config:
     description: "best online casino"
 
   windows:
-    app_name: "igames"
+    app_name: "getwiner"
     organization: "win.getwiner"
     copyright_notice: "Copyright (C) 2025 win.getwiner. All rights reserved."
-    exe_name: "igames"
+    exe_name: "getwiner"
