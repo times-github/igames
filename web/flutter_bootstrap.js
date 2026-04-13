@@ -131,7 +131,8 @@
     await unregisterLegacyFlutterWorkers();
 
     const buildVersion = await resolveBuildVersion();
-    const swUrl = buildVersion ? `/sw.js?v=${buildVersion}` : '/sw.js';
+    const swVersionParam = buildVersion ? encodeURIComponent(buildVersion) : '';
+    const swUrl = swVersionParam ? `/sw.js?v=${swVersionParam}` : '/sw.js';
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) {
