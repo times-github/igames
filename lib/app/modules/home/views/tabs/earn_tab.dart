@@ -216,7 +216,6 @@ class _EarnTabState extends State<EarnTab> {
     final content = ListView(
       padding: EdgeInsets.only(bottom: bottomPadding),
       children: [
-        _EarnHeader(),
         _InviteNavBar(),
         const SizedBox(height: 12),
         Padding(
@@ -260,36 +259,6 @@ class _EarnTabState extends State<EarnTab> {
       decoration:
           const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
       child: SafeArea(bottom: false, child: content),
-    );
-  }
-}
-
-// ─── _EarnHeader ─────────────────────────────────────────────────────────────
-
-class _EarnHeader extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Text(
-              '邀请好友',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white70),
-            onPressed: () {},
-          ),
-        ],
-      ),
     );
   }
 }

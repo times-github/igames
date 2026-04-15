@@ -122,11 +122,15 @@ async function staleWhileRevalidate(request, cacheName) {
 }
 
 function shouldUseStaticStrategy(pathname) {
+  const lowerPathname = pathname.toLowerCase();
   return (
     pathname === '/main.dart.js' ||
+    pathname === '/main.dart.mjs' ||
     pathname === '/main.dart.wasm' ||
     pathname === '/flutter.js' ||
     pathname === '/favicon.png' ||
+    lowerPathname.endsWith('.mjs') ||
+    lowerPathname.endsWith('.wasm') ||
     pathname.startsWith('/assets/') ||
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/canvaskit/')

@@ -34,6 +34,12 @@ class GameMenuController extends GetxController {
       translateLabel: true,
     ),
     SlotProviderOption(
+      id: 'cq9',
+      label: 'CQ9',
+      assetPath: 'assets/images/provider/CQ9.webp',
+      requestValue: 'cq9',
+    ),
+    SlotProviderOption(
       id: 'pg',
       label: 'PG',
       assetPath: 'assets/images/provider/pg.webp',
@@ -53,9 +59,9 @@ class GameMenuController extends GetxController {
     ),
     SlotProviderOption(
       id: 'pp',
-      label: 'PP',
+      label: 'Pragmatic',
       assetPath: 'assets/images/provider/pragmatic.webp',
-      requestValue: 'pp',
+      requestValue: 'PP',
     ),
     SlotProviderOption(
       id: 'bg',
@@ -66,7 +72,7 @@ class GameMenuController extends GetxController {
     SlotProviderOption(
       id: 'fc',
       label: 'FC',
-      assetPath: 'assets/images/provider/fachai.webp',
+      assetPath: 'assets/images/provider/fachai2.webp',
       requestValue: 'fc',
     ),
     SlotProviderOption(
@@ -86,12 +92,6 @@ class GameMenuController extends GetxController {
       label: 'WG',
       assetPath: 'assets/images/provider/wg_games.png',
       requestValue: 'wg',
-    ),
-    SlotProviderOption(
-      id: 'cq9',
-      label: 'CQ9',
-      assetPath: 'assets/images/provider/CQ9.webp',
-      requestValue: 'cq9',
     ),
   ];
 

@@ -1,7 +1,7 @@
 {{flutter_js}}
 {{flutter_build_config}}
 
-(async function () {
+(function () {
   let refreshing = false;
   let registration = null;
   let pendingWorker = null;
@@ -43,6 +43,77 @@
     waitingWorker.postMessage({type: 'SKIP_WAITING'});
   };
 
+  function getBuildVersionCandidates() {
+    const candidates = [];
+    const seen = new Set();
+    const builds = Array.isArray(_flutter?.buildConfig?.builds)
+      ? _flutter.buildConfig.builds
+      : [];
+
+    function pushIfPresent(value) {
+      if (typeof value !== 'string') {
+        return;
+      }
+
+      const normalized = value.trim();
+      if (!normalized || seen.has(normalized)) {
+        return;
+      }
+
+      seen.add(normalized);
+      candidates.push(normalized);
+    }
+
+    for (const build of builds) {
+      if (!build || typeof build !== 'object') {
+        continue;
+      }
+      pushIfPresent(build.jsSupportRuntimePath);
+      pushIfPresent(build.mainWasmPath);
+      pushIfPresent(build.mainJsPath);
+    }
+
+    pushIfPresent('main.dart.mjs');
+    pushIfPresent('main.dart.wasm');
+    pushIfPresent('main.dart.js');
+
+    return candidates;
+  }
+
+  async function resolveVersionFromAssets() {
+    const candidates = getBuildVersionCandidates();
+    if (candidates.length === 0) {
+      return '';
+    }
+
+    const parts = [];
+
+    for (const assetPath of candidates) {
+      try {
+        const response = await fetch(assetPath, {
+          method: 'HEAD',
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          continue;
+        }
+
+        const eTag = response.headers.get('etag');
+        const lastModified = response.headers.get('last-modified');
+        const contentLength = response.headers.get('content-length');
+        const assetVersion = [eTag, lastModified, contentLength]
+          .filter(Boolean)
+          .join(':');
+
+        if (assetVersion) {
+          parts.push(`${assetPath}:${assetVersion}`);
+        }
+      } catch (_) {}
+    }
+
+    return parts.join('|');
+  }
+
   async function resolveBuildVersion() {
     const tokenVersion = {{flutter_service_worker_version}};
     const normalizedTokenVersion = String(tokenVersion ?? '')
@@ -53,28 +124,14 @@
       tokenVersion &&
       !tokenVersion.includes('{{') &&
       !normalizedTokenVersion.startsWith('null')
-    ) {
-      return tokenVersion;
-    }
-
-    try {
-      const mainJsResponse = await fetch('main.dart.js', {
-        method: 'HEAD',
-        cache: 'no-store',
-      });
-      if (mainJsResponse.ok) {
-        const eTag = mainJsResponse.headers.get('etag');
-        const lastModified = mainJsResponse.headers.get('last-modified');
-        const contentLength = mainJsResponse.headers.get('content-length');
-        const headerVersion = [eTag, lastModified, contentLength]
-          .filter(Boolean)
-          .join(':');
-
-        if (headerVersion) {
-          return headerVersion;
-        }
+      ) {
+        return tokenVersion;
       }
-    } catch (_) {}
+
+    const assetVersion = await resolveVersionFromAssets();
+    if (assetVersion) {
+      return assetVersion;
+    }
 
     try {
       const response = await fetch('version.json', {cache: 'no-store'});
@@ -119,6 +176,15 @@
       return;
     }
 
+    const isLocalhost =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '::1';
+
+  if (isLocalhost) {
+    return;
+  }
+
     await unregisterLegacyFlutterWorkers();
 
     const buildVersion = await resolveBuildVersion();
@@ -162,9 +228,30 @@
     }, 60000);
   }
 
-  try {
-    await setupWebUpdater();
-  } catch (_) {}
+  function startWebUpdaterLater() {
+    const run = async () => {
+      try {
+        await setupWebUpdater();
+      } catch (_) {}
+    };
 
+    const schedule = () => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(run, {timeout: 4000});
+      } else {
+        window.setTimeout(run, 1200);
+      }
+    };
+
+    window.addEventListener(
+      'flutter-first-frame',
+      () => {
+        schedule();
+      },
+      {once: true},
+    );
+  }
+
+  startWebUpdaterLater();
   _flutter.loader.load();
 })();

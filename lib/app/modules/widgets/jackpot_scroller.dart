@@ -7,6 +7,7 @@ import 'package:igames/app/data/models/jackpot.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/config/app_config_export.dart';
@@ -1246,10 +1247,10 @@ class _DetailGameIcon extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: url != null && url!.isNotEmpty
-            ? Image.network(
-                url!,
+            ? GameCoverImage(
+                url: url!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _iconFallback(),
+                fallback: _iconFallback(),
               )
             : _iconFallback(),
       ),
@@ -1307,10 +1308,10 @@ class _RecommendBlock extends StatelessWidget {
                         height: 72,
                         color: const Color(0xFF2C3240),
                         child: url != null && url.isNotEmpty
-                            ? Image.network(
-                                url,
+                            ? GameCoverImage(
+                                url: url,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _iconFallback(),
+                                fallback: _iconFallback(),
                               )
                             : _iconFallback(),
                       ),

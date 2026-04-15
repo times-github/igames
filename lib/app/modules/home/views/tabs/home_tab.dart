@@ -8,6 +8,7 @@ import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/app/modules/widgets/common_header.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
@@ -73,10 +74,7 @@ class _HomeTabState extends State<HomeTab> {
               const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
           child: SafeArea(
             bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(3, 0, 3, 0),
-              child: _buildContent(context, widget.menuController),
-            ),
+            child: _buildContent(context, widget.menuController),
           ),
         ),
         Obx(() {
@@ -201,7 +199,7 @@ class _HomeTabState extends State<HomeTab> {
             floating: false,
             delegate: CategoryHeaderDelegate(
               menuController: menuController,
-              height: 56,
+              height: 40,
             ),
           ),
           Obx(() {
@@ -213,7 +211,7 @@ class _HomeTabState extends State<HomeTab> {
               floating: false,
               delegate: SlotProviderHeaderDelegate(
                 menuController: menuController,
-                height: 88,
+                height: 61,
               ),
             );
           }),
@@ -937,70 +935,7 @@ class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
                   ),
                 ],
               ),
-              child: Obx(() {
-                final categories = menuController.gameCategories;
-                final selected = menuController.selectedCategory.value;
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: categories.map((category) {
-                      final type = category['type']?.toString() ?? '';
-                      final label = category['name']?.toString() ?? '';
-                      final icon = category['icon']?.toString() ?? '🎮';
-                      final bool isSelected = selected == type;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: GestureDetector(
-                          onTap: () => menuController.selectCategory(type),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                  ? const LinearGradient(
-                                      colors: [
-                                        Color(0xFF8A6CFF),
-                                        Color(0xFF6D7BFF)
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    )
-                                  : null,
-                              color: isSelected
-                                  ? null
-                                  : Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF8A6CFF)
-                                    : Colors.white.withValues(alpha: 0.14),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(icon,
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(width: 1),
-                                Text(
-                                  label.tr,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w800
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                );
-              }),
+              child: _PrimaryCategoryFilterBar(menuController: menuController),
             ),
           ),
         ),
@@ -1015,103 +950,364 @@ class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-class _SlotProviderFilterBar extends StatelessWidget {
+class _PrimaryCategoryFilterBar extends StatefulWidget {
+  const _PrimaryCategoryFilterBar({required this.menuController});
+
+  final GameMenuController menuController;
+
+  @override
+  State<_PrimaryCategoryFilterBar> createState() =>
+      _PrimaryCategoryFilterBarState();
+}
+
+class _PrimaryCategoryFilterBarState extends State<_PrimaryCategoryFilterBar> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showRightHint = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollHint);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollHint());
+  }
+
+  @override
+  void didUpdateWidget(covariant _PrimaryCategoryFilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollHint());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollHint);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateScrollHint() {
+    if (!_scrollController.hasClients) {
+      if (_showRightHint) {
+        setState(() => _showRightHint = false);
+      }
+      return;
+    }
+
+    final position = _scrollController.position;
+    final nextValue = position.maxScrollExtent > 6 &&
+        position.pixels < position.maxScrollExtent - 6;
+    if (nextValue != _showRightHint && mounted) {
+      setState(() => _showRightHint = nextValue);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final categories = widget.menuController.gameCategories;
+      final selected = widget.menuController.selectedCategory.value;
+      return Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 0, 30, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: categories.map((category) {
+                  final type = category['type']?.toString() ?? '';
+                  final label = category['name']?.toString() ?? '';
+                  final icon = category['icon']?.toString() ?? '🎮';
+                  final bool isSelected = selected == type;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: GestureDetector(
+                      onTap: () => widget.menuController.selectCategory(type),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 5),
+                        decoration: BoxDecoration(
+                          gradient: isSelected
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFF8A6CFF),
+                                    Color(0xFF6D7BFF)
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                          color: isSelected
+                              ? null
+                              : Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF8A6CFF)
+                                : Colors.white.withValues(alpha: 0.14),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              icon,
+                              style: const TextStyle(fontSize: 16, height: 1),
+                            ),
+                            const SizedBox(width: 1),
+                            Text(
+                              label.tr,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                height: 1,
+                                fontWeight: isSelected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: AnimatedOpacity(
+                  opacity: _showRightHint ? 1 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Container(
+                    width: 34,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(14),
+                        bottomRight: Radius.circular(14),
+                      ),
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.42),
+                        ],
+                      ),
+                    ),
+                    alignment: Alignment.centerRight,
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.primary,
+                      size: 44,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+class _SlotProviderFilterBar extends StatefulWidget {
   const _SlotProviderFilterBar({required this.menuController});
 
   final GameMenuController menuController;
 
   @override
-  Widget build(BuildContext context) {
-    final providers = menuController.slotProviders;
-    final selectedId = menuController.selectedSlotProvider.value;
+  State<_SlotProviderFilterBar> createState() => _SlotProviderFilterBarState();
+}
 
-    return Container(
-      height: 84,
-      margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 0),
-        child: Row(
-          children: providers.map((provider) {
-            final isSelected = provider.id == selectedId;
-            final label =
-                provider.translateLabel ? provider.label.tr : provider.label;
-            return Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: GestureDetector(
-                onTap: () => menuController.selectSlotProvider(provider.id),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 80,
-                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? const LinearGradient(
-                            colors: [Color(0xFF8A6CFF), Color(0xFF5A6DFF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: isSelected
-                        ? null
-                        : Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFF9B86FF)
-                          : Colors.white.withValues(alpha: 0.08),
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF7E66FF)
-                                  .withValues(alpha: 0.24),
-                              blurRadius: 14,
-                              offset: const Offset(0, 4),
+class _SlotProviderFilterBarState extends State<_SlotProviderFilterBar> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showRightHint = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollHint);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollHint());
+  }
+
+  @override
+  void didUpdateWidget(covariant _SlotProviderFilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollHint());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollHint);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateScrollHint() {
+    if (!_scrollController.hasClients) {
+      if (_showRightHint) {
+        setState(() => _showRightHint = false);
+      }
+      return;
+    }
+
+    final position = _scrollController.position;
+    final nextValue = position.maxScrollExtent > 6 &&
+        position.pixels < position.maxScrollExtent - 6;
+    if (nextValue != _showRightHint && mounted) {
+      setState(() => _showRightHint = nextValue);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final providers = widget.menuController.slotProviders;
+    return Obx(
+      () {
+        final selectedId = widget.menuController.selectedSlotProvider.value;
+        return SizedBox(
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: providers.map((provider) {
+                    final isSelected = provider.id == selectedId;
+                    final label = provider.translateLabel
+                        ? provider.label.tr
+                        : provider.label;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 1),
+                      child: GestureDetector(
+                        onTap: () => widget.menuController
+                            .selectSlotProvider(provider.id),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: 68,
+                          decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF8A6CFF),
+                                      Color(0xFF5A6DFF),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            color: isSelected
+                                ? null
+                                : Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF9B86FF)
+                                  : Colors.white.withValues(alpha: 0.08),
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 44,
-                        child: Center(
-                          child: Image.asset(
-                            provider.assetPath,
-                            width: 42,
-                            height: 42,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.casino_rounded,
-                              color: Colors.white54,
-                              size: 30,
-                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF7E66FF)
+                                          .withValues(alpha: 0.24),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Column(
+                            spacing: 1,
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 40,
+                                width: 40,
+                                child: Center(
+                                  child: Image.asset(
+                                    provider.assetPath,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.casino_rounded,
+                                      color: Colors.white54,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 1),
+                              Text(
+                                label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  height: 1,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                    );
+                  }).toList(),
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: AnimatedOpacity(
+                      opacity: _showRightHint ? 1 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: Container(
+                        width: 34,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(14),
+                            bottomRight: Radius.circular(14),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.42),
+                            ],
+                          ),
+                        ),
+                        alignment: Alignment.centerRight,
+                        child: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.primary,
+                          size: 44,
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            );
-          }).toList(),
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1134,11 +1330,36 @@ class SlotProviderHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final bg = Colors.white.withValues(alpha: overlapsContent ? 0.07 : 0.05);
     return Container(
-      color: AppColors.backgroundDark,
+      color: Colors.transparent,
       padding: EdgeInsets.zero,
-      alignment: Alignment.topCenter,
-      child: _SlotProviderFilterBar(menuController: menuController),
+      child: SizedBox(
+        height: height,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(0, 0, 6, 0),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.22),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              alignment: Alignment.centerLeft,
+              child: _SlotProviderFilterBar(menuController: menuController),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1177,10 +1398,10 @@ Widget _mobileGameCard(
                 if (resolvedUrl == null || resolvedUrl.isEmpty) {
                   return _gameCardLogoFallback();
                 }
-                return Image.network(
-                  resolvedUrl,
+                return GameCoverImage(
+                  url: resolvedUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _gameCardLogoFallback(),
+                  fallback: _gameCardLogoFallback(),
                 );
               }(),
             ),

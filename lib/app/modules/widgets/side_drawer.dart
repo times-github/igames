@@ -7,6 +7,7 @@ import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
 import 'package:igames/app/modules/widgets/language_selector/views/language_selector_view.dart';
@@ -826,10 +827,10 @@ class _SidebarGameIcon extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: resolved != null && resolved.isNotEmpty
-            ? Image.network(
-                resolved,
+            ? GameCoverImage(
+                url: resolved,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _iconFallback(),
+                fallback: _iconFallback(),
               )
             : _iconFallback(),
       ),

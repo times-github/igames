@@ -27,8 +27,7 @@ class GameStartView extends GetView<GameStartController> {
         return Stack(
           children: [
             Positioned.fill(child: content),
-            if (controller.gameUrl.isNotEmpty &&
-                controller.errorMessage.isEmpty)
+            if (controller.hasGameContext)
               _FloatingMenuButton(onTap: _openMenu),
           ],
         );
@@ -126,7 +125,10 @@ class GameStartView extends GetView<GameStartController> {
           onLoadStop: controller.onLoadStop,
           onProgressChanged: controller.onProgressChanged, // 加载进度
           onReceivedError: (webViewController, request, error) {
-            controller.handleWebResourceError(error.description);
+            controller.handleWebResourceError(
+              error.description,
+              isMainFrame: request.isForMainFrame ?? true,
+            );
           },
           shouldOverrideUrlLoading: (c, action) async {
             //

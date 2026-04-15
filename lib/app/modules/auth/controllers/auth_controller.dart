@@ -99,26 +99,33 @@ class AuthController extends GetxController {
     isLoginOpen.value = true;
     Future.microtask(() {
       if (!(Get.isDialogOpen ?? false)) {
+        final overlayBackground = kIsWeb
+            ? ColoredBox(
+                color: Colors.black.withValues(alpha: 0.62),
+              )
+            : BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.22),
+                ),
+              );
         Get.dialog(
           Stack(
             children: [
               Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.22),
-                  ),
-                ),
+                child: overlayBackground,
               ),
               Center(
                 child: Material(
                   color: Colors.transparent,
-                  child: _LoginPanel(onClose: closeLoginOverlay),
+                  child: RepaintBoundary(
+                    child: _LoginPanel(onClose: closeLoginOverlay),
+                  ),
                 ),
               ),
             ],
           ),
-          barrierColor: Colors.black.withValues(alpha: 0.35),
+          barrierColor: Colors.black.withValues(alpha: kIsWeb ? 0.58 : 0.35),
           barrierDismissible: true,
           useSafeArea: true,
         ).whenComplete(() => isLoginOpen.value = false);
@@ -1024,27 +1031,33 @@ class _LoginPanelState extends State<_LoginPanel> {
     final size = MediaQuery.of(context).size;
     final panelW = (size.width * 0.9).clamp(320.0, 420.0);
     final panelH = (size.height * 0.9).clamp(520.0, 640.0);
-    const closeSize = 56.0;
+    const closeSize = 36.0;
     const closeOverlap = closeSize / 2;
 
     return SafeArea(
       child: Center(
         child: SizedBox(
-          width: panelW,
-          height: panelH + closeSize,
+          width: panelW + closeOverlap,
+          height: panelH + closeOverlap,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              _AuthPanelShell(
-                width: panelW,
-                height: panelH,
-                child: _LoginForm(onClose: widget.onClose), // 登录表单
+              Positioned(
+                left: 0,
+                top: closeOverlap,
+                child: _AuthPanelShell(
+                  width: panelW,
+                  height: panelH,
+                  child: _LoginForm(onClose: widget.onClose), // 登录表单
+                ),
               ),
               Positioned(
-                bottom: -closeOverlap,
-                left: 0,
+                top: 0,
                 right: 0,
-                child: _CloseFab(onTap: widget.onClose),
+                child: _CloseFab(
+                  onTap: widget.onClose,
+                  size: closeSize,
+                ),
               ),
             ],
           ),
@@ -1311,132 +1324,144 @@ class _LoginFormState extends State<_LoginForm> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLoginBanner(),
-                  if (!_loadingBanners && _loginBanners.isNotEmpty)
-                    const SizedBox(height: 16),
-                  _buildTabs(),
-                  const SizedBox(height: 14),
-                  _AuthTextField(
-                    controller: _account,
-                    hint: _usePhone
-                        ? 'pleaseEnterPhone'.tr
-                        : 'pleaseEnterUsername'.tr,
-                    icon: _usePhone
-                        ? Icons.phone_android_outlined
-                        : Icons.person_outline,
-                    keyboardType:
-                        _usePhone ? TextInputType.phone : TextInputType.text,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return _usePhone
-                            ? 'pleaseEnterPhone'.tr
-                            : 'pleaseEnterAccount'.tr;
-                      }
-                      if (_usePhone &&
-                          !RegExp(r'^\d{6,}$').hasMatch(value.trim())) {
-                        return 'pleaseEnterCorrectPhone'.tr;
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSecretField(),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _remember,
-                        activeColor: const Color(0xFF7A4CFF),
-                        checkColor: Colors.white,
-                        onChanged: (value) =>
-                            setState(() => _remember = value ?? false),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'rememberPassword'.tr,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.82),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (supportsTurnstileChallenge &&
-                      AppConfig.turnstileSiteKey.isNotEmpty) ...[
+        return ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(
+            scrollbars: false,
+            overscroll: false,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLoginBanner(),
+                    if (!_loadingBanners && _loginBanners.isNotEmpty)
+                      const SizedBox(height: 12),
+                    _buildTabs(),
                     const SizedBox(height: 10),
-                    Center(
-                      child: SizedBox(
-                        width: 300,
-                        child: TurnstileWidget(
-                          key: ValueKey(
-                            'turnstile-$_turnstileLang-$_turnstileEpoch',
+                    _AuthTextField(
+                      controller: _account,
+                      hint: _usePhone
+                          ? 'pleaseEnterPhone'.tr
+                          : 'pleaseEnterUsername'.tr,
+                      icon: _usePhone
+                          ? Icons.phone_android_outlined
+                          : Icons.person_outline,
+                      keyboardType:
+                          _usePhone ? TextInputType.phone : TextInputType.text,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return _usePhone
+                              ? 'pleaseEnterPhone'.tr
+                              : 'pleaseEnterAccount'.tr;
+                        }
+                        if (_usePhone &&
+                            !RegExp(r'^\d{6,}$').hasMatch(value.trim())) {
+                          return 'pleaseEnterCorrectPhone'.tr;
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _buildSecretField(),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _remember,
+                          activeColor: const Color(0xFF7A4CFF),
+                          checkColor: Colors.white,
+                          onChanged: (value) =>
+                              setState(() => _remember = value ?? false),
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'rememberPassword'.tr,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 13,
                           ),
-                          siteKey: AppConfig.turnstileSiteKey,
-                          language: _turnstileLang,
-                          onToken: (token) {
-                            if (!mounted) return;
-                            setState(() => _turnstileToken = token);
-                          },
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  Obx(
-                    () => _GradientButton(
-                      //
-                      text: 'loginRegister'.tr,
-                      height: 48,
-                      colors: const [Color(0xFF7B66FF), Color(0xFF6F7BFF)],
-                      busy: auth.isLoading.value, //busy 是否显示加载中
-                      animate: false,
-                      fontWeight: FontWeight.w800,
-                      onTap: auth.isLoading.value ? null : _submit,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    runSpacing: 4,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          auth.openCustomerService();
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white.withValues(alpha: 0.85),
-                        ),
-                        child: Text('forgotPassword'.tr),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          auth.openCustomerService();
-                        },
-                        icon: const Icon(Icons.headset_mic_outlined, size: 18),
-                        label: Text('contactCustomerService'.tr),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white.withValues(alpha: 0.85),
+                    if (supportsTurnstileChallenge &&
+                        AppConfig.turnstileSiteKey.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Center(
+                        child: SizedBox(
+                          width: 300,
+                          child: TurnstileWidget(
+                            key: ValueKey(
+                              'turnstile-$_turnstileLang-$_turnstileEpoch',
+                            ),
+                            siteKey: AppConfig.turnstileSiteKey,
+                            language: _turnstileLang,
+                            onToken: (token) {
+                              if (!mounted) return;
+                              setState(() => _turnstileToken = token);
+                            },
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                  if (kIsWeb) ...[
+                    const SizedBox(height: 10),
+                    Obx(
+                      () => _GradientButton(
+                        //
+                        text: 'loginRegister'.tr,
+                        height: 48,
+                        colors: const [Color(0xFF7B66FF), Color(0xFF6F7BFF)],
+                        busy: auth.isLoading.value, //busy 是否显示加载中
+                        animate: false,
+                        fontWeight: FontWeight.w800,
+                        onTap: auth.isLoading.value ? null : _submit,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    const SizedBox(height: 16),
-                    _DownloadButtons(),
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      runSpacing: 2,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            auth.openCustomerService();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                Colors.white.withValues(alpha: 0.85),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          child: Text('forgotPassword'.tr),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            auth.openCustomerService();
+                          },
+                          icon:
+                              const Icon(Icons.headset_mic_outlined, size: 18),
+                          label: Text('contactCustomerService'.tr),
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                Colors.white.withValues(alpha: 0.85),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (kIsWeb) ...[
+                      const SizedBox(height: 10),
+                      _DownloadButtons(),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -1635,6 +1660,7 @@ class _AuthPanelShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final useWebCompatMode = kIsWeb;
     return Container(
       width: width,
       height: height,
@@ -1650,33 +1676,40 @@ class _AuthPanelShell extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
-            blurRadius: 36,
-            offset: const Offset(0, 18),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 26,
-            offset: const Offset(0, 16),
-          ),
-        ],
+        boxShadow: useWebCompatMode
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.34),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                  blurRadius: 36,
+                  offset: const Offset(0, 18),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 26,
+                  offset: const Offset(0, 16),
+                ),
+              ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1A1E2E), Color(0xFF0F1322)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1A1E2E), Color(0xFF0F1322)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          child: Stack(
-            children: [
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Stack(
+          children: [
+            if (!useWebCompatMode)
               Positioned(
                 top: 0,
                 left: 0,
@@ -1695,9 +1728,8 @@ class _AuthPanelShell extends StatelessWidget {
                   ),
                 ),
               ),
-              child,
-            ],
-          ),
+            child,
+          ],
         ),
       ),
     );
@@ -1909,7 +1941,6 @@ class _DownloadButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 14),
         _GradientButton(
           text: 'downloadAppNow'.tr,
           height: 44,
@@ -1923,9 +1954,13 @@ class _DownloadButtons extends StatelessWidget {
 }
 
 class _CloseFab extends StatelessWidget {
-  const _CloseFab({required this.onTap});
+  const _CloseFab({
+    required this.onTap,
+    this.size = 56,
+  });
 
   final VoidCallback onTap;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -1933,8 +1968,8 @@ class _CloseFab extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: const LinearGradient(
@@ -1945,16 +1980,20 @@ class _CloseFab extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+              blurRadius: size <= 40 ? 8 : 14,
+              offset: Offset(0, size <= 40 ? 3 : 6),
             ),
           ],
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.85),
-            width: 2,
+            width: size <= 40 ? 1.6 : 2,
           ),
         ),
-        child: const Icon(Icons.close, color: Colors.white, size: 22),
+        child: Icon(
+          Icons.close,
+          color: Colors.white,
+          size: size <= 40 ? 18 : 22,
+        ),
       ),
     );
   }

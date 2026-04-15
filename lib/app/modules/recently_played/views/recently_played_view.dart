@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
+import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/config/app_config_export.dart';
 import '../controllers/recently_played_controller.dart';
 
@@ -115,10 +116,10 @@ class _RecentGameCard extends StatelessWidget {
               Container(
                 color: AppColors.cardBackgroundDark,
                 child: resolvedUrl != null && resolvedUrl.isNotEmpty
-                    ? Image.network(
-                        resolvedUrl,
+                    ? GameCoverImage(
+                        url: resolvedUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _gameCardLogoFallback(),
+                        fallback: _gameCardLogoFallback(),
                       )
                     : _gameCardLogoFallback(),
               ),

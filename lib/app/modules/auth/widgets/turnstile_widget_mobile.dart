@@ -29,7 +29,7 @@ class TurnstileWidget extends StatefulWidget {
 }
 
 class _TurnstileWidgetState extends State<TurnstileWidget> {
-  static const Duration _loadTimeout = Duration(seconds: 12);
+  static const Duration _loadTimeout = Duration(seconds: 20);
 
   _TurnstileViewState _state = _TurnstileViewState.loading;
   Timer? _loadTimer;
@@ -326,6 +326,9 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                 );
               },
               onReceivedError: (controller, request, error) {
+                if (!(request.isForMainFrame ?? true)) {
+                  return;
+                }
                 _markError();
               },
             ),

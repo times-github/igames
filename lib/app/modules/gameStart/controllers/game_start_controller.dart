@@ -22,6 +22,8 @@ class GameStartController extends GetxController {
   final loadingProgress = 0.0.obs;
   // final Rx<Offset> floatingOffset = const Offset(16, 16).obs;
 
+  bool get hasGameContext => game != null;
+
   // InAppWebView 控制器
   InAppWebViewController? webViewController;
 
@@ -237,7 +239,11 @@ class GameStartController extends GetxController {
     _showError('加载失败: $message');
   }
 
-  void handleWebResourceError(String message) {
+  void handleWebResourceError(String message, {bool isMainFrame = true}) {
+    if (!isMainFrame) {
+      debugPrint('忽略子资源加载错误: $message');
+      return;
+    }
     debugPrint('资源加载错误: $message');
     _showError('加载失败: $message');
   }
