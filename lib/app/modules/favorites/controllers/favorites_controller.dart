@@ -144,11 +144,6 @@ class FavoritesController extends GetxController {
 
       if (response.statusCode == 200 && responseData['code'] == 1) {
         favorites.remove(game);
-        Get.snackbar(
-          'transactionStatus_success'.tr,
-          'favoriteRemoveSuccess'.tr,
-          snackPosition: SnackPosition.TOP,
-        );
       } else {
         final msg = responseData['msg']?.toString();
         Get.snackbar(

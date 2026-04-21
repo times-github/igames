@@ -15,8 +15,6 @@ class HomeController extends GetxController {
   final currentView = 'index'.obs; // 'index' 或 'gameAll'
   // 移动端底部导航索引：0 首页 1 优惠 2 充值 3 赚钱 4 我的
   final currentTab = 0.obs;
-  // 首屏加载动效
-  final initialLoading = true.obs;
 
   // 页面切换方法
   void switchToGameAll() {
@@ -47,8 +45,6 @@ class HomeController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    Future.delayed(const Duration(milliseconds: 400),
-        () => initialLoading.value = false);
     _autoOpenAuthFromLink();
   }
 
@@ -62,10 +58,6 @@ class HomeController extends GetxController {
     });
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
   //刷新余额 请求api
 
   Future<void> refreshBalance() async {

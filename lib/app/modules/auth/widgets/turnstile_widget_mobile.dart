@@ -30,10 +30,12 @@ class TurnstileWidget extends StatefulWidget {
 
 class _TurnstileWidgetState extends State<TurnstileWidget> {
   static const Duration _loadTimeout = Duration(seconds: 20);
+  static const int _maxRetryableErrors = 2;
 
   _TurnstileViewState _state = _TurnstileViewState.loading;
   Timer? _loadTimer;
   int _reloadNonce = 0;
+  int _retryableErrorCount = 0;
 
   WebUri get _baseUri => WebUri('${AppConfig.appWebUrl}/');
 
@@ -109,8 +111,12 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
           'expired-callback': function() {
             notifyFlutter('turnstileExpired', '');
           },
-          'error-callback': function() {
-            notifyFlutter('turnstileError', '');
+          'timeout-callback': function() {
+            notifyFlutter('turnstileTimeout', '');
+          },
+          'error-callback': function(errorCode) {
+            notifyFlutter('turnstileError', errorCode == null ? '' : String(errorCode));
+            return false;
           }
         });
         notifyVisibleWhenReady(0);
@@ -144,15 +150,55 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
 
   void _markReady() {
     _loadTimer?.cancel();
+    _retryableErrorCount = 0;
     if (!mounted || _state == _TurnstileViewState.ready) return;
     setState(() => _state = _TurnstileViewState.ready);
   }
 
-  void _markError() {
-    _loadTimer?.cancel();
+  bool _isFatalTurnstileError(String? code) {
+    switch (code) {
+      case '100000':
+      case '110100':
+      case '110110':
+      case '110200':
+      case '200100':
+      case '400020':
+      case '400070':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void _handleTurnstileError([String? code]) {
+    final errorCode = code?.trim() ?? '';
     widget.onToken('');
-    if (!mounted || _state != _TurnstileViewState.loading) return;
-    setState(() => _state = _TurnstileViewState.error);
+    debugPrint(
+      'Turnstile mobile error: ${errorCode.isEmpty ? 'unknown' : errorCode}',
+    );
+    if (!mounted) return;
+
+    if (_isFatalTurnstileError(errorCode)) {
+      _loadTimer?.cancel();
+      if (_state != _TurnstileViewState.error) {
+        setState(() => _state = _TurnstileViewState.error);
+      }
+      return;
+    }
+
+    _retryableErrorCount += 1;
+    if (_retryableErrorCount > _maxRetryableErrors) {
+      _loadTimer?.cancel();
+      if (_state != _TurnstileViewState.error) {
+        setState(() => _state = _TurnstileViewState.error);
+      }
+      return;
+    }
+
+    if (_state != _TurnstileViewState.loading) {
+      setState(() => _state = _TurnstileViewState.loading);
+    }
+    _startLoadingState();
   }
 
   void _retry() {
@@ -161,10 +207,38 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
       _reloadNonce += 1;
       _state = _TurnstileViewState.loading;
     });
+    _retryableErrorCount = 0;
     _startLoadingState();
   }
 
-  Widget _buildStateOverlay() {
+  Widget _buildRefreshButton({double height = 32}) {
+    return SizedBox(
+      height: height,
+      child: ElevatedButton(
+        onPressed: _retry,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: const Color(0xFF8A6CFF),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          minimumSize: Size(0, height),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(
+          'refresh'.tr,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStateOverlay({required bool compact}) {
     switch (_state) {
       case _TurnstileViewState.loading:
         return Container(
@@ -173,30 +247,60 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
             borderRadius: BorderRadius.circular(10),
           ),
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: Color(0xFF8A6CFF),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'turnstileLoading'.tr,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 12 : 16,
+            vertical: compact ? 8 : 0,
           ),
+          child: compact
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Color(0xFF8A6CFF),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'turnstileLoading'.tr,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Color(0xFF8A6CFF),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'turnstileLoading'.tr,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
         );
       case _TurnstileViewState.error:
         return Container(
@@ -208,44 +312,45 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
             ),
           ),
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'turnstileLoadFailed'.tr,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 32,
-                child: ElevatedButton(
-                  onPressed: _retry,
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    backgroundColor: const Color(0xFF8A6CFF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'refresh'.tr,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 12 : 14,
+            vertical: compact ? 8 : 10,
           ),
+          child: compact
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'turnstileLoadFailed'.tr,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _buildRefreshButton(height: 28),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'turnstileLoadFailed'.tr,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildRefreshButton(),
+                  ],
+                ),
         );
       case _TurnstileViewState.ready:
         return const SizedBox.shrink();
@@ -320,8 +425,21 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                 );
                 controller.addJavaScriptHandler(
                   handlerName: 'turnstileError',
+                  callback: (args) {
+                    final code =
+                        args.isNotEmpty ? args.first?.toString() ?? '' : '';
+                    _handleTurnstileError(code);
+                  },
+                );
+                controller.addJavaScriptHandler(
+                  handlerName: 'turnstileTimeout',
                   callback: (_) {
-                    _markError();
+                    widget.onToken('');
+                    if (!mounted) return;
+                    if (_state != _TurnstileViewState.loading) {
+                      setState(() => _state = _TurnstileViewState.loading);
+                    }
+                    _startLoadingState();
                   },
                 );
               },
@@ -329,16 +447,21 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                 if (!(request.isForMainFrame ?? true)) {
                   return;
                 }
-                _markError();
+                _handleTurnstileError();
               },
             ),
           ),
           Positioned.fill(
             child: IgnorePointer(
               ignoring: _state == _TurnstileViewState.ready,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: _buildStateOverlay(),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxHeight <= 110;
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: _buildStateOverlay(compact: compact),
+                  );
+                },
               ),
             ),
           ),

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
@@ -106,67 +105,39 @@ Widget buildCommonHeader(
   });
 }
 
-/// 脉动登录按钮（带动画效果）
-class PulsingLoginButton extends StatefulWidget {
+/// 登录按钮
+class PulsingLoginButton extends StatelessWidget {
   const PulsingLoginButton({required this.onTap, super.key});
 
   final VoidCallback onTap;
 
   @override
-  State<PulsingLoginButton> createState() => _PulsingLoginButtonState();
-}
-
-class _PulsingLoginButtonState extends State<PulsingLoginButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat(reverse: true);
-    _scale = _controller.drive(Tween<double>(begin: 0.94, end: 1.04));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _scale,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8A5CFF), Color(0xFF5E63FF)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.28),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8A5CFF), Color(0xFF5E63FF)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-          child: Text(
-            'loginRegister'.tr,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
+          ],
+        ),
+        child: Text(
+          'loginRegister'.tr,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -247,7 +218,7 @@ class _NotificationButtonState extends State<NotificationButton> {
                 return const Positioned(
                   top: -4,
                   right: -4,
-                  child: _PulsingDot(),
+                  child: _UnreadDot(),
                 );
               }),
             ],
@@ -258,97 +229,25 @@ class _NotificationButtonState extends State<NotificationButton> {
   }
 }
 
-/// 波动的红点组件
-class _PulsingDot extends StatefulWidget {
-  const _PulsingDot();
-
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
-
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+/// 简单未读红点
+class _UnreadDot extends StatelessWidget {
+  const _UnreadDot();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 22,
-      height: 22,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final pulse = (math.sin(_controller.value * math.pi * 2) + 1) / 2;
-          final dotScale = 0.9 + pulse * 0.25;
-          final dotOpacity = 0.6 + pulse * 0.4;
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              // 第一层波纹
-              _buildRipple(0.0, 1.0),
-              // 第二层波纹
-              _buildRipple(0.3, 1.0),
-              // 第三层波纹
-              _buildRipple(0.6, 1.0),
-              // 中心实心圆点
-              Transform.scale(
-                scale: dotScale,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color:
-                        const Color(0xFFFF3B6A).withValues(alpha: dotOpacity),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF3B6A).withValues(alpha: 0.6),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildRipple(double delay, double maxScale) {
-    final value = (_controller.value + delay) % 1.0;
-    final scale = 1.0 + (value * maxScale);
-    final opacity = 1.0 - value;
-
-    return Transform.scale(
-      scale: scale,
-      child: Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFFFF3B6A).withValues(alpha: opacity * 0.75),
-            width: 1.6,
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF3B6A),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF3B6A).withValues(alpha: 0.28),
+            blurRadius: 4,
+            spreadRadius: 1,
           ),
-        ),
+        ],
       ),
     );
   }

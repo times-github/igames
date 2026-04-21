@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/utils/storage.dart';
 import 'package:igames/utils/web_lang_param.dart';
@@ -18,9 +19,9 @@ class LanguageSelectorController extends GetxController {
   final isOpen = false.obs;
 
   final List<LanguageOption> languages = [
-    LanguageOption('中文', '🇨🇳', 'zh', 'CN'), // 显示名称，国旗，语言代码，国家代码
-    LanguageOption('Indonesia', '🇮🇩', 'id', 'ID'),
-    LanguageOption('English', '🇺🇸', 'en', 'US'),
+    LanguageOption('中文', 'assets/images/country/zh-cn.svg', 'zh', 'CN'),
+    LanguageOption('Indonesia', 'assets/images/country/id.svg', 'id', 'ID'),
+    LanguageOption('English', 'assets/images/country/en.svg', 'en', 'US'),
     // LanguageOption('Русский', '🇷🇺', 'ru', 'RU'),
     // LanguageOption('日本語', '🇯🇵', 'ja', 'JP'),
     // LanguageOption('한국어', '🇰🇷', 'ko', 'KR'),
@@ -288,7 +289,12 @@ class LanguageSelectorController extends GetxController {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(lang.flag, style: const TextStyle(fontSize: 22)),
+            SvgPicture.asset(
+              lang.flagAsset,
+              width: 24,
+              height: 24,
+              fit: BoxFit.contain,
+            ),
             const SizedBox(height: 6),
             Text(
               lang.name,
@@ -314,9 +320,14 @@ class LanguageSelectorController extends GetxController {
 
 class LanguageOption {
   final String name;
-  final String flag;
+  final String flagAsset;
   final String languageCode;
   final String countryCode;
 
-  LanguageOption(this.name, this.flag, this.languageCode, this.countryCode);
+  LanguageOption(
+    this.name,
+    this.flagAsset,
+    this.languageCode,
+    this.countryCode,
+  );
 }

@@ -14,12 +14,11 @@ class PromoDetailController extends GetxController {
   final isLoading = false.obs;
   final errorMessage = ''.obs;
   final content = ''.obs;
-  final subtitle = ''.obs;
+  final title = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
-    subtitle.value = activity.subtitle;
     fetchDetail();
   }
 
@@ -48,14 +47,13 @@ class PromoDetailController extends GetxController {
         final data = responseData['data'] is Map
             ? Map<String, dynamic>.from(responseData['data'] as Map)
             : <String, dynamic>{};
-        final newSubtitle = data['subtitle']?.toString();
+        final newTitle = data['title']?.toString() ?? '';
         final newContent = data['content']?.toString();
-        if (newSubtitle != null && newSubtitle.isNotEmpty) {
-          subtitle.value = newSubtitle;
-        }
+        title.value = newTitle;
         content.value = newContent ?? '';
       } else {
-        errorMessage.value = responseData['msg']?.toString() ?? 'networkError'.tr;
+        errorMessage.value =
+            responseData['msg']?.toString() ?? 'networkError'.tr;
       }
     } catch (e) {
       debugPrint('加载活动详情失败: $e');

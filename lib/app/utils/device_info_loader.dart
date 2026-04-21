@@ -19,6 +19,7 @@ class DeviceInfoService {
       loginPort: kIsWeb ? 'h5' : 'app',
       browserVersion: _fallback(raw.browserVersion, 'unknown browser version'),
       browserEngine: _fallback(raw.browserEngine, 'unknown browser engine'),
+      flutterRuntime: _fallback(raw.flutterRuntime, 'unknown runtime'),
       currentTime: formattedTime,
       userAgent: _fallback(raw.userAgent, ''),
     );

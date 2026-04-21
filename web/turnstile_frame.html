@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #turnstile-root {
+      width: 100%;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="turnstile-root"></div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const channel = 'igames-turnstile';
+      const instance = params.get('instance') || '';
+      const siteKey = params.get('siteKey') || '';
+      const theme = params.get('theme') || 'dark';
+      const language = (params.get('language') || 'auto').toLowerCase();
+      const targetOrigin = window.location.origin;
+
+      function post(type, payload) {
+        const message = Object.assign(
+          {
+            channel,
+            instance,
+            type,
+          },
+          payload || {},
+        );
+
+        try {
+          window.parent.postMessage(JSON.stringify(message), targetOrigin);
+        } catch (_) {}
+      }
+
+      function notifyVisibleWhenReady(attempt) {
+        const root = document.getElementById('turnstile-root');
+        if (!root) {
+          return;
+        }
+        const hasContent =
+          root.childElementCount > 0 || root.querySelector('iframe') !== null;
+        if (hasContent) {
+          post('rendered');
+          return;
+        }
+        if (attempt >= 20) {
+          return;
+        }
+        setTimeout(function () {
+          notifyVisibleWhenReady(attempt + 1);
+        }, 150);
+      }
+
+      function renderTurnstile() {
+        if (!window.turnstile || !siteKey) {
+          post('error', {message: 'missing-turnstile'});
+          return;
+        }
+
+        try {
+          const options = {
+            sitekey: siteKey,
+            theme: theme,
+            callback: function (token) {
+              post('token', {token: token || ''});
+            },
+            'expired-callback': function () {
+              post('expired');
+            },
+            'timeout-callback': function () {
+              post('timeout');
+            },
+            'error-callback': function (errorCode) {
+              post('error', {
+                message: 'turnstile-error',
+                code: errorCode == null ? '' : String(errorCode),
+              });
+              return false;
+            },
+          };
+
+          if (language && language !== 'auto') {
+            options.language = language;
+          }
+
+          window.turnstile.render('#turnstile-root', options);
+          notifyVisibleWhenReady(0);
+        } catch (error) {
+          post('error', {
+            message: error && error.message ? error.message : 'render-failed',
+          });
+        }
+      }
+
+      window.__igamesTurnstileOnLoad = renderTurnstile;
+      window.addEventListener('load', function () {
+        post('frame_loaded');
+      });
+    })();
+  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__igamesTurnstileOnLoad" async defer></script>
+</body>
+</html>

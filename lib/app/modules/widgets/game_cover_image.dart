@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 
 class GameCoverImage extends StatelessWidget {
   const GameCoverImage({
@@ -18,23 +19,12 @@ class GameCoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
+    return CompatibleImage.network(
       url,
       fit: fit,
       alignment: alignment,
       filterQuality: filterQuality,
-      gaplessPlayback: true,
-      webHtmlElementStrategy: _shouldUseWebHtmlFallback(url)
-          ? WebHtmlElementStrategy.fallback
-          : WebHtmlElementStrategy.never,
       errorBuilder: (_, __, ___) => fallback,
     );
   }
-}
-
-bool _shouldUseWebHtmlFallback(String url) {
-  final normalized = url.toLowerCase();
-  return normalized.endsWith('.avif') ||
-      normalized.contains('.avif?') ||
-      normalized.contains('.avif#');
 }

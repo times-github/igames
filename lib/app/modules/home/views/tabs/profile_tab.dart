@@ -9,6 +9,7 @@ import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/config/app_config_export.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
 import 'package:igames/app/modules/widgets/language_selector/views/language_selector_view.dart';
 import 'package:igames/app/modules/userProfile/controllers/user_profile_controller.dart';
@@ -282,13 +283,22 @@ class _ProfileAvatar extends StatelessWidget {
           colors: [AppColors.secondary, AppColors.primary],
         ),
       ),
-      child: CircleAvatar(
-        radius: 24,
-        backgroundColor: AppColors.backgroundDark,
-        backgroundImage: hasAvatar
-            ? NetworkImage(resolvedUrl)
-            : const AssetImage('assets/images/avator.png'),
-        child: null,
+      child: ClipOval(
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: hasAvatar
+              ? CompatibleImage.network(
+                  resolvedUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Image.asset('assets/images/avator.png'),
+                )
+              : Image.asset(
+                  'assets/images/avator.png',
+                  fit: BoxFit.cover,
+                ),
+        ),
       ),
     );
   }

@@ -29,8 +29,8 @@ class AppConfig {
   static const String otpSecret = '7hygjitdsghyr475f6';
 
   /// Turnstile 站点公钥（Web 登录/注册）
-  static const String turnstileSiteKey = '1x00000000000000000000AA'; //测试环境
-  // static const String turnstileSiteKey = '0x4AAAAAACnWJ5yLmBg0s6bL'; //正式环境
+  // static const String turnstileSiteKey = '1x00000000000000000000AA'; //测试环境
+  static const String turnstileSiteKey = '0x4AAAAAACnWJ5yLmBg0s6bL'; //正式环境
   /// 默认充值金额选项（后端未返回时兜底）
   static const List<String> defaultDepositAmounts = [
     '50',
@@ -40,6 +40,29 @@ class AppConfig {
     '100',
     '200'
   ];
+
+  // ==================== 赚钱页样式配置 ====================
+
+  /// 赚钱页卡片背景色
+  static const Color earnCardBackground = Color(0xFF252535);
+
+  /// 赚钱页顶部悬浮菜单背景色
+  static const Color earnFloatingMenuBackground = Color(0xFF19191E);
+
+  /// 赚钱页强调橙色
+  static const Color earnAccentOrange = Color(0xFFFF9800);
+
+  /// 赚钱页主紫色
+  static const Color earnPrimaryPurple = Color(0xFF7B5CFF);
+
+  /// 赚钱页次级紫色
+  static const Color earnSecondaryPurple = Color(0xFF5A3DCE);
+
+  /// 赚钱页顶部悬浮菜单图标底色
+  static const Color earnFloatingMenuIconBackground = Color(0xFF303044);
+
+  /// 赚钱页顶部悬浮菜单图标边框色
+  static const Color earnFloatingMenuIconBorder = Color(0x22FFFFFF);
 
   /// 货币配置：根据语言切换货币缩写与符号
   // static const Map<String, Map<String, String>> _currencyByLanguage = {

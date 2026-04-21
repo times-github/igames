@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:igames/app/routes/app_pages.dart';
+import 'game_frame_stub.dart'
+    if (dart.library.js_interop) 'game_frame_web.dart';
 import '../controllers/game_start_controller.dart';
 
 class GameStartView extends GetView<GameStartController> {
@@ -116,25 +119,34 @@ class GameStartView extends GetView<GameStartController> {
   Widget _buildGameView() {
     return Stack(
       children: [
-        InAppWebView(
-          initialUrlRequest: URLRequest(url: WebUri(controller.gameUrl.value)),
-          onWebViewCreated: (InAppWebViewController webViewController) {
-            controller.webViewController = webViewController;
-          },
-          onLoadStart: controller.onLoadStart,
-          onLoadStop: controller.onLoadStop,
-          onProgressChanged: controller.onProgressChanged, // 加载进度
-          onReceivedError: (webViewController, request, error) {
-            controller.handleWebResourceError(
-              error.description,
-              isMainFrame: request.isForMainFrame ?? true,
-            );
-          },
-          shouldOverrideUrlLoading: (c, action) async {
-            //
-            return NavigationActionPolicy.ALLOW;
-          },
-        ),
+        if (kIsWeb)
+          GameFrame(
+            key: ValueKey(controller.gameUrl.value),
+            url: controller.gameUrl.value,
+            onLoaded: controller.onWebFrameLoaded,
+            onError: controller.onWebFrameError,
+          )
+        else
+          InAppWebView(
+            initialUrlRequest:
+                URLRequest(url: WebUri(controller.gameUrl.value)),
+            onWebViewCreated: (InAppWebViewController webViewController) {
+              controller.webViewController = webViewController;
+            },
+            onLoadStart: controller.onLoadStart,
+            onLoadStop: controller.onLoadStop,
+            onProgressChanged: controller.onProgressChanged, // 加载进度
+            onReceivedError: (webViewController, request, error) {
+              controller.handleWebResourceError(
+                error.description,
+                isMainFrame: request.isForMainFrame ?? true,
+              );
+            },
+            shouldOverrideUrlLoading: (c, action) async {
+              //
+              return NavigationActionPolicy.ALLOW;
+            },
+          ),
         Obx(() {
           if (controller.loadingProgress.value > 0 && // 加载进度
               controller.loadingProgress.value < 1) {
@@ -302,8 +314,76 @@ class _FloatingMenuButton extends StatefulWidget {
 }
 
 class _FloatingMenuButtonState extends State<_FloatingMenuButton> {
+  static const double _buttonSize = 48;
+  static const double _dragThreshold = 6;
+
   double _x = 16;
   double _y = 16;
+  Offset? _pointerDownPosition;
+  Offset? _pointerDownOrigin;
+  int? _activePointer;
+  bool _isDragging = false;
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _activePointer = event.pointer;
+    _pointerDownPosition = event.position;
+    _pointerDownOrigin = Offset(_x, _y);
+    _isDragging = false;
+  }
+
+  void _handlePointerMove(PointerMoveEvent event, Size screenSize) {
+    if (_activePointer != event.pointer ||
+        _pointerDownPosition == null ||
+        _pointerDownOrigin == null) {
+      return;
+    }
+
+    final delta = event.position - _pointerDownPosition!;
+    if (!_isDragging && delta.distance < _dragThreshold) {
+      return;
+    }
+
+    if (!_isDragging) {
+      _isDragging = true;
+    }
+
+    setState(() {
+      _x = (_pointerDownOrigin!.dx + delta.dx).clamp(
+        0,
+        screenSize.width - _buttonSize,
+      );
+      _y = (_pointerDownOrigin!.dy + delta.dy).clamp(
+        0,
+        screenSize.height - _buttonSize,
+      );
+    });
+  }
+
+  void _handlePointerUp(PointerUpEvent event) {
+    if (_activePointer != event.pointer) {
+      return;
+    }
+
+    final shouldTap = !_isDragging;
+    _resetPointerState();
+    if (shouldTap) {
+      widget.onTap();
+    }
+  }
+
+  void _handlePointerCancel(PointerCancelEvent event) {
+    if (_activePointer != event.pointer) {
+      return;
+    }
+    _resetPointerState();
+  }
+
+  void _resetPointerState() {
+    _activePointer = null;
+    _pointerDownPosition = null;
+    _pointerDownOrigin = null;
+    _isDragging = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -312,31 +392,31 @@ class _FloatingMenuButtonState extends State<_FloatingMenuButton> {
       left: _x,
       top: _y,
       child: PointerInterceptor(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          onPanUpdate: (details) {
-            setState(() {
-              _x = (_x + details.delta.dx).clamp(0, screenSize.width - 48);
-              _y = (_y + details.delta.dy).clamp(0, screenSize.height - 48);
-            });
-          },
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.65),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color.fromARGB(90, 0, 0, 0),
-                  blurRadius: 10,
-                  offset: Offset(0, 6),
-                ),
-              ],
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: _handlePointerDown,
+            onPointerMove: (event) => _handlePointerMove(event, screenSize),
+            onPointerUp: _handlePointerUp,
+            onPointerCancel: _handlePointerCancel,
+            child: Container(
+              width: _buttonSize,
+              height: _buttonSize,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color.fromARGB(90, 0, 0, 0),
+                    blurRadius: 10,
+                    offset: Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.home, color: Colors.white),
             ),
-            child: const Icon(Icons.home, color: Colors.white),
           ),
         ),
       ),

@@ -11,15 +11,12 @@ class JackpotService extends GetxService {
 
   final jackpotList = <JackpotRecord>[].obs;
   final isLoading = false.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchJackpotList();
-  }
+  bool _hasLoaded = false;
 
   /// 获取奖池中奖记录
-  Future<void> fetchJackpotList() async {
+  Future<void> fetchJackpotList({bool force = false}) async {
+    if (isLoading.value) return;
+    if (!force && _hasLoaded && jackpotList.isNotEmpty) return;
     try {
       isLoading.value = true;
 
@@ -41,6 +38,7 @@ class JackpotService extends GetxService {
 
         if (jackpotResponse.code == 1 && jackpotResponse.data?.list != null) {
           jackpotList.value = jackpotResponse.data!.list!;
+          _hasLoaded = true;
         }
       }
     } catch (e) {
@@ -50,9 +48,13 @@ class JackpotService extends GetxService {
     }
   }
 
+  Future<void> ensureLoaded() async {
+    await fetchJackpotList();
+  }
+
   /// 刷新奖池记录
   Future<void> refresh() async {
-    await fetchJackpotList();
+    await fetchJackpotList(force: true);
   }
 
   Future<String> _resolveLang() async {

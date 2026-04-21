@@ -43,6 +43,9 @@ class _RechargeTabState extends State<RechargeTab> {
   void initState() {
     super.initState();
     _setDefaultSelectedAmount();
+    if (_appInfo.depositAmountOptions.isEmpty) {
+      _appInfo.fetchDepositAmounts();
+    }
     _depositAmountsWorker = ever<List<String>>(
       _appInfo.depositAmountOptions,
       (_) => _setDefaultSelectedAmount(notify: true),
@@ -229,7 +232,6 @@ class _RechargeTabState extends State<RechargeTab> {
       Get.snackbar('tip'.tr, 'openPaymentPageFailed'.tr + ': $e');
     }
   }
-
 
   void _showUsdtDepositSheet({
     required String orderNo,
@@ -894,8 +896,7 @@ class _UsdtDepositSheetState extends State<_UsdtDepositSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final amountText =
-        widget.amount.isNotEmpty ? widget.amount : '--';
+    final amountText = widget.amount.isNotEmpty ? widget.amount : '--';
     final canCopy = widget.address.isNotEmpty;
     final canCancel = widget.orderNo.isNotEmpty && !_isCanceling;
     return WillPopScope(
@@ -923,104 +924,104 @@ class _UsdtDepositSheetState extends State<_UsdtDepositSheet> {
                     fontSize: 16,
                   ),
                 ),
-              const SizedBox(height: 12),
-              if (widget.orderNo.isNotEmpty)
-                _InfoRow(label: 'orderNumber'.tr, value: widget.orderNo),
-              const SizedBox(height: 8),
-              _InfoRow(label: 'usdtAmount'.tr, value: amountText),
-              const SizedBox(height: 8),
-              _InfoRow(
-                label: 'createdAt'.tr,
-                value: _formatCreatedAtFull(),
-              ),
-              const SizedBox(height: 14),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: QrImageView(
-                    data: widget.address.isNotEmpty ? widget.address : ' ',
-                    size: 160,
-                    backgroundColor: Colors.white,
+                const SizedBox(height: 12),
+                if (widget.orderNo.isNotEmpty)
+                  _InfoRow(label: 'orderNumber'.tr, value: widget.orderNo),
+                const SizedBox(height: 8),
+                _InfoRow(label: 'usdtAmount'.tr, value: amountText),
+                const SizedBox(height: 8),
+                _InfoRow(
+                  label: 'createdAt'.tr,
+                  value: _formatCreatedAtFull(),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: QrImageView(
+                      data: widget.address.isNotEmpty ? widget.address : ' ',
+                      size: 160,
+                      backgroundColor: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  '${'chainType'.tr}: TRC20',
+                const SizedBox(height: 10),
+                Center(
+                  child: Text(
+                    '${'chainType'.tr}: TRC20',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: Text(
+                    _expireAt == null
+                        ? 'payWithinTime'.tr
+                        : '${'payWithinTime'.tr} (${_formatRemaining(_remaining)})',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFFF5B5B),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'depositAddress'.tr,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  _expireAt == null
-                      ? 'payWithinTime'.tr
-                      : '${'payWithinTime'.tr} (${_formatRemaining(_remaining)})',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFFFF5B5B),
-                    fontWeight: FontWeight.w700,
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'depositAddress'.tr,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(10),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.address.isNotEmpty ? widget.address : '--',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.address.isNotEmpty ? widget.address : '--',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: canCopy
-                          ? () async {
-                              await Clipboard.setData(
-                                ClipboardData(text: widget.address),
-                              );
-                              Get.snackbar('tip'.tr, 'copied'.tr);
-                            }
-                          : null,
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF8A6CFF),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: canCopy
+                            ? () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: widget.address),
+                                );
+                                Get.snackbar('tip'.tr, 'copied'.tr);
+                              }
+                            : null,
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF8A6CFF),
+                        ),
+                        child: Text('copyAddress'.tr),
                       ),
-                      child: Text('copyAddress'.tr),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 48),
+                const SizedBox(height: 48),
                 Row(
                   children: [
                     Expanded(

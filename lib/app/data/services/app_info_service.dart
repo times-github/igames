@@ -111,6 +111,26 @@ class AppInfoService extends GetxService {
     String? platform,
   }) async {
     try {
+      final parsed = await fetchBanners(
+        sceneCode: sceneCode,
+        lang: lang,
+        platform: platform,
+      );
+      if (parsed.isNotEmpty) {
+        banners.assignAll(parsed);
+        Get.forceAppUpdate();
+      }
+    } catch (e) {
+      debugPrint('获取首页轮播失败: $e');
+    }
+  }
+
+  Future<List<AppBanner>> fetchBanners({
+    required String sceneCode,
+    String lang = 'id',
+    String? platform,
+  }) async {
+    try {
       final resp = await _apiClient.get(
         '/user/banner/pic',
         withAuth: false,
@@ -121,15 +141,12 @@ class AppInfoService extends GetxService {
         },
       );
       if (resp.statusCode == 200) {
-        final parsed = _parseBannerData(resp.data);
-        if (parsed.isNotEmpty) {
-          banners.assignAll(parsed);
-          Get.forceAppUpdate();
-        }
+        return _parseBannerData(resp.data);
       }
     } catch (e) {
-      debugPrint('获取首页轮播失败: $e');
+      debugPrint('获取轮播失败: $e');
     }
+    return const [];
   }
 
   dynamic _extractConfigValue(dynamic data) {

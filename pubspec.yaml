@@ -55,6 +55,7 @@ dependencies:
   pointer_interceptor: ^0.10.1
   qr_flutter: ^4.1.0
   web: ^1.1.1
+  flutter_svg: ^2.0.10+1
  
 
 dev_dependencies:
@@ -92,6 +93,8 @@ flutter:
     - assets/images/rpicon.png
     - assets/images/avator.png
     - assets/images/provider/
+    - assets/images/country/
+    - assets/images/gamecategory/
 
 
 

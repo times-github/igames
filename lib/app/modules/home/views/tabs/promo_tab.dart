@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/promo_controller.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/common_header.dart';
 import 'package:igames/config/app_config_export.dart';
 import 'package:igames/app/modules/home/views/promo_detail_view.dart';
@@ -39,13 +40,12 @@ class PromoTab extends StatelessWidget {
             // 内容区域
             Expanded(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _PromoCategorySidebar(controller: promoController),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: _PromoActivityList(controller: promoController),
                     ),
@@ -241,14 +241,9 @@ class _PromoActivityList extends StatelessWidget {
           final activity = controller.activities[index];
           return _PromoActivityCard(
             activity: activity,
-            categoryLabel: _resolveCategoryLabel(
-              controller.categories,
-              activity.categoryId,
-            ),
             onTap: () => Get.to(
               () => PromoDetailView(activity: activity),
             ),
-            gradient: _promoGradients[index % _promoGradients.length],
           );
         },
       );
@@ -259,151 +254,23 @@ class _PromoActivityList extends StatelessWidget {
 class _PromoActivityCard extends StatelessWidget {
   const _PromoActivityCard({
     required this.activity,
-    required this.categoryLabel,
     required this.onTap,
-    required this.gradient,
   });
 
   final PromoActivity activity;
-  final String categoryLabel;
   final VoidCallback onTap;
-  final List<Color> gradient;
 
   @override
   Widget build(BuildContext context) {
-    final statusLabel = (activity.endAt == null || activity.endAt!.isEmpty)
-        ? 'activityInProgress'.tr
-        : 'activityEnded'.tr;
     return Material(
-      color: const Color.fromARGB(255, 47, 82, 176),
-      //右上角圆角为0 其他圆角为18
-      borderRadius: BorderRadius.only(
-          topRight: Radius.circular(0),
-          bottomRight: Radius.circular(18),
-          topLeft: Radius.circular(18),
-          bottomLeft: Radius.circular(0)),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          // height: 102,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            boxShadow: [
-              BoxShadow(
-                color: const Color.fromARGB(255, 255, 255, 255)
-                    .withValues(alpha: 0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
-                child: Row(
-                  children: [
-                    _PromoImage(url: activity.picture),
-                    const SizedBox(width: 3),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              activity.title.isEmpty ? '--' : activity.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: _PromoTag(
-                  text: categoryLabel.isEmpty ? 'hot'.tr : categoryLabel,
-                  tone: const [
-                    Color.fromARGB(156, 206, 158, 119),
-                    Color(0xFF9B5F27)
-                  ],
-                ),
-              ),
-              Positioned(
-                bottom: 1,
-                right: 14,
-                child: _PromoCountdownText(
-                  endAt: activity.endAt,
-                  fallback: statusLabel,
-                ),
-              ),
-            ],
-          ),
+        child: AspectRatio(
+          aspectRatio: 16 / 4.2,
+          child: _PromoImage(url: activity.picture),
         ),
       ),
-    );
-  }
-}
-
-class _PromoCountdownText extends StatelessWidget {
-  const _PromoCountdownText({
-    required this.endAt,
-    required this.fallback,
-  });
-
-  final String? endAt;
-  final String fallback;
-
-  @override
-  Widget build(BuildContext context) {
-    final endTime = _parseEndAt(endAt);
-    if (endTime == null) {
-      return Text(
-        fallback,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.7),
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
-        ),
-      );
-    }
-    return StreamBuilder<int>(
-      stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
-      builder: (context, snapshot) {
-        final now = DateTime.now();
-        final diff = endTime.difference(now);
-        if (diff.isNegative) {
-          return Text(
-            'activityEnded'.tr,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          );
-        }
-        return Text(
-          _formatCountdown(diff),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 10.5,
-            fontWeight: FontWeight.w700,
-          ),
-        );
-      },
     );
   }
 }
@@ -416,79 +283,45 @@ class _PromoImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolved = _resolvePromoImageUrl(url);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 68,
-        height: 68,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        child: resolved == null || resolved.isEmpty
-            ? const Icon(Icons.campaign, color: Colors.white70, size: 26)
-            : Image.network(
-                resolved,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.campaign,
-                  color: Colors.white70,
-                  size: 26,
-                ),
-              ),
-      ),
-    );
-  }
-}
+    if (resolved == null || resolved.isEmpty) {
+      return Container(
+        color: Colors.white.withValues(alpha: 0.08),
+        alignment: Alignment.center,
+        child: const Icon(Icons.campaign, color: Colors.white70, size: 28),
+      );
+    }
 
-class _PromoTag extends StatelessWidget {
-  const _PromoTag({
-    required this.text,
-    required this.tone,
-  });
-
-  final String text;
-  final List<Color> tone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: tone,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        //只有左下 右下角圆角
-        borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(10), bottomRight: Radius.circular(0)),
-        boxShadow: [
-          BoxShadow(
-            color: tone.last.withValues(alpha: 0.25),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+    return CompatibleImage.network(
+      resolved,
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) {
+        return Container(
+          color: Colors.white.withValues(alpha: 0.08),
+          alignment: Alignment.center,
+          child: const Icon(Icons.campaign, color: Colors.white70, size: 28),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        return Container(
+          color: Colors.white.withValues(alpha: 0.08),
+          alignment: Alignment.center,
+          child: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
           ),
-        ],
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+        );
+      },
     );
   }
-}
-
-String _resolveCategoryLabel(List<PromoCategory> categories, int? id) {
-  if (id == null) return '';
-  final found = categories.firstWhereOrNull((item) => item.id == id);
-  if (found == null) return '';
-  return found.shortName.isNotEmpty ? found.shortName : found.name;
 }
 
 String? _resolvePromoImageUrl(String raw) {
@@ -497,38 +330,3 @@ String? _resolvePromoImageUrl(String raw) {
   final trimmed = raw.startsWith('/') ? raw.substring(1) : raw;
   return '${AppConfig.apiBaseUrl}/$trimmed';
 }
-
-DateTime? _parseEndAt(String? raw) {
-  if (raw == null || raw.isEmpty) return null;
-  var value = raw.trim();
-  if (value.contains(' ') && !value.contains('T')) {
-    value = value.replaceFirst(' ', 'T');
-  }
-  final parsed = DateTime.tryParse(value);
-  return parsed?.toLocal();
-}
-
-String _formatCountdown(Duration diff) {
-  final totalSeconds = diff.inSeconds;
-  final days = totalSeconds ~/ 86400;
-  final hours = (totalSeconds % 86400) ~/ 3600;
-  final minutes = (totalSeconds % 3600) ~/ 60;
-  final seconds = totalSeconds % 60;
-  if (days > 0) {
-    return '$days${'countdownDay'.tr} '
-        '$hours${'countdownHour'.tr} '
-        '$minutes${'countdownMinute'.tr} '
-        '$seconds${'countdownSecond'.tr}';
-  }
-  return '$hours${'countdownHour'.tr} '
-      '$minutes${'countdownMinute'.tr} '
-      '$seconds${'countdownSecond'.tr}';
-}
-
-const List<List<Color>> _promoGradients = [
-  [Color(0xFF7A7BFF), Color(0xFF5C7CFF)],
-  [Color(0xFF3DB7FF), Color(0xFF2BB6C7)],
-  [Color(0xFFFF8A5B), Color(0xFFFFB66D)],
-  [Color(0xFF5CD06A), Color(0xFF2F8D5D)],
-  [Color(0xFF8E6BFF), Color(0xFF5A3DCE)],
-];

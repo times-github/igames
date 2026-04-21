@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,12 +7,15 @@ import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/app/modules/widgets/common_header.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
+import 'package:igames/app/data/services/jackpot_service.dart';
+import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:igames/config/app_config_export.dart';
@@ -36,12 +38,20 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   final ScrollController _scrollController = ScrollController();
+  static const int _priorityHomeImageCount = 6;
   bool _showBackToTop = false;
+  bool _allowAnnouncementFetch = false;
+  bool _allowDeferredHomeImages = false;
+  bool _didKickOffHomeDeferredResources = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _kickOffHomeDeferredResources();
+      _unlockDeferredHomeImagesLater();
+    });
   }
 
   void _handleScroll() {
@@ -56,6 +66,48 @@ class _HomeTabState extends State<HomeTab> {
         _showBackToTop = shouldShow;
       });
     }
+    if (!_allowDeferredHomeImages && pos.pixels > 120) {
+      setState(() {
+        _allowDeferredHomeImages = true;
+      });
+    }
+  }
+
+  void _kickOffHomeDeferredResources() {
+    if (_didKickOffHomeDeferredResources || !mounted) return;
+    _didKickOffHomeDeferredResources = true;
+
+    final appInfo = Get.find<AppInfoService>();
+    final jackpotService = Get.find<JackpotService>();
+    final locale = Get.locale;
+    final resolvedLang = normalizeApiLang(
+      locale?.toLanguageTag() ?? locale?.languageCode,
+    );
+
+    setState(() {
+      _allowAnnouncementFetch = true;
+    });
+
+    unawaited(widget.menuController.ensureInitialGamesLoaded());
+    if (appInfo.banners.isEmpty) {
+      unawaited(appInfo.fetchAppBanners(lang: resolvedLang));
+    }
+    if (jackpotService.jackpotList.isEmpty) {
+      unawaited(jackpotService.ensureLoaded());
+    }
+  }
+
+  void _unlockDeferredHomeImagesLater() {
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (!mounted || _allowDeferredHomeImages) return;
+      setState(() {
+        _allowDeferredHomeImages = true;
+      });
+    });
+  }
+
+  bool _shouldLoadGameImage(int index) {
+    return _allowDeferredHomeImages || index < _priorityHomeImageCount;
   }
 
   @override
@@ -77,43 +129,6 @@ class _HomeTabState extends State<HomeTab> {
             child: _buildContent(context, widget.menuController),
           ),
         ),
-        Obx(() {
-          if (!widget.controller.initialLoading.value) {
-            return const SizedBox.shrink();
-          }
-          return Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.72),
-                    Colors.black.withValues(alpha: 0.58),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF8A6CFF),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      '页面加载中...',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
         if (_showBackToTop)
           Positioned(
             bottom: 90,
@@ -185,6 +200,7 @@ class _HomeTabState extends State<HomeTab> {
                 children: [
                   HomeAnnouncementBar(
                     service: Get.find<AnnouncementService>(),
+                    shouldFetch: _allowAnnouncementFetch,
                   ),
                   const SizedBox(height: 10),
                   HomeBannerCarousel(appInfo: appInfo),
@@ -230,8 +246,10 @@ class _HomeTabState extends State<HomeTab> {
       sliver: Obx(() {
         final games = menuController.gameList;
         final isLoading = menuController.isLoading.value;
+        final waitingForInitialLoad =
+            !menuController.initialLoadTriggered.value && games.isEmpty;
 
-        if (games.isEmpty && isLoading) {
+        if (waitingForInitialLoad || (games.isEmpty && isLoading)) {
           return const SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
@@ -269,7 +287,12 @@ class _HomeTabState extends State<HomeTab> {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final game = games[index];
-              return _mobileGameCard(context, game, menuController);
+              return _mobileGameCard(
+                context,
+                game,
+                menuController,
+                shouldLoadImage: _shouldLoadGameImage(index),
+              );
             },
             childCount: games.length,
           ),
@@ -314,9 +337,14 @@ class HomeTopBarDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class HomeAnnouncementBar extends StatefulWidget {
-  const HomeAnnouncementBar({super.key, required this.service});
+  const HomeAnnouncementBar({
+    super.key,
+    required this.service,
+    required this.shouldFetch,
+  });
 
   final AnnouncementService service;
+  final bool shouldFetch;
 
   @override
   State<HomeAnnouncementBar> createState() => _HomeAnnouncementBarState();
@@ -328,11 +356,26 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
   List<Announcement> _announcements = [];
   int _currentIndex = 0;
   Timer? _timer;
+  bool _hasRequested = false;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    _tryFetchAnnouncements();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeAnnouncementBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.shouldFetch && widget.shouldFetch) {
+      _tryFetchAnnouncements();
+    }
+  }
+
+  void _tryFetchAnnouncements() {
+    if (!widget.shouldFetch || _hasRequested) return;
+    _hasRequested = true;
     _fetchAnnouncements();
   }
 
@@ -384,6 +427,9 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasRequested) {
+      return const SizedBox(height: 32);
+    }
     if (_loading && _announcements.isEmpty) {
       return const SizedBox(height: 32);
     }
@@ -570,7 +616,8 @@ class HomeBannerCarousel extends StatefulWidget {
 }
 
 class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
-  final PageController _controller = PageController(viewportFraction: 0.9);
+  static const double _bannerAspectRatio = 2.22;
+  final PageController _controller = PageController();
   int _current = 0;
   Timer? _autoTimer;
 
@@ -640,21 +687,18 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: 150,
+        AspectRatio(
+          aspectRatio: _bannerAspectRatio,
           child: PageView.builder(
             controller: _controller,
             physics: const BouncingScrollPhysics(),
             itemCount: banners.length,
             itemBuilder: (context, index) {
               final banner = banners[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: BannerCard(
-                  imagePath: banner.img,
-                  title: banner.title,
-                  onTap: () => _onBannerTap(banner),
-                ),
+              return BannerCard(
+                imagePath: banner.img,
+                title: banner.title,
+                onTap: () => _onBannerTap(banner),
               );
             },
           ),
@@ -702,6 +746,11 @@ class BannerCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: AppColors.darkBackgroundGradient,
+              ),
+            ),
             _BannerImage(imagePath: imagePath),
             if (!_isBrandBanner)
               Container(
@@ -756,7 +805,7 @@ class _BannerImage extends StatelessWidget {
 
     final isNetwork = imagePath.startsWith('http');
     final image = isNetwork
-        ? Image.network(
+        ? CompatibleImage.network(
             imagePath,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stack) => _fallback(),
@@ -770,13 +819,9 @@ class _BannerImage extends StatelessWidget {
   }
 
   Widget _fallback() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: AppColors.darkBackgroundGradient,
       ),
     );
   }
@@ -919,7 +964,6 @@ class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
-            //BackdropFilter
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -1018,9 +1062,9 @@ class _PrimaryCategoryFilterBarState extends State<_PrimaryCategoryFilterBar> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: categories.map((category) {
-                  final type = category['type']?.toString() ?? '';
-                  final label = category['name']?.toString() ?? '';
-                  final icon = category['icon']?.toString() ?? '🎮';
+                  final type = category.type;
+                  final label = category.nameKey;
+                  final iconAssetPath = category.assetPath;
                   final bool isSelected = selected == type;
                   return Padding(
                     padding: const EdgeInsets.only(right: 4),
@@ -1028,7 +1072,7 @@ class _PrimaryCategoryFilterBarState extends State<_PrimaryCategoryFilterBar> {
                       onTap: () => widget.menuController.selectCategory(type),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 5),
+                            horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
                           gradient: isSelected
                               ? const LinearGradient(
@@ -1054,9 +1098,11 @@ class _PrimaryCategoryFilterBarState extends State<_PrimaryCategoryFilterBar> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              icon,
-                              style: const TextStyle(fontSize: 16, height: 1),
+                            CompatibleImage.asset(
+                              iconAssetPath,
+                              width: 49,
+                              height: 49,
+                              fit: BoxFit.contain,
                             ),
                             const SizedBox(width: 1),
                             Text(
@@ -1371,7 +1417,8 @@ class SlotProviderHeaderDelegate extends SliverPersistentHeaderDelegate {
 }
 
 Widget _mobileGameCard(
-    BuildContext context, GameList game, GameMenuController menuController) {
+    BuildContext context, GameList game, GameMenuController menuController,
+    {required bool shouldLoadImage}) {
   final authController = Get.find<AuthController>();
 
   return InkWell(
@@ -1395,7 +1442,9 @@ Widget _mobileGameCard(
               color: AppColors.cardBackgroundDark,
               child: () {
                 final resolvedUrl = _resolveGameIconUrl(game.iconUrl);
-                if (resolvedUrl == null || resolvedUrl.isEmpty) {
+                if (!shouldLoadImage ||
+                    resolvedUrl == null ||
+                    resolvedUrl.isEmpty) {
                   return _gameCardLogoFallback();
                 }
                 return GameCoverImage(
@@ -1470,25 +1519,22 @@ Widget _mobileGameCard(
               child: ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(bottom: Radius.circular(10)),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.25),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      game.name ?? 'Game',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.42),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    game.name ?? 'Game',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ),

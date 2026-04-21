@@ -1,28 +1,114 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 import 'device_info_models.dart';
 
 Future<RawDeviceInfo> loadPlatformDeviceInfo() async {
-  final navigator = html.window.navigator;
+  final navigator = web.window.navigator;
   final userAgent = navigator.userAgent;
-  final platform = navigator.platform ?? '';
-  final host = html.window.location.host;
+  final platform = navigator.platform;
+  final host = web.window.location.host;
 
   final browserVersion = _parseBrowser(userAgent);
   final engine = _parseEngine(userAgent, browserVersion);
   final model = _parseModel(userAgent, platform);
   final osVersion = _parseOs(userAgent, platform);
+  final flutterRuntime = _parseFlutterRuntime();
 
   return RawDeviceInfo(
     model: model,
     osVersion: osVersion,
     browserVersion: browserVersion,
     browserEngine: engine,
+    flutterRuntime: flutterRuntime,
     host: host,
     userAgent: userAgent,
   );
+}
+
+String _parseFlutterRuntime() {
+  final runtime = _readFlutterRuntime();
+  final summary = _readJsString(runtime, 'summary');
+  if (summary.isNotEmpty) {
+    return summary;
+  }
+
+  final compileTarget = _readJsString(runtime, 'compileTarget');
+  final renderer = _normalizeRendererName(_readJsString(runtime, 'renderer'));
+  final usesWasm = _readJsBool(runtime, 'usesWasm');
+
+  if (compileTarget.isNotEmpty || renderer.isNotEmpty) {
+    final label = renderer.isNotEmpty ? renderer : compileTarget;
+    return usesWasm ? 'Wasm ($label)' : 'JS fallback ($label)';
+  }
+
+  if (_hasWindowProperty('_flutter_skwasmInstance')) {
+    return 'Wasm (skwasm)';
+  }
+
+  if (_hasWindowProperty('flutterCanvasKit')) {
+    return 'JS fallback (CanvasKit)';
+  }
+
+  return '未知';
+}
+
+JSAny? _readFlutterRuntime() {
+  final global = web.window as JSObject;
+  final runtime = global['__igamesFlutterRuntime'];
+  if (runtime == null || runtime.isUndefinedOrNull) {
+    return null;
+  }
+  return runtime;
+}
+
+String _readJsString(JSAny? target, String key) {
+  if (target == null || target.isUndefinedOrNull) {
+    return '';
+  }
+
+  final value = (target as JSObject)[key];
+  if (value == null || value.isUndefinedOrNull) {
+    return '';
+  }
+
+  if (value case JSString jsString) {
+    return jsString.toDart.trim();
+  }
+
+  return value.dartify()?.toString().trim() ?? '';
+}
+
+bool _readJsBool(JSAny? target, String key) {
+  if (target == null || target.isUndefinedOrNull) {
+    return false;
+  }
+
+  final value = (target as JSObject)[key];
+  if (value == null || value.isUndefinedOrNull) {
+    return false;
+  }
+
+  return value == true.toJS;
+}
+
+bool _hasWindowProperty(String key) {
+  final global = web.window as JSObject;
+  final value = global[key];
+  return value != null && !value.isUndefinedOrNull;
+}
+
+String _normalizeRendererName(String renderer) {
+  switch (renderer.toLowerCase()) {
+    case 'canvaskit':
+      return 'CanvasKit';
+    case 'skwasm':
+      return 'skwasm';
+    default:
+      return renderer;
+  }
 }
 
 String _parseBrowser(String ua) {
@@ -65,9 +151,27 @@ String _parseEngine(String ua, String browserVersion) {
 }
 
 String _parseModel(String ua, String platform) {
-  final androidModel =
-      RegExp(r'Android [^;\)]+;\s*([^)]+)\)').firstMatch(ua)?.group(1);
-  if (androidModel != null) return androidModel.trim();
+  final androidSection =
+      RegExp(r'\(([^)]*Android[^)]*)\)').firstMatch(ua)?.group(1);
+  if (androidSection != null) {
+    final parts = androidSection
+        .split(';')
+        .map((part) => part.trim())
+        .map((part) => part.split('Build/').first.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    for (final part in parts) {
+      final normalized = part.toLowerCase();
+      if (normalized.startsWith('linux')) continue;
+      if (normalized.startsWith('android')) continue;
+      if (normalized == 'u' || normalized == 'wv') continue;
+      if (part.length <= 1) continue;
+      return part;
+    }
+
+    return 'Android Device';
+  }
 
   if (ua.contains('iPhone')) return 'iPhone';
   if (ua.contains('iPad')) return 'iPad';
@@ -81,8 +185,7 @@ String _parseOs(String ua, String platform) {
   final android = RegExp(r'Android ([^;\s\)]+)').firstMatch(ua)?.group(1);
   if (android != null) return 'Android $android';
 
-  final ios =
-      RegExp(r'CPU (?:iPhone )?OS ([0-9_]+)').firstMatch(ua)?.group(1);
+  final ios = RegExp(r'CPU (?:iPhone )?OS ([0-9_]+)').firstMatch(ua)?.group(1);
   if (ios != null) return 'iOS ${ios.replaceAll('_', '.')}';
 
   final mac = RegExp(r'Mac OS X ([0-9_\\.]+)').firstMatch(ua)?.group(1);

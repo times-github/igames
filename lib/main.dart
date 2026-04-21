@@ -9,7 +9,6 @@ import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/data/services/web_update_service.dart';
 import 'package:igames/app/modules/widgets/web_update_banner.dart';
-import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/api_client.dart';
 
 import 'app/routes/app_pages.dart';
@@ -71,13 +70,6 @@ void main() async {
   final appInfo = Get.put(AppInfoService(), permanent: true);
   Get.put(JackpotService(), permanent: true);
   Get.put(WebUpdateService(), permanent: true);
-  // 异步拉取站点名称（不阻塞启动）
-  appInfo.fetchAppName();
-  appInfo.fetchAppLogo();
-  appInfo.fetchDepositAmounts();
-  appInfo.fetchAppBanners(
-    lang: normalizeApiLang(initialLocale.toLanguageTag()),
-  );
 
   // 注册 WebView 平台实现（Web 平台）
 
@@ -173,4 +165,9 @@ void main() async {
           ),
         );
       }));
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    appInfo.fetchAppName();
+    appInfo.fetchAppLogo();
+  });
 }

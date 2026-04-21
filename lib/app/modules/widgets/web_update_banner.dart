@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/web_update_service.dart';
-import 'package:igames/config/app_colors.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 class WebUpdateBanner extends GetView<WebUpdateService> {
   const WebUpdateBanner({super.key});
@@ -9,52 +9,93 @@ class WebUpdateBanner extends GetView<WebUpdateService> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final visible = controller.isUpdateAvailable.value;
-      if (!visible) {
+      if (!controller.isUpdateAvailable.value) {
         return const SizedBox.shrink();
       }
 
       final applying = controller.isApplyingUpdate.value;
 
-      return SafeArea(
-        child: IgnorePointer(
-          ignoring: !visible,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: AnimatedSlide(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              offset: visible ? Offset.zero : const Offset(0, -1),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 560;
-
-                  return Container(
-                    constraints: const BoxConstraints(maxWidth: 720),
-                    margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
+      return Positioned.fill(
+        child: PointerInterceptor(
+          child: IgnorePointer(
+            ignoring: false,
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.48),
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF161B2A),
-                      borderRadius: BorderRadius.circular(16),
+                      color: const Color(0xFF343E55),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: Colors.white.withValues(alpha: 0.10),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withValues(alpha: 0.30),
+                          blurRadius: 28,
+                          offset: const Offset(0, 18),
                         ),
                       ],
                     ),
-                    child: compact
-                        ? _buildCompactLayout(applying)
-                        : _buildWideLayout(applying),
-                  );
-                },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'webUpdateAvailableTitle'.tr,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          applying
+                              ? 'webUpdateApplying'.tr
+                              : 'webUpdateAvailableMessage'.tr,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.84),
+                            fontSize: 15,
+                            height: 1.55,
+                          ),
+                        ),
+                        const SizedBox(height: 26),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _DialogButton(
+                                label: 'webUpdateLater'.tr,
+                                filled: false,
+                                enabled: !applying,
+                                onTap: controller.dismissUpdate,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _DialogButton(
+                                label: applying
+                                    ? 'webUpdateApplying'.tr
+                                    : 'webUpdateNow'.tr,
+                                filled: true,
+                                enabled: !applying,
+                                onTap: controller.applyUpdate,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -62,117 +103,60 @@ class WebUpdateBanner extends GetView<WebUpdateService> {
       );
     });
   }
+}
 
-  Widget _buildWideLayout(bool applying) {
-    return Row(
-      children: [
-        _buildLeadingIcon(),
-        const SizedBox(width: 12),
-        Expanded(child: _buildTextContent(applying, maxLines: 1)),
-        const SizedBox(width: 12),
-        _buildLaterButton(applying),
-        const SizedBox(width: 8),
-        _buildUpdateButton(applying),
-      ],
-    );
-  }
+class _DialogButton extends StatelessWidget {
+  const _DialogButton({
+    required this.label,
+    required this.filled,
+    required this.enabled,
+    required this.onTap,
+  });
 
-  Widget _buildCompactLayout(bool applying) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            _buildLeadingIcon(),
-            const SizedBox(width: 12),
-            Expanded(child: _buildTextContent(applying, maxLines: 2)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: _buildLaterButton(applying)),
-            const SizedBox(width: 8),
-            Expanded(child: _buildUpdateButton(applying)),
-          ],
-        ),
-      ],
-    );
-  }
+  final String label;
+  final bool filled;
+  final bool enabled;
+  final VoidCallback onTap;
 
-  Widget _buildLeadingIcon() {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: const Color(0xFF7C3AED).withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(
-        Icons.system_update_alt_rounded,
-        color: Color(0xFFA855F7),
-        size: 18,
-      ),
-    );
-  }
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = const Color(0xFFD7B24A);
+    final fillColor = const Color(0xFFF0C95C);
+    final foregroundColor = filled ? const Color(0xFF443100) : borderColor;
 
-  Widget _buildTextContent(bool applying, {required int maxLines}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'webUpdateAvailableTitle'.tr,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
+    return SizedBox(
+      height: 52,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: filled
+                  ? (enabled ? fillColor : fillColor.withValues(alpha: 0.5))
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color:
+                    enabled ? borderColor : borderColor.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: enabled
+                      ? foregroundColor
+                      : foregroundColor.withValues(alpha: 0.6),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          applying ? 'webUpdateApplying'.tr : 'webUpdateAvailableMessage'.tr,
-          maxLines: maxLines,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.68),
-            fontSize: 12,
-            height: 1.3,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLaterButton(bool applying) {
-    return TextButton(
-      onPressed: applying ? null : controller.dismissUpdate,
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.white.withValues(alpha: 0.78),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      child: Text('webUpdateLater'.tr),
-    );
-  }
-
-  Widget _buildUpdateButton(bool applying) {
-    return ElevatedButton(
-      onPressed: applying ? null : controller.applyUpdate,
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        backgroundColor: const Color(0xFF7C3AED),
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.42),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      child: Text(
-        applying ? 'webUpdateApplying'.tr : 'webUpdateNow'.tr,
       ),
     );
   }

@@ -13,6 +13,7 @@ Future<RawDeviceInfo> loadPlatformDeviceInfo() async {
     osVersion: os,
     browserVersion: 'App built-in',
     browserEngine: Platform.operatingSystem,
+    flutterRuntime: 'Native App',
     host: Platform.localHostname,
     userAgent: '',
   );

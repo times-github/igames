@@ -13,7 +13,7 @@ import 'package:igames/app/modules/home/views/tabs/recharge_tab.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/app/modules/widgets/side_drawer.dart';
 
-class HomeShell extends StatelessWidget {
+class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     required this.controller,
@@ -29,48 +29,70 @@ class HomeShell extends StatelessWidget {
     _BottomNavItem('home', Icons.home_filled),
     _BottomNavItem('promo', Icons.local_activity_outlined),
     _BottomNavItem('recharge', Icons.account_balance_wallet, isCenter: true),
-    _BottomNavItem('earn', Icons.monetization_on_outlined, badge: _FlameBadge()),
+    _BottomNavItem('earn', Icons.monetization_on_outlined,
+        badge: _FlameBadge()),
     _BottomNavItem('mine', Icons.person_outline),
   ];
 
   @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  late final List<Widget?> _tabCache;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCache = List<Widget?>.filled(5, null);
+    _tabCache[0] = _buildTab(0);
+    final initialTab = widget.controller.currentTab.value;
+    if (initialTab >= 0 && initialTab < _tabCache.length) {
+      _tabCache[initialTab] = _buildTab(initialTab);
+    }
+  }
+
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0:
+        return HomeTab(
+          controller: widget.controller,
+          auth: widget.auth,
+          menuController: widget.menuController,
+        );
+      case 1:
+        return PromoTab(auth: widget.auth);
+      case 2:
+        return RechargeTab(auth: widget.auth);
+      case 3:
+        return EarnTab(auth: widget.auth);
+      case 4:
+        return ProfileTab(auth: widget.auth, controller: widget.controller);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  void _ensureTabBuilt(int index) {
+    if (index < 0 || index >= _tabCache.length) return;
+    if (_tabCache[index] != null) return;
+    _tabCache[index] = _buildTab(index);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final tab = controller.currentTab.value;
+      final tab = widget.controller.currentTab.value;
+      _ensureTabBuilt(tab);
       return Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: true,
         drawer: const SideDrawer(),
-        body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          switchInCurve: Curves.easeInOut,
-          switchOutCurve: Curves.easeInOut,
-          transitionBuilder: (child, animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.02, 0),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-            );
-          },
-          child: IndexedStack(
-            index: tab,
-            children: [
-              HomeTab(
-                controller: controller,
-                auth: auth,
-                menuController: menuController,
-              ),
-              PromoTab(auth: auth),
-              RechargeTab(auth: auth),
-              EarnTab(auth: auth),
-              ProfileTab(auth: auth, controller: controller),
-            ],
-          ),
+        body: IndexedStack(
+          index: tab,
+          children: _tabCache
+              .map((tabView) => tabView ?? const SizedBox.shrink())
+              .toList(),
         ),
         bottomNavigationBar: _buildBottomBar(context, tab),
       );
@@ -114,7 +136,10 @@ class HomeShell extends StatelessWidget {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: _bottomNavItems.asMap().entries.expand((entry) {
+                      children: HomeShell._bottomNavItems
+                          .asMap()
+                          .entries
+                          .expand((entry) {
                         final idx = entry.key;
                         final item = entry.value;
                         final bool isActive = tab == idx;
@@ -127,13 +152,15 @@ class HomeShell extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                               onTap: () async {
                                 if (idx == 3) {
-                                  final ok = await auth.ensureAuthenticated(context);
+                                  final ok = await widget.auth
+                                      .ensureAuthenticated(context);
                                   if (!ok) return;
                                 }
-                                if (idx == 4 && auth.isLoggedIn.value) {
-                                  controller.refreshBalance();
+                                if (idx == 4 && widget.auth.isLoggedIn.value) {
+                                  widget.controller.refreshBalance();
                                 }
-                                controller.currentTab.value = idx;
+                                _ensureTabBuilt(idx);
+                                widget.controller.currentTab.value = idx;
                               },
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -185,9 +212,10 @@ class HomeShell extends StatelessWidget {
               child: _CenterRechargeButton(
                 isActive: tab == 2,
                 onTap: () async {
-                  final ok = await auth.ensureAuthenticated(context);
+                  final ok = await widget.auth.ensureAuthenticated(context);
                   if (!ok) return;
-                  controller.currentTab.value = 2;
+                  _ensureTabBuilt(2);
+                  widget.controller.currentTab.value = 2;
                 },
               ),
             ),

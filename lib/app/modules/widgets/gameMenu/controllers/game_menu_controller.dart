@@ -8,6 +8,18 @@ import '../../../../data/models/gametype.dart';
 import '../../../../utils/api_client.dart';
 import 'dart:convert'; // Added for jsonDecode
 
+class GameCategoryOption {
+  const GameCategoryOption({
+    required this.nameKey,
+    required this.type,
+    required this.assetPath,
+  });
+
+  final String nameKey;
+  final String type;
+  final String assetPath;
+}
+
 class SlotProviderOption {
   const SlotProviderOption({
     required this.id,
@@ -26,6 +38,43 @@ class SlotProviderOption {
 
 class GameMenuController extends GetxController {
   static const String _allProviderId = 'all';
+  static const List<GameCategoryOption> _gameCategoryOptions = [
+    GameCategoryOption(
+      nameKey: 'gamestype_recommend',
+      type: 'HOME_TOP',
+      assetPath: 'assets/images/gamecategory/recommend.avif',
+    ),
+    GameCategoryOption(
+      nameKey: 'gamestype_slot',
+      type: 'slot',
+      assetPath: 'assets/images/gamecategory/slot.avif',
+    ),
+    GameCategoryOption(
+      nameKey: 'gamestype_table',
+      type: 'table',
+      assetPath: 'assets/images/gamecategory/tab.avif',
+    ),
+    GameCategoryOption(
+      nameKey: 'gamestype_animal',
+      type: 'animal',
+      assetPath: 'assets/images/gamecategory/animal.avif',
+    ),
+    GameCategoryOption(
+      nameKey: 'gamestype_live',
+      type: 'live',
+      assetPath: 'assets/images/gamecategory/live.avif',
+    ),
+    GameCategoryOption(
+      nameKey: 'gamestype_fish',
+      type: 'fish',
+      assetPath: 'assets/images/gamecategory/fish.avif',
+    ),
+    GameCategoryOption(
+      nameKey: 'gamestype_arcade',
+      type: 'arcade',
+      assetPath: 'assets/images/gamecategory/arcade.avif',
+    ),
+  ];
   static const List<SlotProviderOption> _slotProviderOptions = [
     SlotProviderOption(
       id: _allProviderId,
@@ -96,7 +145,7 @@ class GameMenuController extends GetxController {
   ];
 
   // 游戏分类数据
-  final gameCategories = <Map<String, dynamic>>[].obs;
+  final gameCategories = <GameCategoryOption>[].obs;
 
   // 当前选中的分类
   final selectedCategory = 'HOME_TOP'.obs;
@@ -111,6 +160,7 @@ class GameMenuController extends GetxController {
   final hasMoreData = true.obs;
   final isLoading = false.obs;
   final loadError = false.obs;
+  final initialLoadTriggered = false.obs;
 
   // 游戏状态管理
   final expandedGames = <int>{}.obs; // 记录哪些游戏卡片是展开状态
@@ -123,8 +173,10 @@ class GameMenuController extends GetxController {
   // API客户端
   final ApiClient _apiClient = Get.find<ApiClient>();
   Worker? _authWorker;
+  bool _hasAttemptedInitialLoad = false;
 
   List<SlotProviderOption> get slotProviders => _slotProviderOptions;
+  List<GameCategoryOption> get localGameCategories => _gameCategoryOptions;
 
   bool get showSlotProviderFilter => _isSlotCategory(selectedCategory.value);
 
@@ -141,7 +193,7 @@ class GameMenuController extends GetxController {
     _authWorker = ever<bool>(authController.isLoggedIn, (_) {
       refreshGames();
     });
-    _loadGameCategories();
+    _loadLocalGameCategories();
   }
 
   @override
@@ -187,49 +239,19 @@ class GameMenuController extends GetxController {
     selectedGame.value = null;
   }
 
-  /// 从API加载游戏分类
-  Future<void> _loadGameCategories() async {
-    try {
-      final response = await _apiClient.get(
-        '/user/config/game_categories',
-        withAuth: false,
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data;
-        if (data['code'] == 1 && data['data']?['value'] != null) {
-          final List<dynamic> categories = data['data']['value'];
-          gameCategories.value = categories
-              .map((e) => Map<String, dynamic>.from(e as Map))
-              .toList();
-
-          // 设置默认选中第一个分类
-          if (gameCategories.isNotEmpty) {
-            selectedCategory.value = gameCategories.first['type'] ?? 'HOME_TOP';
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('加载游戏分类失败: $e');
-      // 失败时使用默认分类
-      _setDefaultCategories();
+  void _loadLocalGameCategories() {
+    gameCategories.assignAll(_gameCategoryOptions);
+    if (gameCategories.isNotEmpty) {
+      selectedCategory.value = gameCategories.first.type;
     }
-
-    // 加载游戏列表
-    _loadGames();
   }
 
-  /// 设置默认分类（API失败时的备用）
-  void _setDefaultCategories() {
-    gameCategories.value = [
-      {'name': 'gamestype_recommend', 'type': 'HOME_TOP', 'icon': '⭐'},
-      {'name': 'gamestype_slot', 'type': 'slot', 'icon': '🎲'},
-      {'name': 'gamestype_table', 'type': 'table', 'icon': '🎰'},
-      {'name': 'gamestype_animal', 'type': 'animal', 'icon': '🐒'},
-      {'name': 'gamestype_live', 'type': 'live', 'icon': '🎰'},
-      {'name': 'gamestype_fish', 'type': 'fish', 'icon': '🐟'},
-      {'name': 'gamestype_arcade', 'type': 'arcade', 'icon': '🎮'},
-    ];
+  Future<void> ensureInitialGamesLoaded() async {
+    if (isLoading.value) return;
+    if (_hasAttemptedInitialLoad || gameList.isNotEmpty) return;
+    _hasAttemptedInitialLoad = true;
+    initialLoadTriggered.value = true;
+    await _loadGames();
   }
 
   /// 切换游戏分类
@@ -378,6 +400,8 @@ class GameMenuController extends GetxController {
 
   /// 刷新数据（语言切换或下拉刷新时调用）
   Future<void> refreshGames() async {
+    _hasAttemptedInitialLoad = true;
+    initialLoadTriggered.value = true;
     currentPage.value = 1;
     gameList.clear(); // 清空游戏列表，显示加载状态
     hasMoreData.value = true;
@@ -421,16 +445,13 @@ class GameMenuController extends GetxController {
 
   /// 获取分类显示名称
   String getCategoryDisplayName(String type) {
-    final category =
-        gameCategories.firstWhereOrNull((cat) => cat['type'] == type);
-    return category?['name'] ?? type;
+    final category = gameCategories.firstWhereOrNull((cat) => cat.type == type);
+    return category?.nameKey ?? type;
   }
 
-  /// 获取分类图标
-  String getCategoryIcon(String type) {
-    final category =
-        gameCategories.firstWhereOrNull((cat) => cat['type'] == type);
-    return category?['icon'] ?? '🎮';
+  String getCategoryIconAssetPath(String type) {
+    final category = gameCategories.firstWhereOrNull((cat) => cat.type == type);
+    return category?.assetPath ?? '';
   }
 
   bool _isSlotCategory(String type) => type.trim().toLowerCase() == 'slot';
@@ -467,11 +488,6 @@ class GameMenuController extends GetxController {
           // 更新本地状态
           game.isFavorite = false;
           gameList.refresh(); // 刷新列表
-          Get.snackbar(
-            'transactionStatus_success'.tr,
-            'favoriteRemoveSuccess'.tr,
-            snackPosition: SnackPosition.TOP,
-          );
         } else {
           final msg = response.data['msg']?.toString();
           Get.snackbar(
@@ -495,11 +511,6 @@ class GameMenuController extends GetxController {
           // 更新本地状态
           game.isFavorite = true;
           gameList.refresh(); // 刷新列表
-          Get.snackbar(
-            'transactionStatus_success'.tr,
-            'favoriteAddSuccess'.tr,
-            snackPosition: SnackPosition.TOP,
-          );
         } else {
           final msg = response.data['msg']?.toString();
           Get.snackbar(

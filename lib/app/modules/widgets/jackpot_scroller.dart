@@ -7,6 +7,7 @@ import 'package:igames/app/data/models/jackpot.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
@@ -1462,33 +1463,15 @@ class _GameIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = BorderRadius.circular(size * 0.28);
-    final innerRadius = BorderRadius.circular(size * 0.22);
     final resolvedUrl = _resolveGameIconUrl(iconUrl);
 
-    return Container(
-      width: size,
-      height: size,
-      padding: const EdgeInsets.all(1),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFD36E), Color(0xFFFF7A1A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: borderRadius,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFA933).withValues(alpha: 0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: innerRadius,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.22),
+      child: SizedBox(
+        width: size,
+        height: size,
         child: resolvedUrl != null && resolvedUrl.isNotEmpty
-            ? Image.network(
+            ? CompatibleImage.network(
                 resolvedUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => _fallback(),

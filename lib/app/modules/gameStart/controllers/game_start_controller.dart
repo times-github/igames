@@ -232,6 +232,17 @@ class GameStartController extends GetxController {
     isLoading.value = false;
   }
 
+  void onWebFrameLoaded() {
+    debugPrint('Web iframe 加载完成');
+    loadingProgress.value = 1.0;
+    isLoading.value = false;
+  }
+
+  void onWebFrameError(String message) {
+    debugPrint('Web iframe 加载错误: $message');
+    _showError(message);
+  }
+
   /// 处理加载错误
   void onLoadError(InAppWebViewController controller, WebUri? url, int code,
       String message) {

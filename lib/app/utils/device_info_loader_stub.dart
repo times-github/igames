@@ -7,6 +7,7 @@ Future<RawDeviceInfo> loadPlatformDeviceInfo() async {
     osVersion: '',
     browserVersion: '',
     browserEngine: '',
+    flutterRuntime: '',
     host: '',
     userAgent: '',
   );

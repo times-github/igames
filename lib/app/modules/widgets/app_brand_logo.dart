@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 
 const String kDefaultAppLogoAsset = 'assets/images/getwiner.png';
 
@@ -48,7 +49,7 @@ class AppBrandLogo extends StatelessWidget {
 
   Widget _buildImage(String path) {
     if (path.startsWith('http')) {
-      return Image.network(
+      return CompatibleImage.network(
         path,
         fit: fit,
         alignment: alignment,

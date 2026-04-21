@@ -29,9 +29,6 @@ class LocaleKeys {
   static const authRegisterAutoFailed = 'authRegisterAutoFailed';
   static const authPasswordOrCodeRequired = 'authPasswordOrCodeRequired';
   static const authUnknownError = 'authUnknownError';
-  static const lang_id = 'lang_id';
-  static const lang_en = 'lang_en';
-  static const lang_zh = 'lang_zh';
   static const paymentMethod = 'paymentMethod';
   static const payMethodIdr = 'payMethodIdr';
   static const payMethodUsdtTrc20 = 'payMethodUsdtTrc20';
@@ -74,7 +71,6 @@ class LocaleKeys {
   static const contactCustomerService = 'contactCustomerService';
   static const customerService = 'customerService';
   static const supportCenterSubtitle = 'supportCenterSubtitle';
-  static const supportOpenNow = 'supportOpenNow';
   static const supportNotConfigured = 'supportNotConfigured';
   static const supportWhatsAppDesc = 'supportWhatsAppDesc';
   static const supportTelegramDesc = 'supportTelegramDesc';
@@ -273,6 +269,7 @@ class LocaleKeys {
   static const loginPort = 'loginPort';
   static const browserVersion = 'browserVersion';
   static const browserEngine = 'browserEngine';
+  static const flutterRuntime = 'flutterRuntime';
   static const currentTime = 'currentTime';
   static const pageLoading = 'pageLoading';
   static const pleaseEnterPhone = 'pleaseEnterPhone';
@@ -449,7 +446,6 @@ class LocaleKeys {
   static const favoritesEmpty = 'favoritesEmpty';
   static const favoriteAddSuccess = 'favoriteAddSuccess';
   static const favoriteAddFailed = 'favoriteAddFailed';
-  static const favoriteRemoveSuccess = 'favoriteRemoveSuccess';
   static const favoriteRemoveFailed = 'favoriteRemoveFailed';
   static const checkNetwork = 'checkNetwork';
   static const recentlyPlayed = 'recentlyPlayed';
@@ -487,9 +483,6 @@ class Locales {
     'authPasswordOrCodeRequired':
         'Silakan masukkan kata sandi atau kode verifikasi',
     'authUnknownError': 'Login gagal, silakan coba lagi nanti',
-    'lang_id': 'Indonesia',
-    'lang_en': 'Inggris',
-    'lang_zh': 'Tionghoa',
     'paymentMethod': 'Metode pembayaran',
     'payMethodIdr': 'IDR',
     'payMethodUsdtTrc20': 'USDT',
@@ -536,16 +529,15 @@ class Locales {
     'customerService': 'Layanan pelanggan',
     'supportCenterSubtitle':
         'Pilih saluran kontak, tim kami akan segera membalas.',
-    'supportOpenNow': 'Hubungi sekarang',
     'supportNotConfigured': 'Belum dikonfigurasi',
     'supportWhatsAppDesc': 'Balasan prioritas via WhatsApp',
     'supportTelegramDesc': 'Dukungan Telegram resmi',
-    'webUpdateAvailableTitle': 'Versi baru tersedia',
+    'webUpdateAvailableTitle': 'Pengingat',
     'webUpdateAvailableMessage':
-        'Tekan perbarui untuk memakai versi terbaru',
-    'webUpdateLater': 'Nanti',
-    'webUpdateNow': 'Perbarui sekarang',
-    'webUpdateApplying': 'Memperbarui...',
+        'Halaman ini telah diperbarui. Muat ulang halaman untuk kembali normal. Jika masih ada masalah, silakan hubungi layanan pelanggan.',
+    'webUpdateLater': 'Batal',
+    'webUpdateNow': 'Segarkan sekarang',
+    'webUpdateApplying': 'Menyegarkan...',
     'userProfile': 'Profil pengguna',
     'gamestype_all': 'Semua',
     'gamestype_slot': 'Slot',
@@ -588,7 +580,6 @@ class Locales {
     'favoritesEmpty': 'Belum ada favorit',
     'favoriteAddSuccess': 'Favorit ditambahkan',
     'favoriteAddFailed': 'Gagal menambahkan favorit',
-    'favoriteRemoveSuccess': 'Favorit dihapus',
     'favoriteRemoveFailed': 'Gagal menghapus favorit',
     'checkNetwork': 'Periksa jaringan',
     'recentlyPlayed': 'Baru Dimainkan',
@@ -754,6 +745,7 @@ class Locales {
     'loginPort': 'Port Login',
     'browserVersion': 'Versi Browser',
     'browserEngine': 'Mesin Browser',
+    'flutterRuntime': 'Mode Runtime Flutter',
     'currentTime': 'Waktu Saat Ini',
     'pageLoading': 'Memuat...',
     'pleaseEnterPhone': 'Masukkan nomor telepon',
@@ -959,9 +951,6 @@ class Locales {
     'authRegisterAutoFailed': '注册失败，请稍后再试',
     'authPasswordOrCodeRequired': '请输入密码或验证码',
     'authUnknownError': '登录失败，请稍后重试',
-    'lang_id': '印尼语',
-    'lang_en': '英语',
-    'lang_zh': '中文',
     'paymentMethod': '支付方式',
     'payMethodIdr': 'IDR',
     'payMethodUsdtTrc20': 'USDT',
@@ -1003,15 +992,14 @@ class Locales {
     'contactCustomerService': '联系客服',
     'customerService': '客服',
     'supportCenterSubtitle': '选择一个联系方式，我们会尽快回复你',
-    'supportOpenNow': '立即联系',
     'supportNotConfigured': '暂未配置',
     'supportWhatsAppDesc': '优先通过 WhatsApp 回复',
     'supportTelegramDesc': '官方 Telegram 在线支持',
-    'webUpdateAvailableTitle': '发现新版本',
-    'webUpdateAvailableMessage': '点击立即更新切换到最新版本',
-    'webUpdateLater': '稍后',
-    'webUpdateNow': '立即更新',
-    'webUpdateApplying': '更新中...',
+    'webUpdateAvailableTitle': '温馨提示',
+    'webUpdateAvailableMessage': '当前页面已更新，刷新网页即可恢复正常，若有问题请联系客服。',
+    'webUpdateLater': '取消',
+    'webUpdateNow': '立即刷新',
+    'webUpdateApplying': '刷新中...',
     'userProfile': '个人中心',
     'gamestype_all': '全部',
     'gamestype_slot': '老虎机',
@@ -1053,7 +1041,6 @@ class Locales {
     'favoritesEmpty': '暂无收藏',
     'favoriteAddSuccess': '已添加收藏',
     'favoriteAddFailed': '添加收藏失败',
-    'favoriteRemoveSuccess': '已取消收藏',
     'favoriteRemoveFailed': '取消收藏失败',
     'checkNetwork': '检查网络',
     'recentlyPlayed': '最近游戏',
@@ -1214,6 +1201,7 @@ class Locales {
     'loginPort': '登录端口',
     'browserVersion': '当前浏览器版本',
     'browserEngine': '浏览器内核',
+    'flutterRuntime': 'Flutter运行模式',
     'currentTime': '当前时间',
     'pageLoading': '页面加载中...',
     'pleaseEnterPhone': '请输入手机号',
@@ -1408,9 +1396,6 @@ class Locales {
     'authPasswordOrCodeRequired':
         'Please enter a password or verification code',
     'authUnknownError': 'Login failed. Please try again later',
-    'lang_id': 'Indonesian',
-    'lang_en': 'English',
-    'lang_zh': 'Chinese',
     'paymentMethod': 'Payment method',
     'payMethodIdr': 'IDR',
     'payMethodUsdtTrc20': 'USDT',
@@ -1454,16 +1439,15 @@ class Locales {
     'contactCustomerService': 'Contact customer service',
     'customerService': 'Customer service',
     'supportCenterSubtitle': 'Choose a channel and we\'ll reply shortly.',
-    'supportOpenNow': 'Contact now',
     'supportNotConfigured': 'Not configured',
     'supportWhatsAppDesc': 'Priority replies via WhatsApp',
     'supportTelegramDesc': 'Official Telegram online support',
-    'webUpdateAvailableTitle': 'New version available',
+    'webUpdateAvailableTitle': 'Notice',
     'webUpdateAvailableMessage':
-        'Tap update to switch to the latest build',
-    'webUpdateLater': 'Later',
-    'webUpdateNow': 'Update now',
-    'webUpdateApplying': 'Updating...',
+        'This page has been updated. Refresh the page to restore normal behavior. If there is still an issue, please contact customer service.',
+    'webUpdateLater': 'Cancel',
+    'webUpdateNow': 'Refresh now',
+    'webUpdateApplying': 'Refreshing...',
     'userProfile': 'User profile',
     'gamestype_all': 'All',
     'gamestype_slot': 'Slot',
@@ -1506,7 +1490,6 @@ class Locales {
     'favoritesEmpty': 'No favorites yet',
     'favoriteAddSuccess': 'Added to favorites',
     'favoriteAddFailed': 'Failed to add favorite',
-    'favoriteRemoveSuccess': 'Removed from favorites',
     'favoriteRemoveFailed': 'Failed to remove favorite',
     'checkNetwork': 'Check network',
     'recentlyPlayed': 'Recently Played',
@@ -1671,6 +1654,7 @@ class Locales {
     'loginPort': 'Login Port',
     'browserVersion': 'Browser Version',
     'browserEngine': 'Browser Engine',
+    'flutterRuntime': 'Flutter Runtime',
     'currentTime': 'Current Time',
     'pageLoading': 'Loading...',
     'pleaseEnterPhone': 'Please enter phone number',

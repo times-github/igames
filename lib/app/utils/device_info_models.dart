@@ -4,6 +4,7 @@ class RawDeviceInfo {
   final String osVersion;
   final String browserVersion;
   final String browserEngine;
+  final String flutterRuntime;
   final String host;
   final String userAgent;
 
@@ -12,6 +13,7 @@ class RawDeviceInfo {
     required this.osVersion,
     required this.browserVersion,
     required this.browserEngine,
+    required this.flutterRuntime,
     required this.host,
     required this.userAgent,
   });
@@ -24,6 +26,7 @@ class DeviceInfoData {
   final String loginPort;
   final String browserVersion;
   final String browserEngine;
+  final String flutterRuntime;
   final String currentTime;
   final String userAgent;
 
@@ -33,6 +36,7 @@ class DeviceInfoData {
     required this.loginPort,
     required this.browserVersion,
     required this.browserEngine,
+    required this.flutterRuntime,
     required this.currentTime,
     required this.userAgent,
   });

@@ -16,6 +16,7 @@ import 'package:igames/config/app_config.dart';
 import 'package:igames/app/utils/storage.dart';
 import 'package:igames/app/data/services/sse_notify_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
+import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/utils/web_lang_param.dart';
 import 'package:igames/app/modules/auth/widgets/turnstile_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -751,7 +752,12 @@ class _SupportCenterDialog extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               IconButton(
-                                onPressed: Get.back,
+                                onPressed: () {
+                                  Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).maybePop();
+                                },
                                 style: IconButton.styleFrom(
                                   backgroundColor:
                                       Colors.white.withValues(alpha: 0.06),
@@ -955,30 +961,6 @@ class _SupportActionCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                      ),
-                      child: Text(
-                        enabled
-                            ? 'supportOpenNow'.tr
-                            : 'supportNotConfigured'.tr,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
                       ),
                     ),
                   ],
@@ -1290,7 +1272,7 @@ class _LoginFormState extends State<_LoginForm> {
                         Get.toNamed(link);
                       }
                     },
-                    child: Image.network(
+                    child: CompatibleImage.network(
                       banner.imageUrl,
                       fit: BoxFit.fill,
                       errorBuilder: (_, __, ___) => _bannerFallback(),

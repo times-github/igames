@@ -20,19 +20,11 @@ class PromoCategory {
 class PromoActivity {
   PromoActivity({
     required this.id,
-    required this.title,
-    required this.subtitle,
     required this.picture,
-    required this.categoryId,
-    required this.endAt,
   });
 
   final int id;
-  final String title;
-  final String subtitle;
   final String picture;
-  final int? categoryId;
-  final String? endAt;
 }
 
 class PromoController extends GetxController {
@@ -176,27 +168,13 @@ class PromoController extends GetxController {
 
   PromoActivity _mapToActivity(Map<String, dynamic> json) {
     final id = json['id'];
-    final endAtRaw = json['end_at'];
-    String? endAt;
-    if (endAtRaw != null) {
-      final normalized = endAtRaw.toString();
-      if (normalized != '0' && normalized.isNotEmpty) {
-        endAt = normalized;
-      }
-    }
     return PromoActivity(
       id: id is int ? id : int.tryParse(id?.toString() ?? '') ?? 0,
-      title: json['title']?.toString() ?? '',
-      subtitle: json['subtitle']?.toString() ?? '',
       picture: (json['title_picture'] ??
               json['titlePicture'] ??
               json['picture'] ??
               '')
           .toString(),
-      categoryId: json['category_id'] is int
-          ? json['category_id'] as int
-          : int.tryParse(json['category_id']?.toString() ?? ''),
-      endAt: endAt,
     );
   }
 }

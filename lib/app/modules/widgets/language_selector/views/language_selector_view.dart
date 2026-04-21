@@ -22,11 +22,11 @@ class LanguageSelectorView extends GetView<LanguageSelectorController> {
           final padding = compact
               ? const EdgeInsets.symmetric(horizontal: 10, vertical: 10)
               : const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
-          final margin =
-              compact ? const EdgeInsets.symmetric(horizontal: 6) : EdgeInsets.zero;
+          final margin = compact
+              ? const EdgeInsets.symmetric(horizontal: 6)
+              : EdgeInsets.zero;
           final fontSize = compact ? 11.0 : 13.0;
           final dotSize = compact ? 5.0 : 6.0;
-          final iconSize = compact ? 14.0 : 16.0;
           final radius = compact ? 18.0 : 20.0;
           return Container(
             // 外边距
