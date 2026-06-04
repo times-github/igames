@@ -1,9 +1,17 @@
 const currentUrl = new URL(self.location.href);
 const swVersion = currentUrl.searchParams.get('v') || 'base';
+const engineRevision = currentUrl.searchParams.get('engine') || 'base';
 
 const ENTRY_CACHE = `igames-entry-${swVersion}`;
+const RUNTIME_CACHE = `igames-runtime-${swVersion}`;
 const STATIC_CACHE = `igames-static-${swVersion}`;
-const OWNED_CACHE_PREFIXES = ['igames-entry-', 'igames-static-'];
+const CANVASKIT_CACHE = `igames-canvaskit-${engineRevision}`;
+const OWNED_CACHE_PREFIXES = [
+  'igames-entry-',
+  'igames-runtime-',
+  'igames-static-',
+  'igames-canvaskit-',
+];
 const LEGACY_CACHE_NAMES = [
   'flutter-app-cache',
   'flutter-temp-cache',
@@ -55,16 +63,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (shouldUseStaticStrategy(url.pathname)) {
+  if (shouldUseCanvaskitCacheFirst(url.pathname)) {
+    event.respondWith(cacheFirst(request, CANVASKIT_CACHE));
+    return;
+  }
+
+  if (shouldUseRuntimeNetworkFirst(url.pathname)) {
+    event.respondWith(networkFirst(request, RUNTIME_CACHE));
+    return;
+  }
+
+  if (shouldUseFrameworkCacheFirst(url.pathname)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
+
+  if (shouldUseAssetStaleWhileRevalidate(url.pathname)) {
     event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
   }
 });
 
 async function handleNavigationRequest(request) {
   const cache = await caches.open(ENTRY_CACHE);
+  const networkRequest = buildFreshRequest(request);
 
   try {
-    const response = await fetch(request);
+    const response = await fetch(networkRequest);
     if (isCacheable(response)) {
       await cache.put('/index.html', response.clone());
     }
@@ -80,9 +104,10 @@ async function handleNavigationRequest(request) {
 
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
+  const networkRequest = buildFreshRequest(request);
 
   try {
-    const response = await fetch(request);
+    const response = await fetch(networkRequest);
     if (isCacheable(response)) {
       await cache.put(request, response.clone());
     }
@@ -94,6 +119,20 @@ async function networkFirst(request, cacheName) {
     }
     throw error;
   }
+}
+
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetch(request);
+  if (isCacheable(response)) {
+    await cache.put(request, response.clone());
+  }
+  return response;
 }
 
 async function staleWhileRevalidate(request, cacheName) {
@@ -121,19 +160,35 @@ async function staleWhileRevalidate(request, cacheName) {
   throw new Error(`Failed to load resource: ${request.url}`);
 }
 
-function shouldUseStaticStrategy(pathname) {
+function shouldUseFrameworkCacheFirst(pathname) {
+  return pathname === '/favicon.png' || pathname.startsWith('/icons/');
+}
+
+function shouldUseCanvaskitCacheFirst(pathname) {
+  return pathname.startsWith('/canvaskit/');
+}
+
+function shouldUseAssetStaleWhileRevalidate(pathname) {
+  return pathname.startsWith('/assets/');
+}
+
+function buildFreshRequest(request) {
+  try {
+    return new Request(request, {cache: 'no-cache'});
+  } catch (_) {
+    return request;
+  }
+}
+
+function shouldUseRuntimeNetworkFirst(pathname) {
   const lowerPathname = pathname.toLowerCase();
   return (
     pathname === '/main.dart.js' ||
     pathname === '/main.dart.mjs' ||
     pathname === '/main.dart.wasm' ||
     pathname === '/flutter.js' ||
-    pathname === '/favicon.png' ||
     lowerPathname.endsWith('.mjs') ||
-    lowerPathname.endsWith('.wasm') ||
-    pathname.startsWith('/assets/') ||
-    pathname.startsWith('/icons/') ||
-    pathname.startsWith('/canvaskit/')
+    lowerPathname.endsWith('.wasm')
   );
 }
 
@@ -143,7 +198,12 @@ function isCacheable(response) {
 
 async function cleanupOldCaches() {
   const cacheKeys = await caches.keys();
-  const currentCaches = new Set([ENTRY_CACHE, STATIC_CACHE]);
+  const currentCaches = new Set([
+    ENTRY_CACHE,
+    RUNTIME_CACHE,
+    STATIC_CACHE,
+    CANVASKIT_CACHE,
+  ]);
 
   await Promise.all(
     cacheKeys.map((cacheName) => {

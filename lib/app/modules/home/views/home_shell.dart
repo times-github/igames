@@ -12,6 +12,8 @@ import 'package:igames/app/modules/home/views/tabs/promo_tab.dart';
 import 'package:igames/app/modules/home/views/tabs/recharge_tab.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/app/modules/widgets/side_drawer.dart';
+import 'package:igames/app/utils/responsive.dart';
+import 'package:igames/config/app_config_export.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -29,8 +31,7 @@ class HomeShell extends StatefulWidget {
     _BottomNavItem('home', Icons.home_filled),
     _BottomNavItem('promo', Icons.local_activity_outlined),
     _BottomNavItem('recharge', Icons.account_balance_wallet, isCenter: true),
-    _BottomNavItem('earn', Icons.monetization_on_outlined,
-        badge: _FlameBadge()),
+    _BottomNavItem('earn', Icons.monetization_on_outlined, showBadge: true),
     _BottomNavItem('mine', Icons.person_outline),
   ];
 
@@ -40,6 +41,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   late final List<Widget?> _tabCache;
+  bool _isDrawerOpen = false;
 
   @override
   void initState() {
@@ -87,7 +89,13 @@ class _HomeShellState extends State<HomeShell> {
       return Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: true,
-        drawer: const SideDrawer(),
+        drawer: SideDrawer(isOpen: _isDrawerOpen),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen == isOpen) return;
+          setState(() {
+            _isDrawerOpen = isOpen;
+          });
+        },
         body: IndexedStack(
           index: tab,
           children: _tabCache
@@ -101,127 +109,194 @@ class _HomeShellState extends State<HomeShell> {
 
   Widget _buildBottomBar(BuildContext context, int tab) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final extraSpace = bottomInset > 0 ? bottomInset / 2 : 0.0;
-    return SafeArea(
-      top: false,
-      bottom: false,
-      child: SizedBox(
-        height: 82 + bottomInset,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Container(
-              color: Colors.transparent,
-              padding: EdgeInsets.fromLTRB(16, 6, 16, 6 + extraSpace),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
-                          blurRadius: 12,
-                          offset: const Offset(0, -2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = Responsive.fromConstraints(constraints, context);
+        final m = _BottomNavMetrics.from(r, bottomInset);
+
+        TextStyle navLabelStyle(
+          bool isActive, {
+          Color activeColor = AppConfig.btnSelectedColor,
+        }) =>
+            TextStyle(
+              color: isActive ? activeColor : Colors.white70,
+              fontSize: m.labelSize,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              height: 1,
+            );
+
+        return SafeArea(
+          top: false,
+          bottom: false,
+          child: SizedBox(
+            height: m.barHeight,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  color: Colors.transparent,
+                  padding: EdgeInsets.fromLTRB(
+                    m.outerHorizontal,
+                    m.outerTop,
+                    m.outerHorizontal,
+                    m.outerTop + m.extraSpace,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(m.barRadius),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: m.innerHorizontal,
+                          vertical: m.innerVertical,
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: HomeShell._bottomNavItems
-                          .asMap()
-                          .entries
-                          .expand((entry) {
-                        final idx = entry.key;
-                        final item = entry.value;
-                        final bool isActive = tab == idx;
-                        if (item.isCenter) {
-                          return [const SizedBox(width: 88)];
-                        }
-                        return [
-                          Expanded(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(14),
-                              onTap: () async {
-                                if (idx == 3) {
-                                  final ok = await widget.auth
-                                      .ensureAuthenticated(context);
-                                  if (!ok) return;
-                                }
-                                if (idx == 4 && widget.auth.isLoggedIn.value) {
-                                  widget.controller.refreshBalance();
-                                }
-                                _ensureTabBuilt(idx);
-                                widget.controller.currentTab.value = idx;
-                              },
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Icon(
-                                        item.icon,
-                                        size: 22,
-                                        color: isActive
-                                            ? const Color(0xFF8A6CFF)
-                                            : Colors.white70,
-                                      ),
-                                      if (item.badge != null)
-                                        Positioned(
-                                          top: -6,
-                                          right: -8,
-                                          child: item.badge!,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(m.barRadius),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.22),
+                              blurRadius: m.shadowBlur,
+                              offset: Offset(0, -m.shadowOffset),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: HomeShell._bottomNavItems
+                              .asMap()
+                              .entries
+                              .expand((entry) {
+                            final idx = entry.key;
+                            final item = entry.value;
+                            final bool isActive = tab == idx;
+                            if (item.isCenter) {
+                              return [
+                                Expanded(
+                                  child: InkWell(
+                                    borderRadius:
+                                        BorderRadius.circular(m.barRadius - 4),
+                                    onTap: () async {
+                                      final ok = await widget.auth
+                                          .ensureAuthenticated(context);
+                                      if (!ok) return;
+                                      _ensureTabBuilt(2);
+                                      widget.controller.currentTab.value = 2;
+                                    },
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                            height: m.centerPlaceholderHeight),
+                                        SizedBox(height: m.labelGap),
+                                        Text(
+                                          item.label.tr,
+                                          style: navLabelStyle(
+                                            isActive,
+                                            activeColor:
+                                                AppConfig.btnSelectedColor,
+                                          ),
                                         ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    item.label.tr,
-                                    style: TextStyle(
-                                      color: isActive
-                                          ? const Color(0xFF8A6CFF)
-                                          : Colors.white70,
-                                      fontSize: 11,
-                                      fontWeight: isActive
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
+                                      ],
                                     ),
                                   ),
-                                ],
+                                ),
+                              ];
+                            }
+                            return [
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius:
+                                      BorderRadius.circular(m.barRadius - 4),
+                                  onTap: () async {
+                                    if (idx == 3) {
+                                      final ok = await widget.auth
+                                          .ensureAuthenticated(context);
+                                      if (!ok) return;
+                                    }
+                                    if (idx == 4 &&
+                                        widget.auth.isLoggedIn.value) {
+                                      widget.controller.refreshBalance();
+                                    }
+                                    _ensureTabBuilt(idx);
+                                    widget.controller.currentTab.value = idx;
+                                  },
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: m.sideIconBox,
+                                        height: m.sideIconBox,
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.center,
+                                              child: Icon(
+                                                item.icon,
+                                                size: m.sideIconSize,
+                                                color: isActive
+                                                    ? AppConfig.btnSelectedColor
+                                                    : Colors.white70,
+                                              ),
+                                            ),
+                                            if (item.showBadge)
+                                              Positioned(
+                                                top: -m.badgeTopOffset,
+                                                right: -m.badgeRightOffset,
+                                                child: _FlameBadge(
+                                                  size: m.badgeSize,
+                                                  iconSize: m.badgeIconSize,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: m.labelGap),
+                                      Text(
+                                        item.label.tr,
+                                        style: navLabelStyle(isActive),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ];
-                      }).toList(),
+                            ];
+                          }).toList(),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                Positioned(
+                  bottom: m.centerIconBottom + m.extraSpace,
+                  child: GestureDetector(
+                    onTap: () async {
+                      final ok = await widget.auth.ensureAuthenticated(context);
+                      if (!ok) return;
+                      _ensureTabBuilt(2);
+                      widget.controller.currentTab.value = 2;
+                    },
+                    child: SizedBox(
+                      width: m.centerIconSize,
+                      height: m.centerIconSize,
+                      child: Image.asset(
+                        'assets/images/menu_desposit.png',
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.low,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              bottom: 8 + extraSpace,
-              child: _CenterRechargeButton(
-                isActive: tab == 2,
-                onTap: () async {
-                  final ok = await widget.auth.ensureAuthenticated(context);
-                  if (!ok) return;
-                  _ensureTabBuilt(2);
-                  widget.controller.currentTab.value = 2;
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -230,24 +305,102 @@ class _BottomNavItem {
   final String label;
   final IconData icon;
   final bool isCenter;
-  final Widget? badge;
+  final bool showBadge;
 
   const _BottomNavItem(
     this.label,
     this.icon, {
     this.isCenter = false,
-    this.badge,
+    this.showBadge = false,
   });
 }
 
+class _BottomNavMetrics {
+  const _BottomNavMetrics._({
+    required this.barHeight,
+    required this.outerHorizontal,
+    required this.outerTop,
+    required this.innerHorizontal,
+    required this.innerVertical,
+    required this.barRadius,
+    required this.sideIconBox,
+    required this.sideIconSize,
+    required this.labelSize,
+    required this.labelGap,
+    required this.centerIconSize,
+    required this.centerPlaceholderHeight,
+    required this.centerIconBottom,
+    required this.badgeSize,
+    required this.badgeIconSize,
+    required this.badgeTopOffset,
+    required this.badgeRightOffset,
+    required this.extraSpace,
+    required this.shadowBlur,
+    required this.shadowOffset,
+  });
+
+  factory _BottomNavMetrics.from(Responsive r, double bottomInset) {
+    final centerIconSize = r.size(48);
+    return _BottomNavMetrics._(
+      barHeight: r.size(82) + bottomInset,
+      outerHorizontal: r.size(16),
+      outerTop: r.size(6),
+      innerHorizontal: r.size(14),
+      innerVertical: r.size(8),
+      barRadius: r.size(20),
+      sideIconBox: r.size(24),
+      sideIconSize: r.size(22),
+      labelSize: r.font(11),
+      labelGap: r.size(3),
+      centerIconSize: centerIconSize,
+      centerPlaceholderHeight: centerIconSize * 0.48,
+      centerIconBottom: r.size(26),
+      badgeSize: r.size(16),
+      badgeIconSize: r.size(12),
+      badgeTopOffset: r.size(6),
+      badgeRightOffset: r.size(8),
+      extraSpace: bottomInset > 0 ? bottomInset / 2 : 0.0,
+      shadowBlur: r.size(12),
+      shadowOffset: r.size(2),
+    );
+  }
+
+  final double barHeight;
+  final double outerHorizontal;
+  final double outerTop;
+  final double innerHorizontal;
+  final double innerVertical;
+  final double barRadius;
+  final double sideIconBox;
+  final double sideIconSize;
+  final double labelSize;
+  final double labelGap;
+  final double centerIconSize;
+  final double centerPlaceholderHeight;
+  final double centerIconBottom;
+  final double badgeSize;
+  final double badgeIconSize;
+  final double badgeTopOffset;
+  final double badgeRightOffset;
+  final double extraSpace;
+  final double shadowBlur;
+  final double shadowOffset;
+}
+
 class _FlameBadge extends StatelessWidget {
-  const _FlameBadge();
+  const _FlameBadge({
+    this.size = 16,
+    this.iconSize = 12,
+  });
+
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 16,
-      height: 16,
+      width: size,
+      height: size,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
@@ -256,95 +409,11 @@ class _FlameBadge extends StatelessWidget {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: const Center(
+      child: Center(
         child: Icon(
           Icons.local_fire_department,
-          size: 12,
+          size: iconSize,
           color: Colors.white,
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterRechargeButton extends StatelessWidget {
-  const _CenterRechargeButton({required this.isActive, required this.onTap});
-
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Transform.translate(
-        offset: const Offset(0, -6),
-        child: SizedBox(
-          width: 84,
-          height: 84,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned(
-                top: 18,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFB489FF), Color(0xFF7E74FF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color.fromARGB(208, 177, 185, 234),
-                        blurRadius: 10,
-                        offset: Offset(2, 5),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.white
-                          .withValues(alpha: isActive ? 0.26 : 0.16),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Container(
-                    margin: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.16),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.account_balance_wallet_outlined,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
-                  child: Text(
-                    'recharge'.tr,
-                    style: TextStyle(
-                      color: isActive
-                          ? const Color(0xFFB07CFF)
-                          : const Color.fromARGB(179, 255, 255, 255),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

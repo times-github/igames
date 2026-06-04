@@ -16,11 +16,16 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  >
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="best online casino">
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="getwiner.win">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -32,17 +37,18 @@
   <link rel="manifest" href="manifest.json">
   <style>
     :root {
-      --bg-1: #0c1020;
-      --bg-2: #141a32;
-      --accent-1: #7a4cff;
-      --text-1: #e7ebff;
+      --accent-1: #6DF0E3;  /* 强调色：加载转圈高亮边 */
+      --text-1: #6DF0E3;    /* 主文字色：Loading 文案等 */
     }
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      background-image: url("assets/images/appbg.png");
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-size: cover;
       overflow: hidden;
     }
 
@@ -57,8 +63,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
-      min-width: 120px;
+      gap: clamp(14px, 3.6vw, 22px);
+      min-width: clamp(148px, 40vw, 220px);
+      padding: 24px 20px;
       color: var(--text-1);
     }
 
@@ -73,23 +80,24 @@
     }
 
     .logo-wrap img {
-      width: 76px;
-      height: 76px;
+      width: clamp(92px, 24vw, 128px);
+      height: clamp(92px, 24vw, 128px);
     }
 
     .spinner {
-      width: 26px;
-      height: 26px;
+      width: clamp(28px, 8vw, 38px);
+      height: clamp(28px, 8vw, 38px);
       border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, 0.14);
+      border: clamp(3px, 0.9vw, 4px) solid rgba(255, 255, 255, 0.14);
       border-top-color: var(--accent-1);
       animation: spin 0.85s linear infinite;
     }
 
     .loading-text {
-      font-size: 13px;
+      font-size: clamp(14px, 3.8vw, 18px);
       color: rgba(231, 235, 255, 0.72);
       letter-spacing: 0.2px;
+      line-height: 1.2;
     }
 
     @keyframes spin {
@@ -103,13 +111,12 @@
       background: transparent;
     }
 
-    /* 防止 Flutter canvas 覆盖成白底 */
     canvas {
       background-color: transparent !important;
     }
   </style>
 
-  <script>
+  <!-- <script>
     window.__igamesLoadFacebookPixel = function () {
       if (window.fbq) return;
       !function(f,b,e,v,n,t,s)
@@ -126,11 +133,11 @@
       });
       fbq('track', 'PageView');
     };
-  </script>
+  </script> -->
   
 
 </head>
-<body>  <!-- 加载中的动画 -->
+<body> 
   <div id="loading">
     <div class="logo-wrap">
       <img src="icons/Icon-192.png" alt="Logo" width="76" height="76" decoding="async">
@@ -140,15 +147,12 @@
   </div>
 
 
-  <!-- Flutter 容器 -->
   <div id="flutter_container"></div>
 
-  <!-- Flutter 入口 -->
   <script src="flutter_bootstrap.js" async=""></script>
 
   <script>
 
-    // Flutter 渲染第一个 frame 后，隐藏 loading
     window.addEventListener("flutter-first-frame", function () {
       document.getElementById("loading").style.display = "none";
       document.getElementById("flutter_container").style.display = "block";

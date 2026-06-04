@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/utils/api_client.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class PayPasswordView extends StatefulWidget {
   const PayPasswordView({super.key});
@@ -32,7 +32,7 @@ class _PayPasswordViewState extends State<PayPasswordView> {
   Widget build(BuildContext context) {
     final step = _steps[_stepIndex];
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: Padding(
@@ -73,10 +73,8 @@ class _PayPasswordViewState extends State<PayPasswordView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(

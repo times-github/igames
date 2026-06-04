@@ -9,6 +9,8 @@
         "cancel": "Cancel"
     },
     "language": "Language",
+    "switchLanguageTitle": "Switch Language",
+    "switchLanguageSubtitle": "Please choose your language to switch",
     "turnstileRequired": "Please complete the human verification first",
     "login": "Login",
     "register": "Register",
@@ -39,6 +41,9 @@
     "tip": "Tip",
     "passwordNotMatch": "Password not match",
     "passwordError": "Password error",
+    "password_invalid": "Invalid password",
+    "password_login_locked": "Too many failed password attempts. Please try again later.",
+    "retry_after_seconds": "Retry in @minutes min",
     "pleaseEnterAllInformation": "Please enter all information",
     "contactCustomerService": "Contact customer service",
     "customerService": "Customer service",

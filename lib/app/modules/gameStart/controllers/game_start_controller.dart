@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
+import 'package:igames/app/utils/user_status_error.dart';
 import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/device_utils.dart';
 import 'dart:convert';
@@ -10,7 +11,7 @@ import '../../../utils/api_client.dart';
 
 class GameStartController extends GetxController {
   // 游戏数据（允许在再次进入时更新）
-  GameList? game = Get.arguments as GameList?;
+  GameList? game = _readGameFromArgs(Get.arguments);
   String? _activeGameKey;
   String? _loadingGameKey;
   String? _loadedGameKey;
@@ -61,7 +62,7 @@ class GameStartController extends GetxController {
 
   void _syncArgsAndMaybeLoad() {
     //同步参数并加载游戏
-    final arg = Get.arguments as GameList?;
+    final arg = _readGameFromArgs(Get.arguments);
     final nextGameKey = _buildGameKey(arg);
 
     final bool isDifferent =
@@ -80,6 +81,22 @@ class GameStartController extends GetxController {
       _activeGameKey ??= nextGameKey;
       _loadGameUrl();
     }
+  }
+
+  static GameList? _readGameFromArgs(dynamic args) {
+    if (args is GameList) {
+      return args;
+    }
+
+    if (args is Map) {
+      try {
+        return GameList.fromJson(Map<String, dynamic>.from(args));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return null;
   }
 
   /// 加载游戏URL
@@ -175,6 +192,20 @@ class GameStartController extends GetxController {
                 urlRequest: URLRequest(url: WebUri(newUrl)));
           } catch (_) {}
         } else {
+          final handled = await handleUserStatusError(
+            code: responseData['code'],
+            message: responseData['msg']?.toString(),
+          );
+          if (handled) {
+            _showError(
+              parseUserStatusError(
+                    code: responseData['code'],
+                    message: responseData['msg']?.toString(),
+                  )?.localizedMessage ??
+                  'networkError'.tr,
+            );
+            return;
+          }
           _showError(_extractGameLinkErrorMessage(responseData));
         }
       } else {
@@ -287,6 +318,14 @@ class GameStartController extends GetxController {
   }
 
   String _extractGameLinkErrorMessage(Map<String, dynamic> responseData) {
+    final statusError = parseUserStatusError(
+      code: responseData['code'],
+      message: responseData['msg']?.toString(),
+    );
+    if (statusError != null) {
+      return statusError.localizedMessage;
+    }
+
     final data = _asMap(responseData['data']);
     final vendorMessage = data['vendor_msg']?.toString().trim();
     if (vendorMessage != null && vendorMessage.isNotEmpty) {

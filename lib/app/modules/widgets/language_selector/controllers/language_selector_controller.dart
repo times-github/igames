@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -88,92 +87,83 @@ class LanguageSelectorController extends GetxController {
       return;
     }
 
-    final Size screen = MediaQuery.of(context).size;
-    final double panelWidth = math.min(screen.width - 48, 980);
-    final double panelHeight = math.min(screen.height - 160, 600);
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final bottomInset = mediaQuery.padding.bottom;
+    final scale = (screenWidth / 390).clamp(0.88, 1.18);
+    final blur = 8.0 * scale;
+    final panelRadius = 28.0 * scale;
+    final horizontalPadding = 24.0 * scale;
+    final titleTop = 26.0 * scale;
+    final titleBottom = 10.0 * scale;
+    final titleSize = 24.0 * scale;
+    final subtitleGap = 12.0 * scale;
+    final subtitleSize = 14.0 * scale;
 
     _entry = OverlayEntry(
       builder: (context) => Stack(children: [
-        // 背景模糊 + 暗色蒙层（点击关闭）
         Positioned.fill(
           child: GestureDetector(
             onTap: close,
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
               child: Container(
-                color: Colors.black.withValues(alpha: 0.35),
+                color: Colors.black.withValues(alpha: 0.48),
               ),
             ),
           ),
         ),
-        // 居中弹窗面板
-        Center(
+        Align(
+          alignment: Alignment.bottomCenter,
           child: Material(
             color: Colors.transparent,
             child: Container(
-              width: panelWidth,
-              height: panelHeight,
+              width: double.infinity,
+              padding: EdgeInsets.only(bottom: bottomInset),
               decoration: BoxDecoration(
-                color: const Color(0xFF0E1621),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+                color: const Color(0xFF0D6A72),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(panelRadius),
+                ),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 顶部标题 + 关闭按钮
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    child: Row(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      titleTop,
+                      horizontalPadding,
+                      titleBottom,
+                    ),
+                    child: Column(
                       children: [
                         Text(
-                          'language'.tr,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800),
+                          'switchLanguageTitle'.tr,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        const Spacer(),
-                        InkWell(
-                          onTap: close,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF20242D),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.close,
-                                color: Colors.white, size: 18),
+                        SizedBox(height: subtitleGap),
+                        Text(
+                          'switchLanguageSubtitle'.tr,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.52),
+                            fontSize: subtitleSize,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  // // 可选的顶部装饰横幅
-                  // Padding(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  //   child: Container(
-                  //     height: 64,
-                  //     decoration: BoxDecoration(
-                  //       borderRadius: BorderRadius.circular(16),
-                  //       gradient: const LinearGradient(
-                  //         colors: [Color(0xFF0E3A8C), Color(0xFF2563EB)],
-                  //       ),
-                  //     ),
-                  //     // 可放入装饰内容
-                  //   ),
-                  // ),
-
-                  expandedGrid(), // 中部网格区域（可滚动）
+                  ...languages.map(
+                    (lang) => _buildLanguageOption(lang, scale: scale),
+                  ),
+                  _buildCancelButton(scale: scale),
                 ],
               ),
             ),
@@ -184,23 +174,6 @@ class LanguageSelectorController extends GetxController {
 
     targetOverlay.insert(_entry!);
     isOpen.value = true;
-  }
-
-  // 中部网格区域（可滚动）
-  Widget expandedGrid() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: SingleChildScrollView(
-          child: Wrap(
-            spacing: 14,
-            runSpacing: 14,
-            children:
-                languages.map((lang) => _buildLanguageOption(lang)).toList(),
-          ),
-        ),
-      ),
-    );
   }
 
   void close() {
@@ -258,57 +231,101 @@ class LanguageSelectorController extends GetxController {
     );
   }
 
-  Widget _buildLanguageOption(LanguageOption lang) {
-    final bool isSelected = currentCode.value ==
-        lang.languageCode; // 判断是否选中，根据语言代码，而不是语言名称 ，因为语言名称可能相同，但是语言代码不会相同
+  Widget _buildLanguageOption(LanguageOption lang, {required double scale}) {
+    final bool isSelected = currentCode.value == lang.languageCode;
+    final horizontalPadding = 24.0 * scale;
+    final verticalPadding = 18.0 * scale;
+    final flagSize = 28.0 * scale;
+    final gap = 18.0 * scale;
+    final textSize = 18.0 * scale;
+    final checkBoxSize = 38.0 * scale;
+    final checkIconSize = 28.0 * scale;
 
     return GestureDetector(
-      // 网格选项（点击选中的语言）
       onTap: () => selectLanguage(lang),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: isSelected ? 86 : 74,
-        height: isSelected ? 86 : 74,
-        decoration: BoxDecoration(
-          color: isSelected ? null : const Color(0xFF20242D),
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF1D4ED8), Color(0xFF3B82F6)])
-              : null,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.45),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
+      child: Container(
+        width: double.infinity,
+        color: isSelected ? const Color(0xFF13959D) : Colors.transparent,
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
             SvgPicture.asset(
               lang.flagAsset,
-              width: 24,
-              height: 24,
+              width: flagSize,
+              height: flagSize,
               fit: BoxFit.contain,
             ),
-            const SizedBox(height: 6),
-            Text(
-              lang.name,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+            SizedBox(width: gap),
+            Expanded(
+              child: Text(
+                _displayNameForSheet(lang),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: textSize,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
+            if (isSelected)
+              Container(
+                width: checkBoxSize,
+                height: checkBoxSize,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1CE5E6),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_rounded,
+                  color: const Color(0xFF005B61),
+                  size: checkIconSize,
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildCancelButton({required double scale}) {
+    final horizontalPadding = 24.0 * scale;
+    final verticalPadding = 20.0 * scale;
+    final fontSize = 17.0 * scale;
+    return GestureDetector(
+      onTap: close,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
+        child: Text(
+          'button_cancel'.tr,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.65),
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _displayNameForSheet(LanguageOption lang) {
+    switch (lang.languageCode.toLowerCase()) {
+      case 'id':
+        return 'Indonesian';
+      case 'en':
+        return 'English';
+      case 'zh':
+        return '中文';
+      default:
+        return lang.name;
+    }
   }
 
   @override

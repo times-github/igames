@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/utils/api_client.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class RealNameView extends StatefulWidget {
   const RealNameView({super.key});
@@ -45,7 +45,9 @@ class _RealNameViewState extends State<RealNameView> {
         if (data['code'] == 1 && data['data'] is Map) {
           final payload = data['data'] as Map;
           final verifiedValue = payload['verified'] ?? payload['is_verified'];
-          final verified = verifiedValue == true || verifiedValue == 1 || verifiedValue == '1';
+          final verified = verifiedValue == true ||
+              verifiedValue == 1 ||
+              verifiedValue == '1';
           final realName = (payload['real_name'] ?? '').toString();
           _verified = verified;
           _realName = realName;
@@ -62,7 +64,7 @@ class _RealNameViewState extends State<RealNameView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -105,10 +107,8 @@ class _RealNameViewState extends State<RealNameView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -179,7 +179,8 @@ class _RealNameViewState extends State<RealNameView> {
               controller: _controller,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                hintStyle:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                 border: InputBorder.none,
               ),
             ),
@@ -251,7 +252,8 @@ class _RealNameViewState extends State<RealNameView> {
   }
 
   void _showError(dynamic code, dynamic msg) {
-    final parsedCode = code is int ? code : int.tryParse(code?.toString() ?? '');
+    final parsedCode =
+        code is int ? code : int.tryParse(code?.toString() ?? '');
     String text;
     switch (parsedCode) {
       case 1301:

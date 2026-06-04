@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
@@ -11,7 +13,7 @@ import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/config/app_config_export.dart';
 import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
-import 'package:igames/app/modules/widgets/language_selector/views/language_selector_view.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/app/modules/userProfile/controllers/user_profile_controller.dart';
 import 'package:igames/app/modules/userProfile/views/game_history_page.dart';
 
@@ -29,105 +31,110 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     const bottomNavHeight = 20.0;
-    return Container(
-      decoration:
-          const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
-      child: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            3,
-            12,
-            3,
-            1 + bottomNavHeight + bottomInset,
-          ),
-          children: [
-            _ProfileCard(
-              auth: auth,
-              balance: controller.balance,
-              onRefreshBalance: controller.refreshBalance,
-              isRefreshingBalance: controller.isRefreshingBalance,
-              hasFetchedBalance: controller.hasFetchedBalance,
-            ),
-            const SizedBox(height: 12),
-            _ProfileActions(auth: auth, controller: controller),
-            const SizedBox(height: 12),
-            _PromoTile(
-              title: 'promoCenter'.tr,
-              actionText: 'getBenefits'.tr,
-              onTap: () => controller.currentTab.value = 1,
-            ),
-            const SizedBox(height: 8),
-            _SettingsGroup(
-              items: [
-                _SettingsItem(
-                  label: 'betRecord'.tr,
-                  icon: Icons.history,
-                  onTap: () async {
-                    final ok = await auth.ensureAuthenticated(context);
-                    if (ok) {
-                      final userProfile =
-                          Get.isRegistered<UserProfileController>()
-                              ? Get.find<UserProfileController>()
-                              : Get.put(UserProfileController());
-                      userProfile.switchPageByIndex(2);
-                      userProfile.selectedDrawerTab.value = 3;
-                      Get.to(() => const GameHistoryPage());
-                    }
-                  },
-                ),
-                _SettingsItem(
-                  label: 'accountSecurity'.tr,
-                  icon: Icons.shield_moon_outlined,
-                  onTap: () async {
-                    final ok = await auth.ensureAuthenticated(context);
-                    if (ok) {
-                      Get.toNamed(Routes.ACCOUNT_SECURITY);
-                    }
-                  },
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'accountSecurityReward'.tr,
-                        style: const TextStyle(
-                          color: Color(0xFFFF6B6B),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right, color: Colors.white70),
-                    ],
-                  ),
-                ),
-                _SettingsItem(
-                  label: 'helpCenter'.tr,
-                  icon: Icons.help_outline,
-                  onTap: () => auth.openCustomerService(),
-                ),
-                _SettingsItem(
-                  label: 'language'.tr,
-                  icon: Icons.language,
-                  onTap: () {
-                    final languageController =
-                        Get.isRegistered<LanguageSelectorController>()
-                            ? Get.find<LanguageSelectorController>()
-                            : Get.put(LanguageSelectorController());
-                    languageController.openLanguageMenu(
-                      fallbackContext: context,
-                    );
-                  },
-                  trailing: IgnorePointer(
-                    child: LanguageSelectorView(compact: false),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _LogoutButton(auth: auth),
-          ],
+    final showAppUpdateItem =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final languageController = Get.isRegistered<LanguageSelectorController>()
+        ? Get.find<LanguageSelectorController>()
+        : Get.put(LanguageSelectorController());
+    return SafeArea(
+      bottom: false,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(
+          3,
+          12,
+          3,
+          1 + bottomNavHeight + bottomInset,
         ),
+        children: [
+          _ProfileCard(
+            auth: auth,
+            balance: controller.balance,
+            onRefreshBalance: controller.refreshBalance,
+            isRefreshingBalance: controller.isRefreshingBalance,
+            hasFetchedBalance: controller.hasFetchedBalance,
+            onBalanceActionTap: () {
+              auth.ensureAuthenticated(context).then((ok) {
+                if (ok) {
+                  controller.currentTab.value = 2;
+                }
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          _ProfileActions(auth: auth, controller: controller),
+          const SizedBox(height: 12),
+          _PromoTile(
+            title: 'promoCenter'.tr,
+            actionText: 'getBenefits'.tr,
+            onTap: () => controller.currentTab.value = 1,
+          ),
+          const SizedBox(height: 12),
+          _ProfileMenuPanel(
+            auth: auth,
+            languageController: languageController,
+            items: [
+              _ProfileMenuItem(
+                label: 'betRecord'.tr,
+                iconAsset: 'assets/images/me/games.png',
+                onTap: () async {
+                  final ok = await auth.ensureAuthenticated(context);
+                  if (ok) {
+                    final userProfile =
+                        Get.isRegistered<UserProfileController>()
+                            ? Get.find<UserProfileController>()
+                            : Get.put(UserProfileController());
+                    userProfile.switchPageByIndex(2);
+                    userProfile.selectedDrawerTab.value = 3;
+                    Get.to(() => const GameHistoryPage());
+                  }
+                },
+              ),
+              _ProfileMenuItem(
+                label: 'accountSecurity'.tr,
+                iconAsset: 'assets/images/me/edit.png',
+                onTap: () async {
+                  final ok = await auth.ensureAuthenticated(context);
+                  if (ok) {
+                    Get.toNamed(Routes.ACCOUNT_SECURITY);
+                  }
+                },
+                subtitle: 'accountSecurityReward'.tr,
+              ),
+              _ProfileMenuItem(
+                label: 'helpCenter'.tr,
+                iconAsset: 'assets/images/me/customer.png',
+                onTap: () => auth.openCustomerService(),
+              ),
+              _ProfileMenuItem(
+                label: 'language'.tr,
+                iconAsset: 'assets/images/me/language.png',
+                onTap: () {
+                  languageController.openLanguageMenu(
+                    fallbackContext: context,
+                  );
+                },
+                trailing: Obx(
+                  () => Text(
+                    languageController.currentLanguage.value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              if (showAppUpdateItem)
+                _ProfileMenuItem(
+                  label: 'appUpdate'.tr,
+                  iconData: Icons.system_update_alt_rounded,
+                  onTap: auth.openDownloadUrl,
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -139,13 +146,15 @@ class _ProfileCard extends StatelessWidget {
       required this.balance,
       required this.onRefreshBalance,
       required this.isRefreshingBalance,
-      required this.hasFetchedBalance});
+      required this.hasFetchedBalance,
+      required this.onBalanceActionTap});
 
   final AuthController auth;
   final RxString balance;
   final Future<void> Function() onRefreshBalance;
   final RxBool isRefreshingBalance;
   final RxBool hasFetchedBalance;
+  final VoidCallback onBalanceActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -170,95 +179,102 @@ class _ProfileCard extends StatelessWidget {
               : '-';
           final avatarUrl = (userInfo['avatar'] ?? '').toString();
 
-          return Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1C1A2E),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 16,
-                  offset: const Offset(0, 10),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final r = Responsive.fromConstraints(constraints, context);
+
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: r.size(8),
+                  vertical: r.size(8),
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                decoration: BoxDecoration(
+                  color: AppConfig.webDesktopOuterBackground,
+                  borderRadius: BorderRadius.circular(r.size(18)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: r.size(16),
+                      offset: Offset(0, r.size(10)),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _ProfileAvatar(avatarUrl: avatarUrl),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: loggedIn
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _ProfileAvatar(
+                          avatarUrl: avatarUrl,
+                          size: r.size(48),
+                        ),
+                        SizedBox(width: r.size(12)),
+                        Expanded(
+                          child: loggedIn
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Flexible(
-                                      child: Text(
-                                        displayName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: AppColors.textPrimary,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            displayName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  color: AppColors.textPrimary,
+                                                  fontSize: r.font(16),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                        ),
+                                        SizedBox(width: r.size(6)),
+                                        _CopyNameButton(text: displayName),
+                                      ],
                                     ),
-                                    const SizedBox(width: 6),
-                                    _CopyNameButton(text: displayName),
                                   ],
+                                )
+                              : Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: _ProfileLoginButton(
+                                    onTap: auth.openLoginOverlay,
+                                    scale: r.scale,
+                                  ),
                                 ),
-                              ],
-                            )
-                          : Align(
-                              alignment: Alignment.centerLeft,
-                              child: _ProfileLoginButton(
-                                onTap: () => auth.openLoginOverlay(context),
-                              ),
-                            ),
+                        ),
+                        SizedBox(width: r.size(8)),
+                        _CircleIconButton(
+                          assetPath: 'assets/images/me/edit.png',
+                          onTap: () => Get.toNamed(Routes.ABOUT),
+                          padding: r.size(10),
+                          iconSize: r.size(21),
+                        ),
+                        SizedBox(width: r.size(8)),
+                        _NotificationCircleButton(
+                          padding: r.size(10),
+                          iconSize: r.size(38),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    _CircleIconButton(
-                      icon: Icons.settings_outlined,
-                      onTap: () => Get.toNamed(Routes.SETTINGS),
-                    ),
-                    const SizedBox(width: 8),
-                    const _NotificationCircleButton(),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _WalletBalancePill(
-                        loggedIn: loggedIn,
-                        balanceText: balanceText,
-                        isRefreshing: refreshing,
-                        onRefresh: loggedIn ? () => onRefreshBalance() : null,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _RecordButton(
-                      onTap: () async {
-                        final ok = await auth.ensureAuthenticated(context);
-                        if (!ok) return;
-                        Get.toNamed(Routes.TRANSACTION_HISTORY);
-                      },
+                    SizedBox(height: r.size(14)),
+                    _WalletBalancePill(
+                      loggedIn: loggedIn,
+                      balanceText: balanceText,
+                      isRefreshing: refreshing,
+                      onRefresh: loggedIn ? onBalanceActionTap : null,
+                      scale: r.scale,
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       );
@@ -267,9 +283,13 @@ class _ProfileCard extends StatelessWidget {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.avatarUrl});
+  const _ProfileAvatar({
+    required this.avatarUrl,
+    this.size = 48,
+  });
 
   final String avatarUrl;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -285,8 +305,8 @@ class _ProfileAvatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: SizedBox(
-          width: 48,
-          height: 48,
+          width: size,
+          height: size,
           child: hasAvatar
               ? CompatibleImage.network(
                   resolvedUrl,
@@ -312,36 +332,55 @@ class _ProfileAvatar extends StatelessWidget {
 }
 
 class _ProfileLoginButton extends StatelessWidget {
-  const _ProfileLoginButton({required this.onTap});
+  const _ProfileLoginButton({
+    required this.onTap,
+    this.scale = 1,
+  });
 
   final VoidCallback onTap;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
+    final widthScale = scale;
+    final horizontalPadding = 14 * widthScale;
+    final verticalPadding = 8 * widthScale;
+    final fontSize = 14 * widthScale;
+    final radius = 18 * widthScale;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF8A5CFF), Color(0xFF5E63FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [
+              Color.fromARGB(255, 16, 82, 77),
+              Color.fromARGB(255, 45, 218, 206),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF8A5CFF).withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 6 * widthScale,
+              offset: Offset(0, 3 * widthScale),
             ),
           ],
         ),
         child: Text(
           'loginRegister'.tr,
-          style: const TextStyle(
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w700,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -350,10 +389,17 @@ class _ProfileLoginButton extends StatelessWidget {
 }
 
 class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onTap});
+  const _CircleIconButton({
+    this.assetPath,
+    required this.onTap,
+    this.padding = 10,
+    this.iconSize = 21,
+  });
 
-  final IconData icon;
+  final String? assetPath;
   final VoidCallback onTap;
+  final double padding;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -361,20 +407,31 @@ class _CircleIconButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Ink(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(padding),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        child: Icon(icon, color: Colors.white70, size: 18),
+        child: Image.asset(
+          assetPath!,
+          width: iconSize,
+          height: iconSize,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
 }
 
 class _NotificationCircleButton extends StatefulWidget {
-  const _NotificationCircleButton();
+  const _NotificationCircleButton({
+    this.padding = 10,
+    this.iconSize = 21,
+  });
+
+  final double padding;
+  final double iconSize;
 
   @override
   State<_NotificationCircleButton> createState() =>
@@ -388,7 +445,7 @@ class _NotificationCircleButtonState extends State<_NotificationCircleButton> {
       onTap: () => Get.toNamed(Routes.MESSAGE),
       borderRadius: BorderRadius.circular(12),
       child: Ink(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(widget.padding),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(12),
@@ -397,10 +454,11 @@ class _NotificationCircleButtonState extends State<_NotificationCircleButton> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(
-              Icons.notifications_none_outlined,
-              color: Colors.white70,
-              size: 18,
+            Image.asset(
+              'assets/images/inbox.png',
+              width: widget.iconSize,
+              height: widget.iconSize,
+              fit: BoxFit.contain,
             ),
             Obx(() {
               final auth = Get.find<AuthController>();
@@ -541,60 +599,57 @@ class _WalletBalancePill extends StatelessWidget {
       {required this.loggedIn,
       required this.balanceText,
       required this.isRefreshing,
-      this.onRefresh});
+      this.onRefresh,
+      this.scale = 1});
 
   final bool loggedIn;
   final String balanceText;
   final bool isRefreshing;
   final VoidCallback? onRefresh;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
+    final widthScale = scale;
+    final displayedBalance = loggedIn ? _formatBalanceAsK(balanceText) : '-';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: (7 * widthScale).clamp(5, 7).toDouble(),
+        vertical: (3 * widthScale).clamp(2.5, 3).toDouble(),
+      ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color.fromARGB(255, 72, 41, 159),
-            Color.fromARGB(193, 24, 20, 50)
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+        color: const Color(0xFF14383C),
+        border: Border.all(
+          color: const Color(0xFF22D8DF),
+          width: 1.4,
         ),
-        borderRadius: BorderRadius.circular(23),
+        borderRadius:
+            BorderRadius.circular((24 * widthScale).clamp(18, 24).toDouble()),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              AppConfig.currencySymbol(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                letterSpacing: 0.2,
-              ),
-            ),
+          Image.asset(
+            'assets/images/me/idr.png',
+            width: (26 * widthScale).clamp(20, 26).toDouble(),
+            height: (26 * widthScale).clamp(20, 26).toDouble(),
+            fit: BoxFit.contain,
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: (6 * widthScale).clamp(4, 6).toDouble()),
           Flexible(
             fit: FlexFit.loose,
             child: Text(
-              loggedIn ? balanceText : '-',
+              displayedBalance,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
+                    color: const Color(0xFFFFF133),
+                    fontSize: (15 * widthScale).clamp(11.5, 15).toDouble(),
                     fontWeight: FontWeight.w700,
                   ),
             ),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: (3 * widthScale).clamp(1.5, 3).toDouble()),
           _RefreshBalanceButton(
             isRefreshing: isRefreshing,
             onTap: onRefresh,
@@ -615,125 +670,15 @@ class _RefreshBalanceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onTap == null;
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 150),
-      opacity: disabled ? 0.55 : 1,
-      child: _RefreshIconButton(
-        isRefreshing: isRefreshing,
-        disabled: disabled,
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-class _RefreshIconButton extends StatefulWidget {
-  const _RefreshIconButton(
-      {required this.isRefreshing,
-      required this.disabled,
-      required this.onTap});
-
-  final bool isRefreshing;
-  final bool disabled;
-  final VoidCallback? onTap;
-
-  @override
-  State<_RefreshIconButton> createState() => _RefreshIconButtonState();
-}
-
-class _RefreshIconButtonState extends State<_RefreshIconButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-    if (widget.isRefreshing) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _RefreshIconButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isRefreshing && !_controller.isAnimating) {
-      _controller.repeat();
-    } else if (!widget.isRefreshing && _controller.isAnimating) {
-      _controller.stop();
-      _controller.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.disabled ? null : widget.onTap,
-      child: Center(
-        child: RotationTransition(
-          turns: _controller,
-          child: const Icon(
-            Icons.refresh_rounded,
-            color: Colors.white,
-            size: 16,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecordButton extends StatelessWidget {
-  const _RecordButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.receipt_long_outlined,
-                color: Colors.white70,
-                size: 14,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'transactionHistory'.tr,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ],
+    return Opacity(
+      opacity: disabled ? 0.55 : (isRefreshing ? 0.88 : 1),
+      child: GestureDetector(
+        onTap: disabled ? null : onTap,
+        child: Image.asset(
+          'assets/images/me/add.png',
+          width: 24,
+          height: 24,
+          fit: BoxFit.contain,
         ),
       ),
     );
@@ -750,16 +695,13 @@ class _ProfileActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = [
       _WalletAction(
-        label: 'deposit'.tr,
-        icon: Icons.download_rounded,
-        onTap: () async {
-          final ok = await auth.ensureAuthenticated(context);
-          if (ok) controller.currentTab.value = 2;
-        },
-      ),
-      _WalletAction(
         label: 'withdraw'.tr,
-        icon: Icons.upload_rounded,
+        iconAsset: 'assets/images/me/withdraw.png',
+        backgroundAsset: AppConfig.btnDefaultBackgroundAsset,
+        textColor: AppConfig.btnDefaultTextColor,
+        borderColor: AppConfig.btnSelectedBorderColor,
+        borderWidth: 2,
+        borderRadius: 14,
         onTap: () async {
           final ok = await auth.ensureAuthenticated(context);
           if (ok) {
@@ -767,153 +709,168 @@ class _ProfileActions extends StatelessWidget {
           }
         },
       ),
+      _WalletAction(
+        label: 'deposit'.tr,
+        iconAsset: 'assets/images/me/desposit.png',
+        backgroundAsset: AppConfig.btnSelectedBackgroundAsset,
+        textColor: AppConfig.btnSelectedTextColor,
+        borderColor: AppConfig.btn2SelectedBorderColor,
+        borderWidth: 2.2,
+        borderRadius: 14,
+        onTap: () async {
+          final ok = await auth.ensureAuthenticated(context);
+          if (ok) controller.currentTab.value = 2;
+        },
+      ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: Row(
-        children: actions.asMap().entries.expand((entry) {
-          final idx = entry.key;
-          final action = entry.value;
-          return [
-            Expanded(
-              child: _ActionButton(
-                label: action.label,
-                icon: action.icon,
-                onTap: action.onTap,
-                highlight: action.highlight,
-                badgeText: action.badge,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = Responsive.fromConstraints(constraints, context);
+
+        return Row(
+          children: actions.asMap().entries.expand((entry) {
+            final idx = entry.key;
+            final action = entry.value;
+            return [
+              Expanded(
+                child: _ActionButton(
+                  label: action.label,
+                  iconAsset: action.iconAsset,
+                  backgroundAsset: action.backgroundAsset,
+                  textColor: action.textColor,
+                  borderColor: action.borderColor,
+                  borderWidth: action.borderWidth,
+                  borderRadius: action.borderRadius,
+                  scale: r.scale,
+                  onTap: action.onTap,
+                ),
               ),
-            ),
-            if (idx != actions.length - 1) const SizedBox(width: 8),
-          ];
-        }).toList(),
-      ),
+              if (idx != actions.length - 1) SizedBox(width: r.size(12)),
+            ];
+          }).toList(),
+        );
+      },
     );
   }
 }
 
 class _WalletAction {
   final String label;
-  final IconData icon;
+  final String iconAsset;
+  final String backgroundAsset;
+  final Color textColor;
+  final Color? borderColor;
+  final double borderWidth;
+  final double borderRadius;
   final VoidCallback onTap;
-  final bool highlight;
-  final String? badge;
 
   const _WalletAction({
     required this.label,
-    required this.icon,
+    required this.iconAsset,
+    required this.backgroundAsset,
+    required this.textColor,
     required this.onTap,
-    this.highlight = false,
-    this.badge,
+    this.borderColor,
+    this.borderWidth = 0,
+    this.borderRadius = 18,
   });
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton(
-      {required this.label,
-      required this.icon,
-      required this.onTap,
-      this.highlight = false,
-      this.badgeText});
+  const _ActionButton({
+    required this.label,
+    required this.iconAsset,
+    required this.backgroundAsset,
+    required this.textColor,
+    this.borderColor,
+    this.borderWidth = 0,
+    this.borderRadius = 18,
+    required this.onTap,
+    this.scale = 1,
+  });
 
   final String label;
-  final IconData icon;
+  final String iconAsset;
+  final String backgroundAsset;
+  final Color textColor;
+  final Color? borderColor;
+  final double borderWidth;
+  final double borderRadius;
   final VoidCallback onTap;
-  final bool highlight;
-  final String? badgeText;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
-    final gradient = highlight
-        ? const LinearGradient(
-            colors: [Color(0xFF3B1F9D), Color(0xFF7A4DFF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-        : const LinearGradient(
-            colors: [Color(0xFF5B4ADA), Color(0xFF7A55FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          );
+    final widthScale = scale;
+    final height = (54 * widthScale).clamp(42, 54).toDouble();
+    final iconSize = (30 * widthScale).clamp(22, 30).toDouble();
+    final fontSize = (16 * widthScale).clamp(12, 16).toDouble();
+    final resolvedRadius = (borderRadius * widthScale).clamp(12, 18).toDouble();
+    final resolvedBorderWidth = borderColor == null
+        ? 0.0
+        : (borderWidth * widthScale).clamp(1.0, 2.8).toDouble();
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 12,
-              offset: const Offset(0, 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(resolvedRadius),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(backgroundAsset),
+              fit: BoxFit.fill,
             ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
+            borderRadius: BorderRadius.circular(resolvedRadius),
+            border: borderColor == null
+                ? null
+                : Border.all(
+                    color: borderColor!,
+                    width: resolvedBorderWidth,
+                  ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: (20 * widthScale).clamp(14, 20).toDouble(),
+            ),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  height: 32,
-                  width: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.18),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                Image.asset(
+                  iconAsset,
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                SizedBox(width: (10 * widthScale).clamp(7, 10).toDouble()),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
             ),
-            if (badgeText != null && badgeText!.isNotEmpty)
-              Positioned(
-                right: -2,
-                top: -6,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE1524C),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    badgeText!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+String _formatBalanceAsK(String raw) {
+  final normalized = raw.replaceAll(',', '').replaceAll(' ', '');
+  final value = double.tryParse(normalized);
+  if (value == null) return raw;
+  final scaled = value / 1000;
+  return '${scaled.toStringAsFixed(2)} K';
 }
 
 class _PromoTile extends StatelessWidget {
@@ -926,37 +883,364 @@ class _PromoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = Responsive.fromConstraints(constraints, context);
+        final stackAction = r.width < 300;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(r.size(16)),
+            onTap: onTap,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: r.size(14),
+                vertical: r.size(12),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(r.size(16)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: stackAction
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.card_giftcard,
+                              color: Colors.white70,
+                              size: r.size(24),
+                            ),
+                            SizedBox(width: r.size(10)),
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: r.font(15),
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: r.size(8)),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: onTap,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF8A6CFF),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: r.size(8),
+                                vertical: r.size(4),
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              actionText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: r.font(13),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Icon(
+                          Icons.card_giftcard,
+                          color: Colors.white70,
+                          size: r.size(24),
+                        ),
+                        SizedBox(width: r.size(10)),
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: r.font(15),
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: onTap,
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF8A6CFF),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: r.size(8),
+                              vertical: r.size(4),
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            actionText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: r.font(13),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProfileMenuPanel extends StatelessWidget {
+  const _ProfileMenuPanel({
+    required this.auth,
+    required this.languageController,
+    required this.items,
+  });
+
+  final AuthController auth;
+  final LanguageSelectorController languageController;
+  final List<_ProfileMenuItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = Responsive.fromConstraints(constraints, context);
+        return Obx(() {
+          final showLogout = auth.isLoggedIn.value;
+          final borderRadius = BorderRadius.circular(14);
+          return Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: Color.fromARGB(168, 17, 157, 159),
+                width: 2,
+              ),
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(168, 17, 157, 159)
+                      .withValues(alpha: 0.10),
+                  const Color.fromARGB(0, 255, 255, 255)
+                      .withValues(alpha: 0.10),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                    left: r.size(-200),
+                    top: r.size(-208),
+                    child: IgnorePointer(
+                      child: Container(
+                        width: r.size(400),
+                        height: r.size(400),
+                        decoration: const BoxDecoration(
+                          gradient: RadialGradient(
+                            colors: [
+                              Color.fromARGB(191, 41, 253, 239),
+                              Color.fromARGB(0, 69, 255, 240),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )),
+                Positioned(
+                  left: r.size(110),
+                  right: r.size(110),
+                  bottom: r.size(-35),
+                  child: IgnorePointer(
+                    child: Container(
+                      height: r.size(44),
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(191, 41, 253, 239),
+                            blurRadius: r.size(50),
+                            spreadRadius: r.size(0.1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Column(
+                  children: [
+                    Column(
+                      children: items.asMap().entries.map((entry) {
+                        final item = entry.value;
+                        final isLast = entry.key == items.length - 1;
+                        return Column(
+                          children: [
+                            _ProfileMenuRow(
+                              item: item,
+                              scale: r.scale,
+                            ),
+                            if (!isLast)
+                              Divider(
+                                height: 1,
+                                indent: r.size(18),
+                                endIndent: r.size(18),
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                    if (showLogout)
+                      Divider(
+                        height: 1,
+                        indent: r.size(18),
+                        endIndent: r.size(18),
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    if (showLogout)
+                      _ProfileMenuRow(
+                        item: _ProfileMenuItem(
+                          label: 'logout'.tr,
+                          iconAsset: 'assets/images/me/logout.png',
+                          onTap: auth.logout,
+                        ),
+                        scale: r.scale,
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        });
+      },
+    );
+  }
+}
+
+class _ProfileMenuRow extends StatelessWidget {
+  const _ProfileMenuRow({
+    required this.item,
+    required this.scale,
+  });
+
+  final _ProfileMenuItem item;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontal = (16 * scale).clamp(14, 18).toDouble();
+    final vertical = (14 * scale).clamp(13, 17).toDouble();
+    final iconBox = (26 * scale).clamp(22, 26).toDouble();
+    final iconSize = (24 * scale).clamp(20, 24).toDouble();
+    final arrowSize = (28 * scale).clamp(13, 16).toDouble();
+    final titleSize = (19 * scale).clamp(12.5, 15).toDouble();
+    final subtitleSize = (15 * scale).clamp(10, 12).toDouble();
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        onTap: item.onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontal,
+            vertical: vertical,
           ),
           child: Row(
             children: [
-              const Icon(Icons.card_giftcard, color: Colors.white70),
-              const SizedBox(width: 10),
+              SizedBox(
+                width: iconBox,
+                height: iconBox,
+                child: item.iconAsset != null
+                    ? Image.asset(
+                        item.iconAsset!,
+                        width: iconSize,
+                        height: iconSize,
+                        fit: BoxFit.contain,
+                      )
+                    : Icon(
+                        item.iconData,
+                        // color: const Color(0xFF79FFF0),
+                        size: iconSize,
+                      ),
+              ),
+              SizedBox(width: (16 * scale).clamp(12, 16).toDouble()),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: titleSize,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          if (item.subtitle != null) ...[
+                            SizedBox(
+                              height: (4 * scale).clamp(2, 4).toDouble(),
+                            ),
+                            Text(
+                              item.subtitle!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: const Color.fromARGB(255, 239, 53, 47),
+                                fontSize: subtitleSize,
+                                fontWeight: FontWeight.w600,
+                                height: 1.15,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (item.trailing != null) ...[
+                      SizedBox(width: (10 * scale).clamp(8, 10).toDouble()),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: (132 * scale).clamp(82, 132).toDouble(),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: item.trailing!,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              TextButton(
-                onPressed: onTap,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF8A6CFF),
-                ),
-                child: Text(actionText),
+              SizedBox(width: (14 * scale).clamp(10, 14).toDouble()),
+              Image.asset(
+                'assets/images/me/into.png',
+                width: arrowSize,
+                height: arrowSize,
+                fit: BoxFit.contain,
               ),
             ],
           ),
@@ -966,144 +1250,20 @@ class _PromoTile extends StatelessWidget {
   }
 }
 
-class _SettingsGroup extends StatelessWidget {
-  const _SettingsGroup({required this.items});
+class _ProfileMenuItem {
+  const _ProfileMenuItem({
+    required this.label,
+    required this.onTap,
+    this.iconAsset,
+    this.iconData,
+    this.trailing,
+    this.subtitle,
+  });
 
-  final List<_SettingsItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        children: items
-            .map((item) => Column(
-                  children: [
-                    ListTile(
-                      leading: Icon(item.icon,
-                          color: Colors.white.withValues(alpha: 0.9)),
-                      title: Text(
-                        item.label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      trailing: item.trailing ??
-                          const Icon(Icons.chevron_right,
-                              color: Colors.white70),
-                      onTap: item.onTap,
-                    ),
-                    if (item != items.last)
-                      Divider(
-                        height: 1,
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
-                  ],
-                ))
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _SettingsItem {
   final String label;
-  final IconData icon;
   final VoidCallback onTap;
+  final String? iconAsset;
+  final IconData? iconData;
   final Widget? trailing;
-  const _SettingsItem(
-      {required this.label,
-      required this.icon,
-      required this.onTap,
-      this.trailing});
-}
-
-class _LanguageSelectorTile extends StatelessWidget {
-  const _LanguageSelectorTile();
-
-  void _openLanguageMenu(BuildContext context) {
-    final languageController = Get.isRegistered<LanguageSelectorController>()
-        ? Get.find<LanguageSelectorController>()
-        : Get.put(LanguageSelectorController());
-    languageController.openLanguageMenu(
-      fallbackContext: context,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _openLanguageMenu(context),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.language, color: Colors.white.withValues(alpha: 0.9)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'language'.tr,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            IgnorePointer(
-              child: LanguageSelectorView(compact: false),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LogoutButton extends StatelessWidget {
-  const _LogoutButton({required this.auth});
-
-  final AuthController auth;
-
-  @override
-  Widget build(BuildContext context) {
-    // 使用 Obx 监听登录状态，只有登录时才显示注销按钮
-    return Obx(() {
-      if (!auth.isLoggedIn.value) {
-        return const SizedBox.shrink(); // 未登录时返回空组件
-      }
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEB5757),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0),
-            onPressed: () => auth.logout(),
-            child: Text(
-              'logout'.tr,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-      );
-    });
-  }
+  final String? subtitle;
 }

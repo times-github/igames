@@ -5,20 +5,38 @@ import 'package:get/get.dart'; // GetX
 import 'package:flutter/services.dart';
 import 'package:igames/app/modules/home/bindings/home_binding.dart';
 import 'package:igames/app/modules/home/views/home.dart';
+import 'package:igames/app/data/services/announcement_service.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
+import 'package:igames/app/data/services/notification_center_service.dart';
+import 'package:igames/app/data/services/sse_notify_service.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:igames/app/data/services/web_update_service.dart';
+import 'package:igames/app/modules/widgets/web_desktop_viewport_shell.dart';
 import 'package:igames/app/modules/widgets/web_update_banner.dart';
 import 'package:igames/app/utils/api_client.dart';
+import 'package:igames/app/utils/event_bus.dart';
 
 import 'app/routes/app_pages.dart';
 import 'generated/locales.g.dart'; // 是否需要国际化
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // 屏幕适配
 import 'config/app_config_export.dart'; // 全局配置
 import 'utils/web_hash_handler.dart';
 import 'utils/web_lang_param.dart';
 import 'app/utils/launch_params.dart';
 import 'app/utils/storage.dart';
+
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}
 
 Locale _resolveStoredLocale(dynamic raw) {
   if (raw is! String) return const Locale('id', 'ID');
@@ -61,113 +79,131 @@ void main() async {
   }
   final storedLanguage = urlLang ?? await Storage.getData("language");
   final initialLocale = _resolveStoredLocale(storedLanguage);
+  final webRouteName = ValueNotifier<String>(AppPages.INITIAL);
   if (kIsWeb) {
     ensureHomeHash();
   }
 
-  // 全局服务
-  Get.put(ApiClient(), permanent: true); // 先注册 ApiClient
+  // ============ 全局服务注册（按依赖顺序） ============
+  // 0. 事件总线（最先注册，用于模块间解耦通信）
+  Get.put(EventBus(), permanent: true);
+
+  // 1. 基础服务
+  Get.put(ApiClient(), permanent: true);
+  Get.put(UserService(), permanent: true);
+
+  // 2. 应用信息服务
   final appInfo = Get.put(AppInfoService(), permanent: true);
+
+  // 3. 其他全局服务
   Get.put(JackpotService(), permanent: true);
+  Get.put(AnnouncementService(), permanent: true);
+  Get.put(NotificationCenterService(), permanent: true);
+  Get.put(SseNotifyService(), permanent: true);
   Get.put(WebUpdateService(), permanent: true);
 
-  // 注册 WebView 平台实现（Web 平台）
-
-  runApp(ScreenUtilInit(
-      designSize: const Size(1080, 2400), //设计稿的宽度和高度 px
-      minTextAdapt: true, // 是否根据屏幕大小自动调整字体大小
-      splitScreenMode: true, // 是否根据屏幕大小自动调整布局
-      builder: (context, child) {
-        final appInfo = Get.find<AppInfoService>();
-        return Obx(
-          () => GetMaterialApp(
-            debugShowCheckedModeBanner: false, // 隐藏调试标志
-            title: appInfo.appName.value,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.system, // 系统主题
-            builder: (context, child) {
+  runApp(
+    GetMaterialApp(
+        debugShowCheckedModeBanner: false, // 隐藏调试标志
+        title: AppConfig.appName,
+        scrollBehavior: const _AppScrollBehavior(),
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system, // 系统主题
+        builder: (context, child) {
+          return ValueListenableBuilder<String>(
+            valueListenable: webRouteName,
+            builder: (context, currentRoute, _) {
               return Stack(
+                fit: StackFit.expand,
                 children: [
-                  Positioned.fill(child: child ?? const SizedBox.shrink()),
+                  Positioned.fill(
+                    child: WebDesktopViewportShell(
+                      currentRoute: currentRoute,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  ),
                   const WebUpdateBanner(),
                 ],
               );
             },
+          );
+        },
 
-            defaultTransition: Transition.rightToLeftWithFade, //全局动画
-            initialRoute: AppPages.INITIAL, // 初始路由
-            getPages: AppPages.routes, // 路由列表
-            // 遇到不认识的路由，强制回首页
-            unknownRoute: GetPage(
-              name: AppPages.INITIAL,
-              page: () => Home(),
-              binding: HomeBinding(),
-            ),
+        defaultTransition: Transition.rightToLeftWithFade, //全局动画
+        initialRoute: AppPages.INITIAL, // 初始路由
+        getPages: AppPages.routes, // 路由列表
+        // 遇到不认识的路由，强制回首页
+        unknownRoute: GetPage(
+          name: AppPages.INITIAL,
+          page: () => Home(),
+          binding: HomeBinding(),
+        ),
 
-            // // 全局路由拦截
-            // onGenerateRoute: (settings) {
-            //   final current = Get.currentRoute; // 当前路由
-            //   // 白名单（允许直接访问的路由）
-            //   const allowed = {
-            //     AppPages.INITIAL, // '/home'
-            //     '/', // 有些场景会是 '/'
-            //     '', // 极端情况
-            //   };
+        // // 全局路由拦截
+        // onGenerateRoute: (settings) {
+        //   final current = Get.currentRoute; // 当前路由
+        //   // 白名单（允许直接访问的路由）
+        //   const allowed = {
+        //     AppPages.INITIAL, // '/home'
+        //     '/', // 有些场景会是 '/'
+        //     '', // 极端情况
+        //   };
 
-            //   // 已在首页或白名单内不处理
-            //   if (allowed.contains(current)) return;
+        //   // 已在首页或白名单内不处理
+        //   if (allowed.contains(current)) return;
 
-            //   // 避免重复跳转（如正在跳回）
-            //   if (Get.routing.isBack == true) return;
+        //   // 避免重复跳转（如正在跳回）
+        //   if (Get.routing.isBack == true) return;
 
-            //   // 非白名单路径：强制回首页
-            //   Future.microtask(() => Get.offAllNamed(AppPages.INITIAL));
-            // },
+        //   // 非白名单路径：强制回首页
+        //   Future.microtask(() => Get.offAllNamed(AppPages.INITIAL));
+        // },
 
-            translationsKeys: AppTranslation.translations, // 国际化翻译
-            // 默认与后备语言（使用标准构造：languageCode + countryCode）
-            locale: initialLocale, // 默认语言来自本地缓存
-            fallbackLocale: const Locale('id', 'ID'), // 翻译失败时使用中文
+        translationsKeys: AppTranslation.translations, // 国际化翻译
+        // 默认与后备语言（使用标准构造：languageCode + countryCode）
+        locale: initialLocale, // 默认语言来自本地缓存
+        fallbackLocale: const Locale('id', 'ID'), // 翻译失败时使用中文
 
-            // 与语言选择器一致的支持列表
-            supportedLocales: const [
-              Locale('zh', 'CN'),
-              Locale('en', 'US'),
-              Locale('id', 'ID'),
-            ],
+        // 与语言选择器一致的支持列表
+        supportedLocales: const [
+          Locale('zh', 'CN'),
+          Locale('en', 'US'),
+          Locale('id', 'ID'),
+        ],
 
-            routingCallback: (routing) {
-              if (!kIsWeb) return;
-              final lang =
-                  Get.locale?.languageCode ?? initialLocale.languageCode;
-              final params = <String, String?>{'lang': lang.toLowerCase()};
-              final inviteCode = LaunchParams.registerCode;
-              params['invite_code'] = inviteCode;
-              setWebHashParams(params);
-            },
+        routingCallback: (routing) {
+          final currentRoute = routing?.current;
+          if (currentRoute != null && currentRoute.isNotEmpty) {
+            webRouteName.value = currentRoute;
+          }
+          if (!kIsWeb) return;
+          final lang = Get.locale?.languageCode ?? initialLocale.languageCode;
+          final params = <String, String?>{'lang': lang.toLowerCase()};
+          final inviteCode = LaunchParams.registerCode;
+          params['invite_code'] = inviteCode;
+          setWebHashParams(params);
+        },
 
-            localizationsDelegates: const [
-              //
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+        localizationsDelegates: const [
+          //
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
 
-            // 按系统语言匹配，匹配不到则用 fallback
-            localeResolutionCallback: (locale, supportedLocales) {
-              if (locale == null) return const Locale('id', 'ID');
-              for (final l in supportedLocales) {
-                if (l.languageCode == locale.languageCode) return l;
-              }
-              return const Locale('id', 'ID');
-            },
-          ),
-        );
-      }));
+        // 按系统语言匹配，匹配不到则用 fallback
+        localeResolutionCallback: (locale, supportedLocales) {
+          if (locale == null) return const Locale('id', 'ID');
+          for (final l in supportedLocales) {
+            if (l.languageCode == locale.languageCode) return l;
+          }
+          return const Locale('id', 'ID');
+        },
+    ),
+  );
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    appInfo.fetchAppName();
     appInfo.fetchAppLogo();
   });
 }

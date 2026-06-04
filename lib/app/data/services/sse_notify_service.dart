@@ -4,7 +4,7 @@ import 'package:dio/dio.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/config/app_config_export.dart';
@@ -636,9 +636,30 @@ class SseNotifyService extends GetxService with WidgetsBindingObserver {
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(_stopConnection(clearIntent: true, preserveCursor: false));
-    _controller.close();
-    _sseDio.close(force: true);
+
+    // 确保所有资源都被清理
+    try {
+      _stopConnection(clearIntent: true, preserveCursor: false);
+    } catch (e) {
+      debugPrint('Error during SSE cleanup: $e');
+    }
+
+    // 确保StreamController被关闭
+    try {
+      if (!_controller.isClosed) {
+        _controller.close();
+      }
+    } catch (e) {
+      debugPrint('Error closing SSE StreamController: $e');
+    }
+
+    // 确保Dio被关闭
+    try {
+      _sseDio.close(force: true);
+    } catch (e) {
+      debugPrint('Error closing SSE Dio: $e');
+    }
+
     super.onClose();
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/utils/api_client.dart';

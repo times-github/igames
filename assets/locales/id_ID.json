@@ -7,6 +7,8 @@
         "cancel": "Batal"
     },
     "language": "Bahasa",
+    "switchLanguageTitle": "Ganti Bahasa",
+    "switchLanguageSubtitle": "Silakan pilih bahasa yang ingin digunakan",
     "turnstileRequired": "Silakan selesaikan verifikasi keamanan manusia terlebih dahulu",
     "moneySymbol": "Rp",
     "login": "Masuk",
@@ -37,6 +39,9 @@
     "tip": "Tip",
     "passwordNotMatch": "Kata sandi tidak cocok",
     "passwordError": "Kata sandi salah",
+    "password_invalid": "Kata sandi tidak valid",
+    "password_login_locked": "Terlalu banyak percobaan kata sandi yang gagal. Silakan coba lagi nanti.",
+    "retry_after_seconds": "Coba lagi dalam @minutes menit",
     "pleaseEnterAllInformation": "Silakan masukkan semua informasi",
     "contactCustomerService": "Hubungi layanan pelanggan",
     "customerService": "Layanan pelanggan",

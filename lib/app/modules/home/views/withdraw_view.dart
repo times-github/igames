@@ -3,10 +3,12 @@ import 'package:get/get.dart';
 import 'package:igames/app/data/services/payment_services.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/utils/storage.dart';
+import 'package:igames/app/utils/user_status_error.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/config/app_config_export.dart';
 
@@ -179,13 +181,6 @@ class _WithdrawViewState extends State<WithdrawView> {
     return card['bank_name']?.toString() ?? card['bankName']?.toString() ?? '';
   }
 
-  String _resolveBankShortFromCard(Map<String, dynamic> card) {
-    return card['bank_short_name']?.toString() ??
-        card['bank_short']?.toString() ??
-        card['bankShort']?.toString() ??
-        '';
-  }
-
   String _resolveCardNumber(Map<String, dynamic>? card) {
     if (card == null) return '';
     return card['card_number']?.toString() ??
@@ -227,14 +222,6 @@ class _WithdrawViewState extends State<WithdrawView> {
     return id == null ? '' : id.toString();
   }
 
-  String _maskCardNumber(String raw) {
-    if (raw.isEmpty) return '';
-    if (raw.contains('*')) return raw;
-    if (raw.length <= 4) return raw;
-    final tail = raw.substring(raw.length - 4);
-    return '**** $tail';
-  }
-
   String _extractCardTail(String raw) {
     if (raw.isEmpty) return '';
     final digits =
@@ -248,16 +235,6 @@ class _WithdrawViewState extends State<WithdrawView> {
     if (raw.isEmpty) return '';
     if (raw.length <= 4) return raw;
     return raw.substring(raw.length - 4);
-  }
-
-  String _resolveBankCardLabel(Map<String, dynamic> card) {
-    final name = _resolveBankNameFromCard(card);
-    final short = _resolveBankShortFromCard(card);
-    final number = _maskCardNumber(_resolveCardNumber(card));
-    final bankLabel = short.isEmpty ? name : '$name ($short)';
-    if (bankLabel.isEmpty) return number.isEmpty ? '--' : number;
-    if (number.isEmpty) return bankLabel;
-    return '$bankLabel $number';
   }
 
   String _resolveCardValue(Map<String, dynamic> card) {
@@ -710,6 +687,10 @@ class _WithdrawViewState extends State<WithdrawView> {
   }
 
   String _resolveWithdrawError(dynamic code, {String? message}) {
+    final statusError = parseUserStatusError(code: code, message: message);
+    if (statusError != null) {
+      return statusError.localizedMessage;
+    }
     final parsedCode =
         code is int ? code : int.tryParse(code?.toString() ?? '');
     switch (parsedCode) {
@@ -744,9 +725,6 @@ class _WithdrawViewState extends State<WithdrawView> {
       case 1015:
         return 'errorWithdrawDeductBalanceFailed'.tr;
       default:
-        if (message != null && message.trim().isNotEmpty) {
-          return message;
-        }
         return 'withdrawFailed'.tr;
     }
   }
@@ -792,8 +770,15 @@ class _WithdrawViewState extends State<WithdrawView> {
         bankCode: _selectedBankCode,
         mobile: mobile,
       );
+      final handled = await handleUserStatusError(
+        code: result.code,
+        message: result.msg,
+      );
+      if (handled) {
+        return;
+      }
       if (result.code == 1) {
-        Get.snackbar('tip'.tr, 'withdrawSubmitted'.tr);
+        Get.snackbar('tip'.tr, 'withdraw_submitted'.tr);
         Future.microtask(() => _home.refreshBalance());
       } else {
         Get.snackbar(
@@ -844,9 +829,16 @@ class _WithdrawViewState extends State<WithdrawView> {
         addressId: addressId,
         address: address,
       );
+      final handled = await handleUserStatusError(
+        code: result['code'],
+        message: result['msg']?.toString(),
+      );
+      if (handled) {
+        return;
+      }
       final code = result['code'];
-      if (code == 1 || code == 200 || code?.toString() == '1') {
-        Get.snackbar('tip'.tr, 'withdrawSubmitted'.tr);
+      if (code == 1 || code?.toString() == '1') {
+        Get.snackbar('tip'.tr, 'withdraw_submitted'.tr);
         Future.microtask(() => _home.refreshBalance());
       } else {
         Get.snackbar(
@@ -866,7 +858,7 @@ class _WithdrawViewState extends State<WithdrawView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: LayoutBuilder(
@@ -1050,11 +1042,8 @@ class _WithdrawViewState extends State<WithdrawView> {
     return SizedBox(
       width: 40,
       height: 40,
-      child: IconButton(
-        padding: EdgeInsets.zero,
+      child: AppBackButton(
         onPressed: () => Get.back(),
-        icon: const Icon(Icons.arrow_back_ios_new,
-            color: Colors.white70, size: 20),
       ),
     );
   }
@@ -1223,8 +1212,9 @@ class _WithdrawViewState extends State<WithdrawView> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _amountFocused
-              ? const Color(0xFF8A6CFF)
+              ? AppConfig.btnSelectedBorderColor
               : Colors.white.withValues(alpha: 0.08),
+          width: _amountFocused ? 1.8 : 1,
         ),
       ),
       child: Row(
@@ -1232,7 +1222,7 @@ class _WithdrawViewState extends State<WithdrawView> {
           Text(
             AppConfig.currencySymbol(),
             style: const TextStyle(
-              color: Color(0xFF8A6CFF),
+              color: AppConfig.btnSelectedColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1245,6 +1235,8 @@ class _WithdrawViewState extends State<WithdrawView> {
               textAlignVertical: TextAlignVertical.center,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
+                filled: false,
+                fillColor: Colors.transparent,
                 hintText: _amountRangeHint.isNotEmpty
                     ? _amountRangeHint
                     : 'withdrawAmountHint'.tr,
@@ -1391,12 +1383,13 @@ class _WithdrawViewState extends State<WithdrawView> {
             ),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7B4CFF), Color(0xFF2F245D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppConfig.btnSelectedGradient,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppConfig.btnSelectedBorderColor,
+                  width: 1.6,
+                ),
+                boxShadow: AppConfig.btnSelectedShadow,
               ),
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitWithdraw,
@@ -1483,11 +1476,8 @@ class _PaymentMethodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = selected
-        ? const Color(0xFF8A6CFF)
+        ? AppConfig.btnSelectedBorderColor
         : Colors.white.withValues(alpha: 0.1);
-    final bgColor = selected
-        ? const Color(0xFF8A6CFF).withValues(alpha: 0.2)
-        : Colors.white.withValues(alpha: 0.04);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1499,9 +1489,14 @@ class _PaymentMethodCard extends StatelessWidget {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(
-            color: bgColor,
+            gradient: selected ? AppConfig.btnSelectedGradient : null,
+            color: selected ? null : Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor),
+            border: Border.all(
+              color: borderColor,
+              width: selected ? 1.8 : 1,
+            ),
+            boxShadow: selected ? AppConfig.btnSelectedShadow : null,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1556,50 +1551,45 @@ class _BalanceBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final isLoading = refreshing?.value ?? false;
+      final displayBalance = _formatBalanceAsK(balance.value);
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF222732),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          color: const Color(0xFF14383C),
+          border: Border.all(
+            color: const Color(0xFF22D8DF),
+            width: 1.4,
+          ),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              AppConfig.currencySymbol(),
-              style: const TextStyle(
-                color: Colors.white70,
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-              ),
+            Image.asset(
+              'assets/images/me/idr.png',
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text(
-              balance.value,
+              displayBalance,
               style: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFFFFF133),
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
+                fontSize: 15,
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 3),
             GestureDetector(
               onTap: onRefresh,
-              child: AnimatedRotation(
-                turns: isLoading ? 1 : 0,
-                duration: const Duration(milliseconds: 700),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.refresh,
-                    color: Color(0xFFF1A64C),
-                    size: 16,
-                  ),
+              child: Opacity(
+                opacity: isLoading ? 0.88 : 1,
+                child: Image.asset(
+                  'assets/images/me/add.png',
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
@@ -1632,4 +1622,12 @@ class _OutlineRecordButton extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatBalanceAsK(String raw) {
+  final normalized = raw.replaceAll(',', '').replaceAll(' ', '');
+  final value = double.tryParse(normalized);
+  if (value == null) return raw;
+  final scaled = value / 1000;
+  return '${scaled.toStringAsFixed(2)} K';
 }

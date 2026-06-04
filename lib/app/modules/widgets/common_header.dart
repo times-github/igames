@@ -6,9 +6,8 @@ import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/routes/app_pages.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/config/app_config_export.dart';
-
-const double _kHeaderIconSize = 40.0;
 
 /// 通用顶部栏组件
 /// 用于首页、优惠页面等
@@ -24,120 +23,168 @@ Widget buildCommonHeader(
 
   return Obx(() {
     final loggedIn = auth.isLoggedIn.value;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final showTitle = screenWidth >= 350;
-    return SizedBox(
-      width: double.infinity,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 左侧：菜单 + logo + 标题
-          Expanded(
-            child: Row(
-              children: [
-                if (loggedIn && showMenu) ...[
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: InkWell(
-                      onTap: () => Scaffold.of(context).openDrawer(),
-                      borderRadius: BorderRadius.circular(14),
-                      child: const Center(
-                        child: Icon(Icons.menu_open_outlined,
-                            color: Colors.white70, size: 40),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = Responsive.fromConstraints(constraints, context);
+        final menuImageSize = r.size(44);
+        final menuPadding = r.size(2);
+        final iconBoxSize = menuImageSize + menuPadding;
+        final sideGap = r.size(6);
+        final unauthHeaderScale =
+            !loggedIn ? ((r.width / 520) > 1 ? 1.0 : (r.width / 520)) : 1.0;
+        final compactActionScale = r.width < 360 ? r.scale : 1.0;
+        final actionScale = compactActionScale < unauthHeaderScale
+            ? compactActionScale
+            : unauthHeaderScale;
+        final logoHeight = r.size(loggedIn ? 48 : 36) * unauthHeaderScale;
+        final logoWidth = r.size(loggedIn ? 140 : 148) * unauthHeaderScale;
+
+        return Container(
+          color: AppConfig.webDesktopOuterBackground,
+          width: double.infinity,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    if (loggedIn && showMenu) ...[
+                      SizedBox(
+                        width: iconBoxSize,
+                        height: iconBoxSize,
+                        child: InkWell(
+                          onTap: () => Scaffold.of(context).openDrawer(),
+                          child: Padding(
+                            padding: EdgeInsets.all(menuPadding),
+                            child: Image.asset(
+                              'assets/images/menu.png',
+                              width: menuImageSize,
+                              height: menuImageSize,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.low,
+                            ),
+                          ),
+                        ),
                       ),
+                      SizedBox(width: r.size(2)),
+                    ],
+                    SizedBox(
+                      height: logoHeight,
+                      width: logoWidth,
+                      child: Obx(() {
+                        return AppBrandLogo(
+                          logo: appInfo.appLogo.value,
+                          borderRadius: BorderRadius.zero,
+                          width: logoWidth,
+                          height: logoHeight,
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: r.size(2),
+                            vertical: r.size(1),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: r.size(6)),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!loggedIn) ...[
+                          LanguageSelectorView(
+                            scale: actionScale,
+                          ),
+                          SizedBox(width: r.size(4)),
+                          PulsingLoginButton(
+                            onTap: auth.openLoginOverlay,
+                            scale: actionScale,
+                            dense: r.width < 330,
+                          ),
+                        ] else if (showNotification) ...[
+                          NotificationButton(
+                            size: iconBoxSize,
+                            iconSize: r.size(35),
+                          ),
+                        ],
+                        SizedBox(width: sideGap),
+                        CustomerServiceButton(
+                          onTap: auth.openCustomerService,
+                          size: iconBoxSize * actionScale,
+                          iconSize: r.size(35) * actionScale,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 2),
-                ],
-                SizedBox(
-                  height: 40,
-                  width: 40,
-                  child: Obx(() {
-                    return AppBrandLogo(
-                      logo: appInfo.appLogo.value,
-                      borderRadius: BorderRadius.circular(10),
-                    );
-                  }),
                 ),
-                if (showTitle) ...[
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Obx(() {
-                      final name = appInfo.appName.value;
-                      return Text(
-                        name.toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.1,
-                                ),
-                      );
-                    }),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          // 右侧：固定宽度，客服按钮始终可见
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!loggedIn) ...[
-                const LanguageSelectorView(),
-                const SizedBox(width: 4),
-                PulsingLoginButton(
-                  onTap: () => auth.openLoginOverlay(context),
-                ),
-              ] else if (showNotification) ...[
-                const NotificationButton(),
-              ],
-              const SizedBox(width: 6),
-              CustomerServiceButton(onTap: auth.openCustomerService),
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   });
 }
 
 /// 登录按钮
 class PulsingLoginButton extends StatelessWidget {
-  const PulsingLoginButton({required this.onTap, super.key});
+  const PulsingLoginButton({
+    required this.onTap,
+    super.key,
+    this.scale = 1,
+    this.dense = false,
+  });
 
   final VoidCallback onTap;
+  final double scale;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
+    final widthScale = scale;
+    final horizontalPadding = (dense ? 7 : 8) * widthScale;
+    final verticalPadding = (dense ? 6 : 7) * widthScale;
+    final fontSize = (dense ? 12.5 : 13) * widthScale;
+    final radius = 18 * widthScale;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF8A5CFF), Color(0xFF5E63FF)],
+            colors: [
+              Color.fromARGB(255, 16, 82, 77),
+              Color.fromARGB(255, 45, 218, 206)
+            ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
+              blurRadius: 6 * widthScale,
+              offset: Offset(0, 3 * widthScale),
             ),
           ],
         ),
         child: Text(
           'loginRegister'.tr,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
+            fontSize: fontSize,
             fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
+            letterSpacing: dense ? 0.15 : 0.5,
           ),
         ),
       ),
@@ -147,34 +194,34 @@ class PulsingLoginButton extends StatelessWidget {
 
 /// 客服按钮
 class CustomerServiceButton extends StatelessWidget {
-  const CustomerServiceButton({required this.onTap, super.key});
+  const CustomerServiceButton({
+    required this.onTap,
+    super.key,
+    this.size = 36,
+    this.iconSize = 24,
+  });
 
   final VoidCallback onTap;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: _kHeaderIconSize,
-      height: _kHeaderIconSize,
+      width: size,
+      height: size,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        // borderRadius: BorderRadius.circular(size * 0.35),
         child: Ink(
-          // padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: const Color.fromARGB(255, 242, 241, 247)
-                    .withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.headset_mic_outlined,
-            color: Colors.white70,
-            size: 30,
+          child: Center(
+            child: Image.asset(
+              'assets/images/customer.png',
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.low,
+            ),
           ),
         ),
       ),
@@ -184,7 +231,14 @@ class CustomerServiceButton extends StatelessWidget {
 
 /// 通知按钮
 class NotificationButton extends StatefulWidget {
-  const NotificationButton({super.key});
+  const NotificationButton({
+    super.key,
+    this.size = 36,
+    this.iconSize = 24,
+  });
+
+  final double size;
+  final double iconSize;
 
   @override
   State<NotificationButton> createState() => _NotificationButtonState();
@@ -194,19 +248,21 @@ class _NotificationButtonState extends State<NotificationButton> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: _kHeaderIconSize,
-      height: _kHeaderIconSize,
+      width: widget.size,
+      height: widget.size,
       child: InkWell(
         onTap: () => Get.toNamed(Routes.MESSAGE),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(widget.size * 0.3),
         child: Center(
           child: Stack(
             clipBehavior: Clip.none, //不裁剪
             children: [
-              const Icon(
-                Icons.notifications_none_outlined,
-                color: Colors.white70,
-                size: 30,
+              Image.asset(
+                'assets/images/inbox.png',
+                width: widget.iconSize,
+                height: widget.iconSize,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.low,
               ),
               Obx(() {
                 final auth = Get.find<AuthController>();

@@ -113,7 +113,7 @@ class FavoritesController extends GetxController {
     if (!_auth.isLoggedIn.value) {
       final ctx = Get.context;
       if (ctx != null) {
-        _auth.openLoginOverlay(ctx);
+        _auth.openLoginOverlay();
       }
       return;
     }

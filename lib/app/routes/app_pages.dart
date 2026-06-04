@@ -48,6 +48,8 @@ class AppPages {
       name: _Paths.GAME_START,
       page: () => const GameStartView(),
       binding: GameStartBinding(),
+      transition: Transition.noTransition,
+      transitionDuration: Duration.zero,
     ),
     GetPage(
       name: _Paths.USER_PROFILE,

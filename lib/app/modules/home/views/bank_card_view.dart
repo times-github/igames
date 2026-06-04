@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/payment_services.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/routes/app_pages.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class BankCardView extends StatefulWidget {
   const BankCardView({super.key});
@@ -51,7 +51,7 @@ class _BankCardViewState extends State<BankCardView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -96,10 +96,8 @@ class _BankCardViewState extends State<BankCardView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -376,7 +374,8 @@ class _BankCardViewState extends State<BankCardView> {
   }
 
   String _resolveBankCardError(dynamic code, dynamic msg) {
-    final parsedCode = code is int ? code : int.tryParse(code?.toString() ?? '');
+    final parsedCode =
+        code is int ? code : int.tryParse(code?.toString() ?? '');
     switch (parsedCode) {
       case 2101:
         return 'errorBankNotLogin'.tr;

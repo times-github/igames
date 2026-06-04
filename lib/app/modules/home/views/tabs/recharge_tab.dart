@@ -6,9 +6,10 @@ import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/data/services/payment_services.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:igames/config/app_config_export.dart';
 import 'package:igames/app/routes/app_pages.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,11 +34,12 @@ class _RechargeTabState extends State<RechargeTab> {
       ? _appInfo.depositAmountOptions
       : AppConfig.defaultDepositAmounts;
   List<String> get _formattedAmounts =>
-      _quickAmounts.map((e) => _formatAmount(e)).toList();
+      _quickAmounts.map((e) => _formatQuickAmountDisplay(e)).toList();
   String? _selectedAmount;
   bool _hasUserSelected = false;
   bool _isSubmitting = false;
   late final Worker _depositAmountsWorker;
+  late final Worker _rechargeMethodWorker;
 
   @override
   void initState() {
@@ -50,13 +52,19 @@ class _RechargeTabState extends State<RechargeTab> {
       _appInfo.depositAmountOptions,
       (_) => _setDefaultSelectedAmount(notify: true),
     );
+    _rechargeMethodWorker = ever<String>(
+      _home.rechargeInitialMethod,
+      _applyInitialMethod,
+    );
     _usdtAmountController.addListener(_handleUsdtAmountChange);
+    _applyInitialMethod(_home.rechargeInitialMethod.value);
   }
 
   @override
   void dispose() {
     _usdtAmountController.dispose();
     _depositAmountsWorker.dispose();
+    _rechargeMethodWorker.dispose();
     super.dispose();
   }
 
@@ -77,6 +85,23 @@ class _RechargeTabState extends State<RechargeTab> {
       });
     } else {
       _selectedAmount = defaultAmount;
+    }
+  }
+
+  void _applyInitialMethod(String method) {
+    final normalized = method.trim().toLowerCase();
+    if (normalized == 'usdt') {
+      if (_selectedPayMethod != _DepositPayMethod.usdtTrc20) {
+        _selectPayMethod(_DepositPayMethod.usdtTrc20);
+      }
+      _home.rechargeInitialMethod.value = '';
+      return;
+    }
+    if (normalized == 'idr') {
+      if (_selectedPayMethod != _DepositPayMethod.idr) {
+        _selectPayMethod(_DepositPayMethod.idr);
+      }
+      _home.rechargeInitialMethod.value = '';
     }
   }
 
@@ -101,11 +126,12 @@ class _RechargeTabState extends State<RechargeTab> {
     if (!ok) return;
 
     final amount = _selectedAmount ?? '';
-    final amountValue = double.tryParse(amount);
+    final amountValue = _parseFlexibleAmount(amount);
     if (amountValue == null || amountValue <= 0) {
       Get.snackbar('tip'.tr, 'pleaseSelectAmount'.tr);
       return;
     }
+    final submitAmount = _normalizeSubmitAmount(amount);
 
     setState(() => _isSubmitting = true);
     try {
@@ -113,9 +139,9 @@ class _RechargeTabState extends State<RechargeTab> {
       final account = userInfo['account']?.toString() ?? '';
       final nickname = userInfo['nickname']?.toString() ?? '';
       final remark =
-          '${_appInfo.appName.value}-${nickname.isNotEmpty ? nickname : account}';
+          '${AppConfig.appName}-${nickname.isNotEmpty ? nickname : account}';
       final result = await PaymentServices.deposit(
-        amount: amount,
+        amount: submitAmount,
         remark: remark,
       );
       if (result.code == 200) {
@@ -229,7 +255,7 @@ class _RechargeTabState extends State<RechargeTab> {
         Get.snackbar('tip'.tr, 'cannotOpenPaymentPage'.tr);
       }
     } catch (e) {
-      Get.snackbar('tip'.tr, 'openPaymentPageFailed'.tr + ': $e');
+      Get.snackbar('tip'.tr, '${'openPaymentPageFailed'.tr}: $e');
     }
   }
 
@@ -259,7 +285,7 @@ class _RechargeTabState extends State<RechargeTab> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(color: AppColors.background),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: SafeArea(
         bottom: false,
         child: LayoutBuilder(
@@ -296,24 +322,35 @@ class _RechargeTabState extends State<RechargeTab> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _BalanceBadge(
-          onRefresh: _home.refreshBalance,
-          balance: _home.balance,
-          refreshing: _home.isRefreshingBalance,
-        ),
-        Text(
-          'deposit'.tr,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
+    return SizedBox(
+      height: 48,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _BalanceBadge(
+              onRefresh: _home.refreshBalance,
+              balance: _home.balance,
+              refreshing: _home.isRefreshingBalance,
+            ),
           ),
-        ),
-        _OutlineRecordButton(),
-      ],
+          Center(
+            child: Text(
+              'deposit'.tr,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _OutlineRecordButton(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -351,15 +388,18 @@ class _RechargeTabState extends State<RechargeTab> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
+                      gradient: selected ? AppConfig.btnSelectedGradient : null,
                       color: selected
-                          ? const Color(0xFF8A6CFF)
+                          ? null
                           : Colors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: selected
-                            ? const Color(0xFF8A6CFF)
+                            ? AppConfig.btnSelectedBorderColor
                             : Colors.white.withValues(alpha: 0.1),
+                        width: selected ? 1.8 : 1,
                       ),
+                      boxShadow: selected ? AppConfig.btnSelectedShadow : null,
                     ),
                     child: Center(
                       child: Text(
@@ -382,7 +422,7 @@ class _RechargeTabState extends State<RechargeTab> {
           ),
           const SizedBox(height: 12),
           Text(
-            '${'selectedDepositAmount'.tr}${_selectedAmount != null ? '${AppConfig.currencySymbol()} ${_formatAmount(_selectedAmount!)}' : '--'}',
+            '${'selectedDepositAmount'.tr}${_selectedAmount != null ? '${AppConfig.currencySymbol()} ${_formatQuickAmountDisplay(_selectedAmount!)}' : '--'}',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
@@ -427,14 +467,29 @@ class _RechargeTabState extends State<RechargeTab> {
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
               prefixText: 'USDT ',
               prefixStyle: const TextStyle(
-                color: Color(0xFF8A6CFF),
+                color: AppConfig.btnSelectedColor,
                 fontWeight: FontWeight.w700,
               ),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.06),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppConfig.btnSelectedBorderColor,
+                  width: 1.8,
+                ),
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -512,12 +567,13 @@ class _RechargeTabState extends State<RechargeTab> {
             ),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7B4CFF), Color(0xFF2F245D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppConfig.btnSelectedGradient,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppConfig.btnSelectedBorderColor,
+                  width: 1.6,
+                ),
+                boxShadow: AppConfig.btnSelectedShadow,
               ),
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submit,
@@ -605,6 +661,45 @@ class _RechargeTabState extends State<RechargeTab> {
     return '${AppConfig.currencySymbol()} ${_formatAmount(estimated.toString())}';
   }
 
+  double? _parseFlexibleAmount(String value) {
+    final normalized = value.trim().replaceAll(',', '');
+    if (normalized.isEmpty) return null;
+    final lower = normalized.toLowerCase();
+    if (lower.endsWith('k')) {
+      final base = double.tryParse(lower.substring(0, lower.length - 1));
+      if (base == null) return null;
+      return base * 1000;
+    }
+    return double.tryParse(normalized);
+  }
+
+  String _normalizeSubmitAmount(String value) {
+    final parsed = _parseFlexibleAmount(value);
+    if (parsed == null) return value;
+    if (parsed == parsed.roundToDouble()) {
+      return parsed.toInt().toString();
+    }
+    return parsed.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  String _formatQuickAmountDisplay(String value) {
+    final parsed = _parseFlexibleAmount(value);
+    if (parsed == null) {
+      return value.trim().replaceAll('K', 'k');
+    }
+    if (parsed >= 1000) {
+      final compact = parsed / 1000;
+      final compactText = compact == compact.roundToDouble()
+          ? compact.toInt().toString()
+          : compact.toStringAsFixed(1).replaceFirst(RegExp(r'\.?0+$'), '');
+      return '${compactText}k';
+    }
+    if (parsed == parsed.roundToDouble()) {
+      return parsed.toInt().toString();
+    }
+    return parsed.toStringAsFixed(1).replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
   String _formatAmount(String value) {
     final numValue = num.tryParse(value);
     if (numValue == null) return value;
@@ -616,6 +711,14 @@ class _RechargeTabState extends State<RechargeTab> {
     );
     return intPartWithComma;
   }
+}
+
+String _formatBalanceAsK(String raw) {
+  final normalized = raw.replaceAll(',', '').replaceAll(' ', '');
+  final value = double.tryParse(normalized);
+  if (value == null) return raw;
+  final scaled = value / 1000;
+  return '${scaled.toStringAsFixed(2)} K';
 }
 
 enum _DepositPayMethod {
@@ -641,11 +744,8 @@ class _PaymentMethodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = selected
-        ? const Color(0xFF8A6CFF)
+        ? AppConfig.btnSelectedBorderColor
         : Colors.white.withValues(alpha: 0.1);
-    final bgColor = selected
-        ? const Color(0xFF8A6CFF).withValues(alpha: 0.2)
-        : Colors.white.withValues(alpha: 0.04);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -655,9 +755,14 @@ class _PaymentMethodCard extends StatelessWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 2),
         decoration: BoxDecoration(
-          color: bgColor,
+          gradient: selected ? AppConfig.btnSelectedGradient : null,
+          color: selected ? null : Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor),
+          border: Border.all(
+            color: borderColor,
+            width: selected ? 1.8 : 1,
+          ),
+          boxShadow: selected ? AppConfig.btnSelectedShadow : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -705,51 +810,37 @@ class _BalanceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isLoading = refreshing?.value ?? false;
+      final displayBalance = _formatBalanceAsK(balance.value);
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF222732),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          color: const Color(0xFF14383C),
+          border: Border.all(
+            color: const Color(0xFF22D8DF),
+            width: 1.4,
+          ),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              AppConfig.currencySymbol(),
-              style: const TextStyle(
-                color: Colors.white70,
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-              ),
+            Image.asset(
+              'assets/images/me/idr.png',
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(width: 5),
-            Text(
-              balance.value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap: onRefresh,
-              child: AnimatedRotation(
-                turns: isLoading ? 1 : 0,
-                duration: const Duration(milliseconds: 700),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.refresh,
-                    color: Color(0xFFF1A64C),
-                    size: 16,
-                  ),
+            const SizedBox(width: 6),
+            Flexible(
+              fit: FlexFit.loose,
+              child: Text(
+                displayBalance,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFFFF133),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
                 ),
               ),
             ),
@@ -1093,21 +1184,17 @@ class _UsdtDepositSheetState extends State<_UsdtDepositSheet> {
 class _OutlineRecordButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () => Get.toNamed(Routes.TRANSACTION_HISTORY),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFDF9C4D), width: 1.2),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        foregroundColor: const Color(0xFFDF9C4D),
-      ),
-      child: Text(
-        'transactionHistory'.tr,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
+    final r = Responsive.fromContext(context);
+    return InkWell(
+      onTap: () => Get.toNamed(Routes.TRANSACTION_HISTORY),
+      borderRadius: BorderRadius.circular(r.size(12)),
+      child: Padding(
+        padding: EdgeInsets.all(r.size(6)),
+        child: Image.asset(
+          'assets/images/history.png',
+          width: r.size(34),
+          height: r.size(34),
+          fit: BoxFit.contain,
         ),
       ),
     );

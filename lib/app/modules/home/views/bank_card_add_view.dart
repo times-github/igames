@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/payment_services.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/routes/app_pages.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class BankCardAddView extends StatefulWidget {
   const BankCardAddView({super.key});
@@ -95,7 +95,7 @@ class _BankCardAddViewState extends State<BankCardAddView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -133,10 +133,8 @@ class _BankCardAddViewState extends State<BankCardAddView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -192,10 +190,7 @@ class _BankCardAddViewState extends State<BankCardAddView> {
   }
 
   Future<void> _openBankSelector() async {
-    final result = await Get.toNamed(
-      Routes.BANK_SELECTOR,
-      arguments: {'banks': _bankList},
-    );
+    final result = await Get.toNamed(Routes.BANK_SELECTOR);
     if (result is Map) {
       final code = result['bank_code']?.toString() ?? '';
       final name = result['bank_name']?.toString() ?? '';
@@ -323,7 +318,7 @@ class _BankCardAddViewState extends State<BankCardAddView> {
           ),
           Switch(
             value: _isDefault,
-            activeColor: const Color(0xFF34C759),
+            activeThumbColor: const Color(0xFF34C759),
             activeTrackColor: const Color(0xFF23362C),
             inactiveThumbColor: Colors.white54,
             inactiveTrackColor: Colors.white.withValues(alpha: 0.12),
@@ -419,22 +414,6 @@ class _BankCardAddViewState extends State<BankCardAddView> {
         bank['code']?.toString() ??
         bank['bank_code']?.toString() ??
         '';
-  }
-
-  String _resolveBankName(Map<String, dynamic> bank) {
-    return bank['bankName']?.toString() ??
-        bank['bank_name']?.toString() ??
-        bank['bankShort']?.toString() ??
-        '';
-  }
-
-  String _resolveBankLabel(Map<String, dynamic> bank) {
-    final name = bank['bankName']?.toString() ?? '';
-    final short = bank['bankShort']?.toString() ?? '';
-    if (name.isEmpty && short.isEmpty) return '--';
-    if (short.isEmpty) return name;
-    if (name.isEmpty) return short;
-    return '$name ($short)';
   }
 
   String _resolveBankCardError(dynamic code, dynamic msg) {

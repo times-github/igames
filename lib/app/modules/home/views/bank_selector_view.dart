@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/payment_services.dart';
-import 'package:igames/config/app_config_export.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 
 class BankSelectorView extends StatefulWidget {
   const BankSelectorView({super.key});
@@ -23,7 +23,10 @@ class _BankSelectorViewState extends State<BankSelectorView> {
     final args = Get.arguments;
     final banks = args is Map ? args['banks'] : null;
     if (banks is List && banks.isNotEmpty) {
-      _banks = banks.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      _banks = banks
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
       _filtered = List<Map<String, dynamic>>.from(_banks);
       _loading = false;
     } else {
@@ -71,7 +74,7 @@ class _BankSelectorViewState extends State<BankSelectorView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -116,10 +119,8 @@ class _BankSelectorViewState extends State<BankSelectorView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -157,7 +158,7 @@ class _BankSelectorViewState extends State<BankSelectorView> {
                 hintStyle:
                     TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                 border: InputBorder.none,
-                isDense: true,//
+                isDense: true, //
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
             ),

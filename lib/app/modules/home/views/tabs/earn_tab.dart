@@ -9,8 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
+import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/utils/api_lang.dart';
+import 'package:igames/app/utils/responsive.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/config/app_config_export.dart';
 
@@ -117,26 +120,45 @@ class InviteRebatePreview {
 class WeeklyData {
   final double totalCommission;
   final String currentWeekClaimWindow;
-  final bool lastWeekClaimed;
+  final int lastWeekClaimStatus;
 
   const WeeklyData({
     required this.totalCommission,
     required this.currentWeekClaimWindow,
-    required this.lastWeekClaimed,
+    required this.lastWeekClaimStatus,
   });
+
+  static const empty = WeeklyData(
+    totalCommission: 0,
+    currentWeekClaimWindow: '下周一到周日',
+    lastWeekClaimStatus: -1,
+  );
 }
 
-// ─── Mock 数据 ───────────────────────────────────────────────────────────────
+const _kEarnBannerAspectRatio = 2.0;
+const _kBalanceHighlightColor = Color(0xFFFFF133);
 
-const _kMockWeekly = WeeklyData(
-  totalCommission: 0,
-  currentWeekClaimWindow: '下周一到周日',
-  lastWeekClaimed: false,
-);
-
-const _kMockPendingCommission = 0.0;
-
-const _kEarnBannerAspectRatio = 2.22;
+BoxDecoration _earnThemeCardDecoration({double radius = 14}) {
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        AppConfig.buttonColor.withValues(alpha: 0.11),
+        const Color(0xFF145B5E).withValues(alpha: 0.54),
+        const Color(0xFF0E4145).withValues(alpha: 0.72),
+        const Color(0xFF0A3034).withValues(alpha: 0.88),
+        const Color(0xFF071F23).withValues(alpha: 0.97),
+      ],
+      stops: const [0.0, 0.22, 0.48, 0.74, 1.0],
+    ),
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(
+      color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.24),
+      width: 1,
+    ),
+  );
+}
 
 // ─── 导航项数据 ──────────────────────────────────────────────────────────────
 
@@ -168,20 +190,24 @@ class EarnTab extends StatefulWidget {
 class _EarnTabState extends State<EarnTab>
     with AutomaticKeepAliveClientMixin<EarnTab> {
   static const double _inviteNavBarHeight = 68;
-  int _selectedWeek = 0;
   String _inviteLink = '';
   String _inviteLang = 'id';
   String _inviteCode = '';
   InviteStats _stats = InviteStats.empty;
   InviteRebatePreview _rebatePreview = InviteRebatePreview.empty;
   List<AppBanner> _earnBanners = const [];
-  bool _useAppLang = true;
   bool _loadingBanners = true;
   bool _loadingLink = true;
   bool _loadingRebatePreview = true;
+  bool _loadingCommissionData = true;
+  bool _claimingCommission = false;
   Worker? _authWorker;
+  Worker? _tabWorker;
   bool _statsLoadScheduled = false;
   bool _rebatePreviewLoadScheduled = false;
+  double _claimableCommission = 0;
+  WeeklyData _currentWeekData = WeeklyData.empty;
+  WeeklyData _lastWeekData = WeeklyData.empty;
   String _bannerLang = 'id';
 
   // static 缓存：跨 widget 实例，只请求一次
@@ -201,17 +227,22 @@ class _EarnTabState extends State<EarnTab>
     super.initState();
     _inviteLang = _resolveInviteLang();
     _bannerLang = _resolveBannerLang();
-    _useAppLang = true;
     _authWorker = ever<bool>(widget.auth.isLoggedIn, _handleLoginStateChanged);
+    if (Get.isRegistered<HomeController>()) {
+      _tabWorker =
+          ever<int>(Get.find<HomeController>().currentTab, _handleTabChanged);
+    }
     _loadInviteCode();
     _loadInviteStats();
     _loadInviteRebatePreview();
     _loadEarnBanners();
+    _loadWeeklySummary();
   }
 
   @override
   void dispose() {
     _authWorker?.dispose();
+    _tabWorker?.dispose();
     super.dispose();
   }
 
@@ -223,7 +254,6 @@ class _EarnTabState extends State<EarnTab>
       _bannerLang = bannerLang;
       _loadEarnBanners();
     }
-    if (!_useAppLang) return;
     final appLang = _resolveInviteLang();
     if (appLang == _inviteLang) return;
     if (!mounted) return;
@@ -244,16 +274,6 @@ class _EarnTabState extends State<EarnTab>
     );
   }
 
-  void _setInviteLang(String lang) {
-    if (!_inviteLangs.contains(lang)) return;
-    if (!mounted) return;
-    setState(() {
-      _useAppLang = false;
-      _inviteLang = lang;
-      _inviteLink = _buildInviteLink(_inviteCode, lang: _inviteLang);
-    });
-  }
-
   void _handleLoginStateChanged(bool isLoggedIn) {
     if (!isLoggedIn) {
       _cachedCode = null;
@@ -271,6 +291,10 @@ class _EarnTabState extends State<EarnTab>
         _stats = InviteStats.empty;
         _rebatePreview = InviteRebatePreview.empty;
         _loadingRebatePreview = false;
+        _loadingCommissionData = false;
+        _claimableCommission = 0;
+        _currentWeekData = WeeklyData.empty;
+        _lastWeekData = WeeklyData.empty;
       });
       return;
     }
@@ -284,6 +308,13 @@ class _EarnTabState extends State<EarnTab>
     if (!_hasLoadedRebatePreview) {
       _loadInviteRebatePreview();
     }
+    _loadWeeklySummary(forceRefresh: true);
+  }
+
+  void _handleTabChanged(int tab) {
+    if (tab != 3 || !widget.auth.isLoggedIn.value) return;
+    _loadInviteStats(forceRefresh: true);
+    _loadWeeklySummary(forceRefresh: true);
   }
 
   Future<void> _loadInviteCode() async {
@@ -328,7 +359,7 @@ class _EarnTabState extends State<EarnTab>
     }
   }
 
-  Future<void> _loadInviteStats() async {
+  Future<void> _loadInviteStats({bool forceRefresh = false}) async {
     if (!widget.auth.isLoggedIn.value) {
       if (!mounted) return;
       setState(() => _stats = InviteStats.empty);
@@ -336,13 +367,13 @@ class _EarnTabState extends State<EarnTab>
     }
 
     final cachedStats = _cachedStats;
-    if (_hasLoadedStats && cachedStats != null) {
+    if (!forceRefresh && _hasLoadedStats && cachedStats != null) {
       if (!mounted) return;
       setState(() => _stats = cachedStats);
       return;
     }
 
-    final pendingRequest = _statsRequest;
+    final pendingRequest = forceRefresh ? null : _statsRequest;
     if (pendingRequest != null) {
       final stats = await pendingRequest;
       if (!mounted) return;
@@ -380,6 +411,79 @@ class _EarnTabState extends State<EarnTab>
       debugPrint('invite/rebate/stats error: $e');
     }
     return InviteStats.empty;
+  }
+
+  Future<void> _loadWeeklySummary({bool forceRefresh = false}) async {
+    if (!widget.auth.isLoggedIn.value) {
+      if (!mounted) return;
+      setState(() {
+        _loadingCommissionData = false;
+        _claimableCommission = 0;
+        _currentWeekData = WeeklyData.empty;
+        _lastWeekData = WeeklyData.empty;
+      });
+      return;
+    }
+
+    if (mounted && !_loadingCommissionData) {
+      setState(() => _loadingCommissionData = true);
+    }
+
+    try {
+      final response =
+          await ApiClient().get('/user/invite/rebate/weekly-summary');
+      final raw = response.data;
+      if (response.statusCode == 200 &&
+          raw is Map &&
+          raw['code']?.toString() == '1' &&
+          raw['data'] is Map) {
+        final data = Map<String, dynamic>.from(raw['data'] as Map);
+        final currentWeekTotal = _readDoubleFromMap(
+          data,
+          const ['current_week_total'],
+        );
+        final lastWeekTotal = _readDoubleFromMap(
+          data,
+          const ['last_week_total'],
+        );
+        final lastWeekClaimStatus = _readIntFromMap(
+          data,
+          const ['last_week_claim_status'],
+          defaultValue: -1,
+        );
+        if (!mounted) return;
+        setState(() {
+          _claimableCommission = _resolveClaimableCommission(
+            lastWeekTotal: lastWeekTotal,
+            lastWeekClaimStatus: lastWeekClaimStatus,
+          );
+          _currentWeekData = WeeklyData(
+            totalCommission: currentWeekTotal,
+            currentWeekClaimWindow: '下周一到周日',
+            lastWeekClaimStatus: -1,
+          );
+          _lastWeekData = WeeklyData(
+            totalCommission: lastWeekTotal,
+            currentWeekClaimWindow: '下周一到周日',
+            lastWeekClaimStatus: lastWeekClaimStatus,
+          );
+          _loadingCommissionData = false;
+        });
+        return;
+      }
+    } catch (e) {
+      debugPrint('invite/rebate/weekly-summary error: $e');
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _loadingCommissionData = false;
+      if (forceRefresh) {
+        _claimableCommission = 0;
+        _currentWeekData = WeeklyData.empty;
+        _lastWeekData = WeeklyData.empty;
+      }
+    });
   }
 
   Future<void> _loadInviteRebatePreview() async {
@@ -500,12 +604,65 @@ class _EarnTabState extends State<EarnTab>
     Get.to(() => const _CommissionRulesView());
   }
 
+  Future<void> _handleClaimCommission() async {
+    final ok = await widget.auth.ensureAuthenticated(context);
+    if (!ok || _claimingCommission) return;
+
+    final amount = _claimableCommission;
+    if (amount <= 0) {
+      Get.snackbar(
+        '提示',
+        '没有金额可以领取',
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+
+    setState(() => _claimingCommission = true);
+    try {
+      final response = await ApiClient().post('/user/invite/rebate/claim-all');
+      final raw = response.data;
+      final success = response.statusCode == 200 &&
+          raw is Map &&
+          raw['code']?.toString() == '1';
+      if (success) {
+        final msg = raw['msg']?.toString();
+        Get.snackbar(
+          '提示',
+          (msg != null && msg.isNotEmpty) ? msg : '领取成功',
+          snackPosition: SnackPosition.TOP,
+        );
+        await Future.wait([
+          _loadInviteStats(forceRefresh: true),
+          _loadWeeklySummary(forceRefresh: true),
+        ]);
+      } else {
+        final msg = raw is Map ? raw['msg']?.toString() : null;
+        Get.snackbar(
+          '提示',
+          (msg != null && msg.isNotEmpty) ? msg : '领取失败',
+          snackPosition: SnackPosition.TOP,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        '提示',
+        '领取失败，请稍后再试',
+        snackPosition: SnackPosition.TOP,
+      );
+      debugPrint('invite/rebate/claim-all error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _claimingCommission = false);
+      }
+    }
+  }
+
   String _buildInviteLink(String code, {String? lang}) {
     String base;
     if (kIsWeb) {
       final uri = Uri.base;
-      final port = uri.port != 0 ? ':${uri.port}' : '';
-      base = '${uri.scheme}://${uri.host}$port';
+      base = '${uri.scheme}://${uri.host}';
     } else {
       base = AppConfig.appWebUrl;
     }
@@ -577,20 +734,13 @@ class _EarnTabState extends State<EarnTab>
               _PromoLinkCard(
                 link: _inviteLink,
                 loading: _loadingLink,
-                currentLang: _inviteLang,
-                langOptions: _inviteLangs,
-                onSelectLang: _setInviteLang,
-              ),
-              const SizedBox(height: 12),
-              _PendingCommissionCard(
-                amount: _kMockPendingCommission,
-                onClaim: () => widget.auth.ensureAuthenticated(context),
               ),
               const SizedBox(height: 12),
               _WeeklyCommissionSection(
-                selectedWeek: _selectedWeek,
-                onWeekChanged: (v) => setState(() => _selectedWeek = v),
-                data: _kMockWeekly,
+                currentWeekData: _currentWeekData,
+                lastWeekData: _lastWeekData,
+                onClaim: _handleClaimCommission,
+                claiming: _claimingCommission,
               ),
               const SizedBox(height: 12),
               _CommissionTierCard(
@@ -604,24 +754,20 @@ class _EarnTabState extends State<EarnTab>
       ],
     );
 
-    return Container(
-      decoration:
-          const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
-      child: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            content,
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _InviteNavBar(
-                onTapCommissionRules: _openCommissionRules,
-              ),
+    return SafeArea(
+      bottom: false,
+      child: Stack(
+        children: [
+          content,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _InviteNavBar(
+              onTapCommissionRules: _openCommissionRules,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -642,7 +788,7 @@ class _InviteNavBar extends StatelessWidget {
       height: _EarnTabState._inviteNavBarHeight,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: const BoxDecoration(
-        color: AppConfig.earnFloatingMenuBackground,
+        color: AppConfig.webDesktopOuterBackground,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -783,12 +929,11 @@ class _CommissionRulesViewState extends State<_CommissionRulesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundDark,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        leading: AppBackButton(
           onPressed: () => _handleBack(context),
         ),
         title: const Text(
@@ -800,12 +945,7 @@ class _CommissionRulesViewState extends State<_CommissionRulesView> {
         ),
         centerTitle: true,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.darkBackgroundGradient,
-        ),
-        child: _buildBody(),
-      ),
+      body: _buildBody(),
     );
   }
 
@@ -919,7 +1059,7 @@ class _InviteBannerCarouselState extends State<_InviteBannerCarousel> {
       final next = (_current + 1) % widget.banners.length;
       _controller.animateToPage(
         next,
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 750),
         curve: Curves.easeInOut,
       );
     });
@@ -944,9 +1084,7 @@ class _InviteBannerCarouselState extends State<_InviteBannerCarousel> {
         child: AspectRatio(
           aspectRatio: _kEarnBannerAspectRatio,
           child: Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.darkBackgroundGradient,
-            ),
+            color: Colors.transparent,
             alignment: Alignment.center,
             child: const SizedBox(
               width: 22,
@@ -985,7 +1123,7 @@ class _InviteBannerCarouselState extends State<_InviteBannerCarousel> {
                 children: List.generate(banners.length, (i) {
                   final active = i == _current;
                   return AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
+                    duration: const Duration(milliseconds: 350),
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     width: active ? 18 : 8,
                     height: 8,
@@ -1025,47 +1163,13 @@ class _EarnBannerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasTitle = banner.title != null && banner.title!.isNotEmpty;
     return GestureDetector(
       onTap: onTap,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: AppColors.darkBackgroundGradient,
-            ),
-          ),
+          const ColoredBox(color: Colors.transparent),
           _EarnBannerImage(imagePath: banner.img),
-          if (hasTitle)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.35),
-                    Colors.black.withValues(alpha: 0.08),
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                ),
-              ),
-            ),
-          if (hasTitle)
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 14,
-              child: Text(
-                banner.title!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
         ],
       ),
     );
@@ -1100,11 +1204,7 @@ class _EarnBannerImage extends StatelessWidget {
   }
 
   Widget _fallback() {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: AppColors.darkBackgroundGradient,
-      ),
-    );
+    return const ColoredBox(color: Colors.transparent);
   }
 }
 
@@ -1119,7 +1219,8 @@ class _InviteStatsRow extends StatelessWidget {
     final items = [
       _StatMetric(
         label: '已领取佣金',
-        value: stats.totalCommission.toStringAsFixed(2),
+        value: _formatCommissionAsK(stats.totalCommission),
+        highlight: true,
       ),
       _StatMetric(
         label: '一级直属好友',
@@ -1140,10 +1241,7 @@ class _InviteStatsRow extends StatelessWidget {
         final compact = constraints.maxWidth < 560;
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: AppConfig.earnCardBackground,
-            borderRadius: BorderRadius.circular(14),
-          ),
+          decoration: _earnThemeCardDecoration(),
           child: compact ? _buildCompactGrid(items) : _buildWideRow(items),
         );
       },
@@ -1194,10 +1292,15 @@ class _InviteStatsRow extends StatelessWidget {
 }
 
 class _StatMetric {
-  const _StatMetric({required this.label, required this.value});
+  const _StatMetric({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
 
   final String label;
   final String value;
+  final bool highlight;
 }
 
 class _StatItem extends StatelessWidget {
@@ -1216,7 +1319,8 @@ class _StatItem extends StatelessWidget {
             Text(
               metric.value,
               style: TextStyle(
-                color: Colors.white,
+                color:
+                    metric.highlight ? _kBalanceHighlightColor : Colors.white,
                 fontSize: compact ? 18 : 20,
                 fontWeight: FontWeight.w700,
               ),
@@ -1245,16 +1349,10 @@ class _StatItem extends StatelessWidget {
 class _PromoLinkCard extends StatelessWidget {
   const _PromoLinkCard({
     required this.link,
-    required this.currentLang,
-    required this.langOptions,
-    required this.onSelectLang,
     this.loading = false,
   });
   final String link;
   final bool loading;
-  final String currentLang;
-  final List<String> langOptions;
-  final ValueChanged<String> onSelectLang;
 
   static void _openUrl(String url) async {
     final uri = Uri.parse(url);
@@ -1314,24 +1412,24 @@ class _PromoLinkCard extends StatelessWidget {
         Icons.chat,
         'WhatsApp',
         (_) => _openUrl('https://wa.me/?text=$encoded'),
-        iconWidget: const _WhatsAppIcon(),
+        iconAsset: 'assets/images/shareapp/whatsapp.png',
       ),
       _SocialChannel(
           Icons.facebook,
           'Facebook',
           (_) =>
               _openUrl('https://www.facebook.com/sharer/sharer.php?u=$encoded'),
-          iconColor: const Color(0xFF1877F2)),
-      _SocialChannel(Icons.send, 'Telegram',
-          (_) => _openUrl('https://t.me/share/url?url=$encoded'),
-          iconColor: const Color(0xFF2AABEE)),
+          iconAsset: 'assets/images/shareapp/facebook.png'),
+      _SocialChannel(
+        Icons.send,
+        'Telegram',
+        (_) => _openUrl('https://t.me/share/url?url=$encoded'),
+        iconAsset: 'assets/images/shareapp/tg.png',
+      ),
       _SocialChannel(Icons.link, '复制链接', (_) => _copyLink(),
-          backgroundColor: AppConfig.earnPrimaryPurple,
-          iconColor: Colors.white),
+          backgroundColor: AppConfig.buttonColor.withValues(alpha: 0.18),
+          iconColor: AppConfig.btnSelectedBorderColor),
       _SocialChannel(Icons.qr_code, '二维码', (_) => _showQr(context, link)),
-      _SocialChannel(Icons.more_horiz, '更多', (_) {
-        _copyLink();
-      }),
     ];
   }
 
@@ -1340,10 +1438,7 @@ class _PromoLinkCard extends StatelessWidget {
     final channels = _buildChannels(context);
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConfig.earnCardBackground,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: _earnThemeCardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1366,68 +1461,44 @@ class _PromoLinkCard extends StatelessWidget {
                     onTap: loading || link.isEmpty ? null : _copyLink,
                     child: Ink(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
+                        horizontal: 12,
+                        vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.07),
-                        borderRadius: BorderRadius.circular(8),
+                        image: const DecorationImage(
+                          image: AssetImage(
+                            AppConfig.btnDefaultBackgroundAsset,
+                          ),
+                          fit: BoxFit.fill,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppConfig.btnSelectedBorderColor,
+                          width: 1.5,
+                        ),
                       ),
                       child: loading
                           ? const SizedBox(
                               height: 14,
                               child: LinearProgressIndicator(
                                 backgroundColor: Colors.transparent,
-                                color: AppConfig.earnPrimaryPurple,
+                                color: AppConfig.btnSelectedBorderColor,
                               ),
                             )
                           : Text(
                               link.isEmpty ? '暂无邀请链接' : link,
                               style: TextStyle(
                                 color: link.isEmpty
-                                    ? Colors.white38
-                                    : Colors.white70,
-                                fontSize: 12,
+                                    ? AppConfig.btnDefaultTextColor
+                                        .withValues(alpha: 0.52)
+                                    : AppConfig.btnDefaultTextColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              PopupMenuButton<String>(
-                tooltip: '',
-                padding: EdgeInsets.zero,
-                color: const Color(0xFF1E1E2D),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onSelected: onSelectLang,
-                itemBuilder: (_) {
-                  return langOptions.map((code) {
-                    final isActive = code == currentLang;
-                    return PopupMenuItem<String>(
-                      value: code,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _inviteLangLabel(code),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          if (isActive) const SizedBox(width: 8),
-                          if (isActive)
-                            const Icon(Icons.check,
-                                size: 16, color: Color(0xFF22C55E)),
-                        ],
-                      ),
-                    );
-                  }).toList();
-                },
-                child: _ActionBtn(
-                  label: _shareLanguageLabel(currentLang),
-                  icon: Icons.language,
                 ),
               ),
             ],
@@ -1450,7 +1521,7 @@ class _SocialChannel {
   final String label;
   final Color? iconColor;
   final Color? backgroundColor;
-  final Widget? iconWidget;
+  final String? iconAsset;
   final void Function(String link) onTap;
   const _SocialChannel(
     this.icon,
@@ -1458,7 +1529,7 @@ class _SocialChannel {
     this.onTap, {
     this.iconColor,
     this.backgroundColor,
-    this.iconWidget,
+    this.iconAsset,
   });
 }
 
@@ -1469,183 +1540,99 @@ class _SocialChannelItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.fromContext(context);
+    final isAssetChannel = channel.iconAsset != null;
+    final buttonSize = r.size(48);
+    final assetIconSize = r.size(42);
+    final glyphIconSize = r.size(22);
+    final labelGap = r.size(6);
+    final labelSize = r.font(10.5);
+
     return GestureDetector(
       onTap: () => channel.onTap(link),
       child: Column(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: channel.backgroundColor ??
-                  Colors.white.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
+          SizedBox(
+            width: buttonSize,
+            height: buttonSize,
             child: Center(
-              child: channel.iconWidget ??
-                  Icon(
-                    channel.icon,
-                    color: channel.iconColor ?? Colors.white70,
-                    size: 20,
-                  ),
+              child: isAssetChannel
+                  ? CompatibleImage.asset(
+                      channel.iconAsset!,
+                      width: assetIconSize,
+                      height: assetIconSize,
+                      fit: BoxFit.contain,
+                    )
+                  : Container(
+                      width: buttonSize,
+                      height: buttonSize,
+                      decoration: BoxDecoration(
+                        color: channel.backgroundColor ??
+                            AppConfig.buttonColor.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppConfig.btnSelectedBorderColor
+                              .withValues(alpha: 0.18),
+                        ),
+                      ),
+                      child: Icon(
+                        channel.icon,
+                        color: channel.iconColor ??
+                            AppConfig.btnSelectedBorderColor,
+                        size: glyphIconSize,
+                      ),
+                    ),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: labelGap),
           Text(
             channel.label,
-            style: const TextStyle(color: Colors.white54, fontSize: 10),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WhatsAppIcon extends StatelessWidget {
-  const _WhatsAppIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: const [
-        Icon(
-          Icons.chat_bubble_rounded,
-          color: Color(0xFF25D366),
-          size: 21,
-        ),
-        Padding(
-          padding: EdgeInsets.only(top: 1),
-          child: Icon(
-            Icons.call_rounded,
-            color: Colors.white,
-            size: 10,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ActionBtn extends StatelessWidget {
-  const _ActionBtn({required this.label, required this.icon});
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            AppConfig.earnPrimaryPurple,
-            AppConfig.earnSecondaryPurple,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 14),
-          const SizedBox(width: 4),
-          Text(label,
-              style: const TextStyle(color: Colors.white, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-}
-
-String _shareLanguageLabel(String currentLang) {
-  final current = _inviteLangLabel(currentLang);
-  switch ((Get.locale?.languageCode ?? 'zh').toLowerCase()) {
-    case 'id':
-      return 'Bahasa bagikan: $current';
-    case 'en':
-      return 'Current share language: $current';
-    default:
-      return '当前分享语言: $current';
-  }
-}
-
-String _inviteLangLabel(String code) {
-  switch (code.toLowerCase()) {
-    case 'id':
-      return 'Indonesia';
-    case 'en':
-      return 'English';
-    case 'zh-cn':
-    case 'zh':
-      return '中文';
-    default:
-      return code.toUpperCase();
-  }
-}
-
-// ─── _PendingCommissionCard ──────────────────────────────────────────────────
-
-class _PendingCommissionCard extends StatelessWidget {
-  const _PendingCommissionCard({required this.amount, required this.onClaim});
-  final double amount;
-  final VoidCallback onClaim;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConfig.earnCardBackground,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '待领取佣金',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  amount.toStringAsFixed(2),
-                  style: const TextStyle(
-                    color: AppConfig.earnAccentOrange,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onClaim,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    AppConfig.earnPrimaryPurple,
-                    AppConfig.earnSecondaryPurple,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                '立即领取',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: labelSize,
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+double _readDoubleFromMap(Map<String, dynamic> data, List<String> keys) {
+  for (final key in keys) {
+    if (!data.containsKey(key)) continue;
+    return InviteStats._toDouble(data[key]);
+  }
+  return 0;
+}
+
+int _readIntFromMap(
+  Map<String, dynamic> data,
+  List<String> keys, {
+  int defaultValue = 0,
+}) {
+  for (final key in keys) {
+    if (!data.containsKey(key)) continue;
+    final value = data[key];
+    if (value is num) return value.toInt();
+    final parsed = int.tryParse(value?.toString() ?? '');
+    if (parsed != null) return parsed;
+  }
+  return defaultValue;
+}
+
+double _resolveClaimableCommission({
+  required double lastWeekTotal,
+  required int lastWeekClaimStatus,
+}) {
+  switch (lastWeekClaimStatus) {
+    case 0:
+    case 2:
+      return lastWeekTotal > 0 ? lastWeekTotal : 0;
+    case -1:
+    case 1:
+    default:
+      return 0;
   }
 }
 
@@ -1653,90 +1640,108 @@ class _PendingCommissionCard extends StatelessWidget {
 
 class _WeeklyCommissionSection extends StatelessWidget {
   const _WeeklyCommissionSection({
-    required this.selectedWeek,
-    required this.onWeekChanged,
-    required this.data,
+    required this.currentWeekData,
+    required this.lastWeekData,
+    required this.onClaim,
+    this.claiming = false,
   });
-  final int selectedWeek;
-  final ValueChanged<int> onWeekChanged;
-  final WeeklyData data;
+  final WeeklyData currentWeekData;
+  final WeeklyData lastWeekData;
+  final VoidCallback onClaim;
+  final bool claiming;
 
   @override
   Widget build(BuildContext context) {
-    final isCurrentWeek = selectedWeek == 0;
-    final showRightPanel = isCurrentWeek || data.totalCommission > 0;
-    final rightLabel = isCurrentWeek ? '领取时间' : '领取状态';
-    final rightValue = isCurrentWeek
-        ? data.currentWeekClaimWindow
-        : (data.lastWeekClaimed ? '已领取' : '未领取');
-    final rightValueColor = isCurrentWeek
-        ? Colors.white
-        : (data.lastWeekClaimed ? Colors.white : AppConfig.earnAccentOrange);
+    final claimButtonEnabled =
+        _isClaimButtonEnabled(lastWeekData.lastWeekClaimStatus);
+    final claimButtonText = _claimButtonText(lastWeekData.lastWeekClaimStatus);
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppConfig.earnCardBackground,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: _earnThemeCardDecoration(),
       child: Column(
         children: [
-          Row(
-            children: [
-              _WeekTab(
-                  label: '本周',
-                  active: selectedWeek == 0,
-                  onTap: () => onWeekChanged(0)),
-              _WeekTab(
-                  label: '上周',
-                  active: selectedWeek == 1,
-                  onTap: () => onWeekChanged(1)),
-            ],
-          ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('累计佣金',
-                          style:
-                              TextStyle(color: Colors.white54, fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text(
-                        data.totalCommission.toStringAsFixed(2),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                _WeeklyCommissionRow(
+                  title: '本周',
+                  amount: currentWeekData.totalCommission,
+                  rightLabel: '领取时间',
+                  rightChild: Text(
+                    currentWeekData.currentWeekClaimWindow,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.right,
                   ),
                 ),
-                if (showRightPanel) ...[
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(rightLabel,
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text(
-                          rightValue,
-                          style: TextStyle(
-                            color: rightValueColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Container(
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                ),
+                _WeeklyCommissionRow(
+                  title: '上周',
+                  amount: lastWeekData.totalCommission,
+                  rightLabel: '',
+                  rightChild: Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: claimButtonEnabled && !claiming ? onClaim : null,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 112,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                      ],
+                        decoration: BoxDecoration(
+                          gradient: claimButtonEnabled
+                              ? const LinearGradient(
+                                  colors: [
+                                    AppConfig.btnSelectedBorderColor,
+                                    AppConfig.buttonColor,
+                                  ],
+                                )
+                              : null,
+                          color: claimButtonEnabled
+                              ? null
+                              : Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: claiming
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  claimButtonText,
+                                  style: TextStyle(
+                                    color: claimButtonEnabled
+                                        ? Colors.white
+                                        : Colors.white54,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ),
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -1746,37 +1751,111 @@ class _WeeklyCommissionSection extends StatelessWidget {
   }
 }
 
-class _WeekTab extends StatelessWidget {
-  const _WeekTab(
-      {required this.label, required this.active, required this.onTap});
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
+class _WeeklyCommissionRow extends StatelessWidget {
+  const _WeeklyCommissionRow({
+    required this.title,
+    required this.amount,
+    required this.rightLabel,
+    required this.rightChild,
+  });
+
+  final String title;
+  final double amount;
+  final String rightLabel;
+  final Widget rightChild;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: active ? AppConfig.earnAccentOrange : Colors.transparent,
-              width: 2,
+    return Column(
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
+          ],
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? AppConfig.earnAccentOrange : Colors.white54,
-            fontWeight: active ? FontWeight.w700 : FontWeight.normal,
-            fontSize: 14,
-          ),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '累计佣金',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatCommissionAsK(amount),
+                    style: const TextStyle(
+                      color: _kBalanceHighlightColor,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    rightLabel,
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  rightChild,
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
+      ],
     );
+  }
+}
+
+bool _isClaimButtonEnabled(int status) {
+  switch (status) {
+    case 0:
+    case 2:
+      return true;
+    case -1:
+    case 1:
+    default:
+      return false;
+  }
+}
+
+String _formatCommissionAsK(num amount) {
+  final scaled = amount / 1000;
+  return '${scaled.toStringAsFixed(2)} K';
+}
+
+String _claimButtonText(int status) {
+  switch (status) {
+    case 0:
+      return '立即领取';
+    case 2:
+      return '继续领取';
+    case 1:
+      return '已领取';
+    case -1:
+    default:
+      return '无佣金';
   }
 }
 
@@ -1800,10 +1879,7 @@ class _CommissionTierCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConfig.earnCardBackground,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: _earnThemeCardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1824,7 +1900,7 @@ class _CommissionTierCard extends StatelessWidget {
                 child: const Text(
                   '规则详情 >',
                   style: TextStyle(
-                    color: AppConfig.earnPrimaryPurple,
+                    color: AppConfig.btnSelectedBorderColor,
                     fontSize: 12,
                   ),
                 ),
@@ -1864,13 +1940,13 @@ class _CommissionTierCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? AppConfig.earnAccentOrange.withValues(alpha: 0.18)
+                            ? AppConfig.buttonColor.withValues(alpha: 0.14)
                             : Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isActive
-                              ? AppConfig.earnAccentOrange
-                                  .withValues(alpha: 0.9)
+                              ? AppConfig.btnSelectedBorderColor
+                                  .withValues(alpha: 0.72)
                               : Colors.white.withValues(alpha: 0.04),
                           width: 1.2,
                         ),
@@ -1882,7 +1958,7 @@ class _CommissionTierCard extends StatelessWidget {
                             _formatLevelRate(level.levelRate),
                             style: TextStyle(
                               color: isActive
-                                  ? AppConfig.earnAccentOrange
+                                  ? AppConfig.btnSelectedBorderColor
                                   : Colors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 13,

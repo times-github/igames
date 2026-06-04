@@ -12,7 +12,12 @@
       "mcp__ide__getDiagnostics",
       "Bash(flutter build apk --release --split-per-abi 2>&1)",
       "Bash(java -version 2>&1 && /usr/libexec/java_home -V 2>&1 | head -5)",
-      "Bash(flutter config --jdk-dir /Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home)"
+      "Bash(flutter config --jdk-dir /Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home)",
+      "Bash(xargs ls *)",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(flutter analyze *)",
+      "Bash(find lib/ -name \"*.dart\" -type f -exec sed -i '' 's/userServices\\\\.dart/user_service.dart/g' {} \\\\;)",
+      "Bash(find lib/ -name \".DS_Store\" -delete)"
     ],
     "deny": [],
     "ask": []

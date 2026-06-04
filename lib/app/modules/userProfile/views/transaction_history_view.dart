@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 
 import '../controllers/user_profile_controller.dart';
 
@@ -17,13 +18,12 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E1621),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161E2A),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white70),
+        leading: AppBackButton(
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -34,9 +34,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             fontSize: 18,
           ),
         ),
-        actions: [
-          
-        ],
+        actions: [],
       ),
       body: SafeArea(
         child: Column(

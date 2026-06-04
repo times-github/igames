@@ -6,11 +6,17 @@ class LanguageSelectorView extends GetView<LanguageSelectorController> {
   const LanguageSelectorView({
     super.key,
     this.onTap,
-    this.compact = true,
+    this.dense = true,
+    this.scale = 1,
+    this.showDot = true,
+    this.labelOverride,
   });
 
   final VoidCallback? onTap;
-  final bool compact;
+  final bool dense;
+  final double scale;
+  final bool showDot;
+  final String? labelOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -19,15 +25,22 @@ class LanguageSelectorView extends GetView<LanguageSelectorController> {
       child: GestureDetector(
         onTap: onTap ?? () => controller.toggleLanguageMenu(context),
         child: Obx(() {
-          final padding = compact
-              ? const EdgeInsets.symmetric(horizontal: 10, vertical: 10)
-              : const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
-          final margin = compact
-              ? const EdgeInsets.symmetric(horizontal: 6)
+          final label = labelOverride ?? controller.currentLanguage.value;
+          final padding = dense
+              ? EdgeInsets.symmetric(
+                  horizontal: 10 * scale,
+                  vertical: 10 * scale,
+                )
+              : EdgeInsets.symmetric(
+                  horizontal: 12 * scale,
+                  vertical: 8 * scale,
+                );
+          final margin = dense
+              ? EdgeInsets.symmetric(horizontal: 6 * scale)
               : EdgeInsets.zero;
-          final fontSize = compact ? 11.0 : 13.0;
-          final dotSize = compact ? 5.0 : 6.0;
-          final radius = compact ? 18.0 : 20.0;
+          final fontSize = (dense ? 11.0 : 13.0) * scale;
+          final dotSize = (dense ? 5.0 : 6.0) * scale;
+          final radius = (dense ? 18.0 : 20.0) * scale;
           return Container(
             // 外边距
             margin: margin,
@@ -41,7 +54,7 @@ class LanguageSelectorView extends GetView<LanguageSelectorController> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  controller.currentLanguage.value,
+                  label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -51,16 +64,18 @@ class LanguageSelectorView extends GetView<LanguageSelectorController> {
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(width: 4),
-                Container(
-                  width: dotSize,
-                  height: dotSize,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
+                if (showDot) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    width: dotSize,
+                    height: dotSize,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
+                  const SizedBox(width: 4),
+                ],
               ],
             ),
           );

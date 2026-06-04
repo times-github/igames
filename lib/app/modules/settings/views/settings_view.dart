@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 
-import '../../../../config/app_config_export.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/settings_controller.dart';
 import 'settings_route_back.dart';
@@ -18,12 +18,11 @@ class SettingsView extends GetView<SettingsController> {
         handleSettingsRouteBack(context);
       },
       child: Scaffold(
-        backgroundColor: AppColors.backgroundDark,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          leading: AppBackButton(
             onPressed: () => handleSettingsRouteBack(context),
           ),
           centerTitle: true,

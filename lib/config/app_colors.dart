@@ -163,10 +163,7 @@ class AppColors {
 
   /// 深色背景渐变（根据图片中的主视觉区域）
   static const LinearGradient darkBackgroundGradient = LinearGradient(
-    colors: [
-      Color.fromARGB(255, 24, 26, 29),
-      Color.fromARGB(255, 41, 43, 49)
-    ],
+    colors: [Color.fromARGB(255, 24, 26, 29), Color.fromARGB(255, 41, 43, 49)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );

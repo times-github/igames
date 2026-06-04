@@ -6,30 +6,31 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart' as http;
 import 'package:get/get.dart';
-import 'package:igames/app/data/services/userServices.dart';
-import 'package:igames/app/modules/home/controllers/home_controller.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:igames/app/utils/api_client.dart';
-import 'package:igames/app/utils/api_lang.dart';
+import 'package:igames/app/utils/event_bus.dart';
+import 'package:igames/app/modules/auth/widgets/login_overlay_panel.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/app/utils/launch_params.dart';
-import 'package:igames/config/app_config.dart';
 import 'package:igames/app/utils/storage.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/app/data/services/sse_notify_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
-import 'package:igames/app/modules/widgets/compatible_image.dart';
+import 'package:igames/app/utils/user_status_error.dart';
 import 'package:igames/utils/web_lang_param.dart';
-import 'package:igames/app/modules/auth/widgets/turnstile_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:crypto/crypto.dart';
 
 class AuthController extends GetxController {
   final isLoggedIn = false.obs; // 是否登录
   final isLoading = false.obs;
+  final passwordLoginRetryAfterSeconds = 0.obs;
+  final passwordLoginLockedAccount = ''.obs;
 
   final ApiClient _apiClient = Get.find<ApiClient>();
   String? _customerServiceContact;
   String? _whatsAppSupportContact;
   String? _downloadAppUrl;
+  Timer? _passwordLoginLockTimer;
 
   static String _resolveAuthChannel() {
     if (kIsWeb) return 'h5';
@@ -47,25 +48,36 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
     ApiClient.onUnauthorized = _handleUnauthorized;
+
+    // 监听请求登录事件
+    EventBus.on<RequestLoginEvent>((_) {
+      openLoginOverlay();
+    });
+
     _checkLoginState();
   }
 
   void _handleUnauthorized() {
     logout();
-    final context = Get.context;
-    if (context != null) {
-      openLoginOverlay(context);
-    }
+    openLoginOverlay();
+  }
+
+  @override
+  void onClose() {
+    _passwordLoginLockTimer?.cancel();
+    super.onClose();
   }
 
   /// 检查登录状态
   Future<void> _checkLoginState() async {
     final loginState = await UserServices.getUserLoginState();
     isLoggedIn.value = loginState;
-    //如果登录了，则刷新余额
+    //如果登录了，则触发登录成功事件
     if (isLoggedIn.value) {
-      print('refresh balance');
-      Get.find<HomeController>().refreshBalance();
+      debugPrint('User logged in, firing LoginSuccessEvent');
+      // 通过事件总线通知其他模块，完全解耦
+      EventBus.fire(const LoginSuccessEvent());
+
       if (Get.isRegistered<SseNotifyService>()) {
         Get.find<SseNotifyService>().connect();
       }
@@ -86,7 +98,7 @@ class AuthController extends GetxController {
   /// [context] 构建上下文
   Future<bool> ensureAuthenticated(BuildContext context) async {
     if (isLoggedIn.value) return true;
-    openLoginOverlay(context);
+    openLoginOverlay();
     return false;
   }
 
@@ -95,7 +107,7 @@ class AuthController extends GetxController {
   /// 显示一个全屏的毛玻璃登录弹窗，包含邮箱和密码输入框
   ///
   /// [context] 构建上下文
-  void openLoginOverlay(BuildContext context) {
+  void openLoginOverlay() {
     if (isLoginOpen.value) return;
     isLoginOpen.value = true;
     Future.microtask(() {
@@ -120,7 +132,17 @@ class AuthController extends GetxController {
                 child: Material(
                   color: Colors.transparent,
                   child: RepaintBoundary(
-                    child: _LoginPanel(onClose: closeLoginOverlay),
+                    child: LoginOverlayPanel(
+                      onClose: closeLoginOverlay,
+                      apiClient: _apiClient,
+                      isLoading: isLoading,
+                      passwordLoginRetryAfterSeconds:
+                          passwordLoginRetryAfterSeconds,
+                      passwordLoginLockedAccount: passwordLoginLockedAccount,
+                      onSubmit: loginOrRegister,
+                      onOpenCustomerService: openCustomerService,
+                      onOpenDownloadUrl: openDownloadUrl,
+                    ),
                   ),
                 ),
               ),
@@ -178,6 +200,20 @@ class AuthController extends GetxController {
       required String otpCode,
       String? turnstileToken}) async {
     final loginAccount = account.isNotEmpty ? account : phone;
+    final isPasswordLoginRequest = _isPasswordLoginRequest(
+      account: account,
+      password: password,
+      phone: phone,
+      otpCode: otpCode,
+    );
+    if (isPasswordLoginRequest && isPasswordLoginLockedFor(loginAccount)) {
+      _showAuthFailure(
+        code: '3111',
+        retryAfterSeconds: passwordLoginRetryAfterSeconds.value,
+      );
+      return false;
+    }
+
     try {
       isLoading.value = true;
       final inviteCode = LaunchParams.registerCode;
@@ -220,6 +256,30 @@ class AuthController extends GetxController {
     }
 
     final code = response['code']?.toString();
+    final message = response['msg']?.toString();
+    final retryAfterSeconds = _extractRetryAfterSeconds(response['data']);
+    final statusError =
+        parseUserStatusError(code: response['code'], message: message);
+    if (statusError != null) {
+      isLoggedIn.value = false;
+      _showAuthFailure(code: code, message: message);
+      return false;
+    }
+
+    if (_isPasswordLoginLockedResponse(code, message)) {
+      isLoggedIn.value = false;
+      _startPasswordLoginLock(
+        account: account,
+        retryAfterSeconds: retryAfterSeconds,
+      );
+      _showAuthFailure(
+        code: code,
+        message: message,
+        retryAfterSeconds: retryAfterSeconds,
+      );
+      return false;
+    }
+
     if (code == '1') {
       final data = _asStringKeyedMap(response['data']);
       final token = data['token']?.toString() ?? '';
@@ -241,7 +301,10 @@ class AuthController extends GetxController {
       setWebHashParams({'invite_code': null});
       isLoggedIn.value = true;
       _closeAuthDialogs();
-      Get.find<HomeController>().refreshBalance();
+
+      // 通过事件总线通知登录成功，完全解耦
+      EventBus.fire(const LoginSuccessEvent());
+
       if (Get.isRegistered<SseNotifyService>()) {
         Get.find<SseNotifyService>().connect();
       }
@@ -253,21 +316,54 @@ class AuthController extends GetxController {
     }
 
     isLoggedIn.value = false;
-    _showAuthFailure(code: code);
+    _showAuthFailure(code: code, message: message);
     return false;
   }
 
-  void _showAuthFailure({String? code}) {
-    final messageKey = _authErrorMessageKey(code);
-    final message = messageKey.tr;
+  void _showAuthFailure({
+    String? code,
+    String? message,
+    int? retryAfterSeconds,
+  }) {
+    final localizedMessage = _resolveAuthErrorMessage(
+      code,
+      message: message,
+      retryAfterSeconds: retryAfterSeconds,
+    );
     Get.snackbar(
       'loginFailed'.tr,
-      message,
+      localizedMessage,
       snackPosition: SnackPosition.TOP,
     );
   }
 
-  String _authErrorMessageKey(String? code) {
+  String _resolveAuthErrorMessage(
+    String? code, {
+    String? message,
+    int? retryAfterSeconds,
+  }) {
+    final messageKey = _authErrorMessageKey(code, message: message);
+    if (messageKey == 'password_login_locked') {
+      return _buildPasswordLoginLockedMessage(
+        retryAfterSeconds ??
+            (passwordLoginRetryAfterSeconds.value > 0
+                ? passwordLoginRetryAfterSeconds.value
+                : null),
+      );
+    }
+    return messageKey.tr;
+  }
+
+  String _authErrorMessageKey(String? code, {String? message}) {
+    final statusError = parseUserStatusError(code: code, message: message);
+    if (statusError != null) {
+      return statusError.messageKey;
+    }
+    final normalizedMessage = message?.trim().toLowerCase();
+    if (_isPasswordLoginLockedResponse(code, message)) {
+      return 'password_login_locked';
+    }
+
     switch (code) {
       case '3001':
         return 'authAccountOrPhoneRequired';
@@ -282,16 +378,110 @@ class AuthController extends GetxController {
       case '3006':
         return 'authRegisterAutoFailed';
       case '3007':
-        return 'passwordError';
+        return 'password_invalid';
       case '3008':
         return 'authPasswordOrCodeRequired';
       case '3009':
         return 'turnstileRequired';
+      case '3111':
+        return 'password_login_locked';
       case null:
+        if (normalizedMessage == 'password_invalid') {
+          return 'password_invalid';
+        }
         return 'networkError';
       default:
+        if (normalizedMessage == 'password_invalid') {
+          return 'password_invalid';
+        }
         return 'authUnknownError';
     }
+  }
+
+  bool isPasswordLoginLockedFor(String account) {
+    final normalizedAccount = _normalizeLoginAccount(account);
+    return normalizedAccount.isNotEmpty &&
+        normalizedAccount == passwordLoginLockedAccount.value &&
+        passwordLoginRetryAfterSeconds.value > 0;
+  }
+
+  bool _isPasswordLoginRequest({
+    required String account,
+    required String password,
+    required String phone,
+    required String otpCode,
+  }) {
+    return account.trim().isNotEmpty &&
+        phone.trim().isEmpty &&
+        password.isNotEmpty &&
+        otpCode.isEmpty;
+  }
+
+  bool _isPasswordLoginLockedResponse(String? code, String? message) {
+    final normalizedMessage = message?.trim().toLowerCase();
+    return code == '3111' || normalizedMessage == 'password_login_locked';
+  }
+
+  int? _extractRetryAfterSeconds(dynamic raw) {
+    final data = _asStringKeyedMap(raw);
+    final value = data['retry_after_seconds'];
+    final parsed = value is int ? value : int.tryParse(value?.toString() ?? '');
+    if (parsed == null) {
+      return null;
+    }
+    return parsed < 0 ? 0 : parsed;
+  }
+
+  void _startPasswordLoginLock({
+    required String account,
+    int? retryAfterSeconds,
+  }) {
+    final normalizedAccount = _normalizeLoginAccount(account);
+    final seconds = retryAfterSeconds == null || retryAfterSeconds < 0
+        ? 0
+        : retryAfterSeconds;
+    _passwordLoginLockTimer?.cancel();
+
+    if (normalizedAccount.isEmpty || seconds <= 0) {
+      passwordLoginLockedAccount.value = normalizedAccount;
+      passwordLoginRetryAfterSeconds.value = seconds;
+      return;
+    }
+
+    passwordLoginLockedAccount.value = normalizedAccount;
+    passwordLoginRetryAfterSeconds.value = seconds;
+    _passwordLoginLockTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) {
+      final next = passwordLoginRetryAfterSeconds.value - 1;
+      if (next <= 0) {
+        passwordLoginRetryAfterSeconds.value = 0;
+        passwordLoginLockedAccount.value = '';
+        timer.cancel();
+        return;
+      }
+      passwordLoginRetryAfterSeconds.value = next;
+    });
+  }
+
+  String _buildPasswordLoginLockedMessage(int? retryAfterSeconds) {
+    final base = 'password_login_locked'.tr;
+    if (retryAfterSeconds == null || retryAfterSeconds <= 0) {
+      return base;
+    }
+    final retryText = 'retry_after_seconds'.trParams({
+      'minutes': '${_roundUpRetryMinutes(retryAfterSeconds)}',
+    });
+    return '$base\n$retryText';
+  }
+
+  int _roundUpRetryMinutes(int seconds) {
+    if (seconds <= 0) return 1;
+    return (seconds / 60).ceil();
+  }
+
+  String _normalizeLoginAccount(String account) {
+    return account.trim().toLowerCase();
   }
 
   Map<String, dynamic> _asStringKeyedMap(dynamic raw) {
@@ -327,10 +517,24 @@ class AuthController extends GetxController {
   ///
   /// 清除用户信息并设置登录状态为 false
   Future<void> logout() async {
-    UserServices.loginOut();
+    await UserServices.loginOut();
     isLoggedIn.value = false;
+
+    // 通过事件总线通知登出，完全解耦
+    EventBus.fire(const LogoutEvent());
+
     if (Get.isRegistered<SseNotifyService>()) {
       await Get.find<SseNotifyService>().disconnect();
+    }
+  }
+
+  Future<void> handleUserBanned({
+    bool openLogin = true,
+  }) async {
+    await logout();
+    if (!openLogin) return;
+    if (!isLoginOpen.value) {
+      openLoginOverlay();
     }
   }
 
@@ -632,182 +836,129 @@ class _SupportCenterDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final dialogWidth = size.width < 600 ? size.width : 420.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = Responsive.fromConstraints(constraints, context);
+        final size = MediaQuery.sizeOf(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: dialogWidth,
-                minWidth: min(size.width - 40, 320.0).toDouble(),
-              ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF171A29),
-                      Color(0xFF111C2E),
-                      Color(0xFF101522),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.42),
-                      blurRadius: 36,
-                      offset: const Offset(0, 20),
-                    ),
-                  ],
+        return Material(
+          color: Colors.transparent,
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: r.size(20),
+                  vertical: r.size(18),
                 ),
-                child: Stack(
-                  children: [
-                    const Positioned(
-                      top: -56,
-                      right: -36,
-                      child: _SupportGlow(
-                        diameter: 180,
-                        colors: [Color(0x3341E38D), Color(0x0041E38D)],
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: size.width < 600 ? size.width * 0.92 : 420.0,
+                    minWidth:
+                        min(size.width - (r.size(20) * 2), 300.0).toDouble(),
+                    maxHeight: size.height * 0.84,
+                  ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(r.size(30)),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF171A29),
+                          Color(0xFF111C2E),
+                          Color(0xFF101522),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ),
-                    const Positioned(
-                      bottom: -90,
-                      left: -24,
-                      child: _SupportGlow(
-                        diameter: 220,
-                        colors: [Color(0x333497FF), Color(0x003497FF)],
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.42),
+                          blurRadius: r.size(36),
+                          offset: Offset(0, r.size(20)),
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    child: Stack(
+                      children: [
+                        const Positioned(
+                          top: -56,
+                          right: -36,
+                          child: _SupportGlow(
+                            diameter: 180,
+                            colors: [Color(0x3341E38D), Color(0x0041E38D)],
+                          ),
+                        ),
+                        const Positioned(
+                          bottom: -90,
+                          left: -24,
+                          child: _SupportGlow(
+                            diameter: 220,
+                            colors: [Color(0x333497FF), Color(0x003497FF)],
+                          ),
+                        ),
+                        SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(
+                            r.size(22),
+                            r.size(20),
+                            r.size(22),
+                            r.size(22),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 54,
-                                height: 54,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF7F5CFF),
-                                      Color(0xFF4F8DFF),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF4F8DFF)
-                                          .withValues(alpha: 0.28),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.support_agent_rounded,
-                                  color: Colors.white,
-                                  size: 28,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'helpCenter'.tr,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.2,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      'supportCenterSubtitle'.tr,
-                                      style: TextStyle(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.72),
-                                        fontSize: 13,
-                                        height: 1.45,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () {
+                              _SupportCenterHeader(
+                                onClose: () {
                                   Navigator.of(
                                     context,
                                     rootNavigator: true,
                                   ).maybePop();
                                 },
-                                style: IconButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.06),
-                                  foregroundColor:
-                                      Colors.white.withValues(alpha: 0.82),
+                              ),
+                              SizedBox(height: r.size(18)),
+                              _SupportActionCard(
+                                delay: 0.0,
+                                title: 'WhatsApp',
+                                description: 'supportWhatsAppDesc'.tr,
+                                contactLabel: _formatWhatsAppContact(
+                                  whatsAppContact,
                                 ),
-                                icon: const Icon(Icons.close_rounded),
+                                onTap: onOpenWhatsApp,
+                                icon: Icons.chat_rounded,
+                                colors: const [
+                                  Color(0xFF27D367),
+                                  Color(0xFF14934D),
+                                ],
+                              ),
+                              SizedBox(height: r.size(12)),
+                              _SupportActionCard(
+                                delay: 0.14,
+                                title: 'Telegram',
+                                description: 'supportTelegramDesc'.tr,
+                                contactLabel: _formatTelegramContact(
+                                  telegramContact,
+                                ),
+                                onTap: onOpenTelegram,
+                                icon: Icons.send_rounded,
+                                colors: const [
+                                  Color(0xFF33A4FF),
+                                  Color(0xFF276BFF),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 20),
-                          _SupportActionCard(
-                            delay: 0.0,
-                            title: 'WhatsApp',
-                            description: 'supportWhatsAppDesc'.tr,
-                            contactLabel: _formatWhatsAppContact(
-                              whatsAppContact,
-                            ),
-                            onTap: onOpenWhatsApp,
-                            icon: Icons.chat_rounded,
-                            colors: const [
-                              Color(0xFF27D367),
-                              Color(0xFF14934D),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          _SupportActionCard(
-                            delay: 0.14,
-                            title: 'Telegram',
-                            description: 'supportTelegramDesc'.tr,
-                            contactLabel: _formatTelegramContact(
-                              telegramContact,
-                            ),
-                            onTap: onOpenTelegram,
-                            icon: Icons.send_rounded,
-                            colors: const [
-                              Color(0xFF33A4FF),
-                              Color(0xFF276BFF),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -845,6 +996,95 @@ class _SupportCenterDialog extends StatelessWidget {
   }
 }
 
+class _SupportCenterHeader extends StatelessWidget {
+  const _SupportCenterHeader({
+    required this.onClose,
+  });
+
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = Responsive.fromContext(context);
+    final avatarSize = r.size(48);
+    final titleSize = r.font(19);
+    final subtitleSize = r.font(13);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: avatarSize,
+          height: avatarSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF7F5CFF),
+                Color(0xFF4F8DFF),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4F8DFF).withValues(alpha: 0.28),
+                blurRadius: r.size(18),
+                offset: Offset(0, r.size(8)),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.support_agent_rounded,
+            color: Colors.white,
+            size: r.size(24),
+          ),
+        ),
+        SizedBox(width: r.size(12)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'helpCenter'.tr,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              SizedBox(height: r.size(4)),
+              Text(
+                'supportCenterSubtitle'.tr,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  fontSize: subtitleSize,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: r.size(8)),
+        IconButton(
+          onPressed: onClose,
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.06),
+            foregroundColor: Colors.white.withValues(alpha: 0.82),
+          ),
+          icon: Icon(
+            Icons.close_rounded,
+            size: r.size(20),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SupportActionCard extends StatelessWidget {
   const _SupportActionCard({
     required this.delay,
@@ -867,6 +1107,16 @@ class _SupportActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final r = Responsive.fromContext(context);
+    final compact = r.width < 380;
+    final cardRadius = r.size(compact ? 21 : 24);
+    final cardPadding = r.size(compact ? 15 : 18);
+    final gapSize = r.size(compact ? 10 : 14);
+    final iconBoxSize = r.size(compact ? 48 : 54);
+    final iconGlyphSize = r.size(compact ? 24 : 26);
+    final titleFontSize = r.font(compact ? 17 : 18);
+    final descFontSize = r.font(compact ? 11.5 : 12);
+    final contactFontSize = r.font(compact ? 12.5 : 13);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -889,10 +1139,10 @@ class _SupportActionCard extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(cardRadius),
             child: Ink(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(cardRadius),
                 gradient: LinearGradient(
                   colors: [
                     colors.first.withValues(alpha: 0.20),
@@ -913,12 +1163,12 @@ class _SupportActionCard extends StatelessWidget {
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(18),
+                padding: EdgeInsets.all(cardPadding),
                 child: Row(
                   children: [
                     Container(
-                      width: 54,
-                      height: 54,
+                      width: iconBoxSize,
+                      height: iconBoxSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
@@ -927,36 +1177,46 @@ class _SupportActionCard extends StatelessWidget {
                           end: Alignment.bottomRight,
                         ),
                       ),
-                      child: Icon(icon, color: Colors.white, size: 26),
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: iconGlyphSize,
+                      ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: gapSize),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: titleFontSize,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: r.size(4)),
                           Text(
                             description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.78),
-                              fontSize: 12,
+                              fontSize: descFontSize,
                               height: 1.35,
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          SizedBox(height: r.size(10)),
                           Text(
                             contactLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.90),
-                              fontSize: 13,
+                              fontSize: contactFontSize,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -992,989 +1252,6 @@ class _SupportGlow extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(colors: colors),
-        ),
-      ),
-    );
-  }
-}
-
-// ============== 登录面板 ==============
-class _LoginPanel extends StatefulWidget {
-  const _LoginPanel({required this.onClose}); //
-  final VoidCallback onClose; // 关闭回调
-
-  @override
-  State<_LoginPanel> createState() => _LoginPanelState();
-}
-
-class _LoginPanelState extends State<_LoginPanel> {
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final panelW = (size.width * 0.9).clamp(320.0, 420.0);
-    final panelH = (size.height * 0.9).clamp(520.0, 640.0);
-    const closeSize = 36.0;
-    const closeOverlap = closeSize / 2;
-
-    return SafeArea(
-      child: Center(
-        child: SizedBox(
-          width: panelW + closeOverlap,
-          height: panelH + closeOverlap,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                left: 0,
-                top: closeOverlap,
-                child: _AuthPanelShell(
-                  width: panelW,
-                  height: panelH,
-                  child: _LoginForm(onClose: widget.onClose), // 登录表单
-                ),
-              ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: _CloseFab(
-                  onTap: widget.onClose,
-                  size: closeSize,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============== 登录表单 ==============
-class _LoginForm extends StatefulWidget {
-  const _LoginForm({required this.onClose});
-  final VoidCallback onClose;
-
-  @override
-  State<_LoginForm> createState() => _LoginFormState();
-}
-
-class _LoginFormState extends State<_LoginForm> {
-  final _account = TextEditingController(); // 账号/手机号
-  final _password = TextEditingController(); // 密码
-  final _smsCode = TextEditingController(); // 短信验证码
-  final _formKey = GlobalKey<FormState>(); // 表单键
-  String _turnstileToken = '';
-  int _turnstileEpoch = 0;
-  final PageController _bannerController = PageController();
-  Timer? _bannerTimer;
-  List<_LoginBanner> _loginBanners = [];
-  int _bannerIndex = 0;
-  String _bannerLang = '';
-  String _turnstileLang = 'auto';
-  bool _loadingBanners = true;
-  bool _usePhone = false;
-  bool _remember = true;
-  bool _obscurePwd = true;
-  bool _sendingCode = false;
-  int _smsCountdown = 0;
-  Timer? _smsTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _bannerController.addListener(_handleBannerPageChange);
-    _bannerLang = _resolveBannerLang();
-    _turnstileLang = _resolveTurnstileLanguage();
-    _loadLoginBanners();
-  }
-
-  @override
-  void dispose() {
-    _account.dispose();
-    _password.dispose();
-    _smsCode.dispose();
-    _bannerTimer?.cancel();
-    _bannerController
-      ..removeListener(_handleBannerPageChange)
-      ..dispose();
-    _smsTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final auth = Get.find<AuthController>();
-    if (auth.isLoading.value) return;
-    if (_formKey.currentState!.validate()) {
-      final account = _account.text.trim();
-      final credential = _usePhone ? _smsCode.text.trim() : _password.text;
-      final token = _turnstileToken.trim();
-      if (token.isNotEmpty) {
-        setState(() {
-          _turnstileToken = '';
-          _turnstileEpoch += 1;
-        });
-      }
-      await auth.loginOrRegister(account, credential,
-          isPhone: _usePhone, turnstileToken: token);
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final lang = _resolveBannerLang();
-    if (lang != _bannerLang) {
-      _bannerLang = lang;
-      _loadLoginBanners();
-    }
-    final turnstileLang = _resolveTurnstileLanguage();
-    if (turnstileLang != _turnstileLang && mounted) {
-      setState(() {
-        _turnstileLang = turnstileLang;
-        _turnstileToken = '';
-        _turnstileEpoch += 1;
-      });
-    }
-  }
-
-  String _resolveBannerLang() {
-    return normalizeApiLang(
-      Get.locale?.toLanguageTag() ?? Get.locale?.languageCode,
-    );
-  }
-
-  String _resolveTurnstileLanguage() {
-    final raw = (Get.locale?.languageCode ?? 'id').toLowerCase();
-    if (raw == 'zh') return 'zh-cn';
-    if (raw == 'en') return 'en';
-    if (raw == 'id') return 'id';
-    return 'auto';
-  }
-
-  Future<void> _loadLoginBanners() async {
-    if (!mounted) return;
-    setState(() => _loadingBanners = true);
-    try {
-      final resp = await ApiClient().get(
-        '/user/banner/pic',
-        withAuth: false,
-        queryParameters: {
-          'scene_code': 'login_banner',
-          'lang': _bannerLang,
-          'platform': kIsWeb ? 'h5' : 'app',
-        },
-      );
-      final list = _parseBannerList(resp.data);
-      if (!mounted) return;
-      setState(() {
-        _loginBanners = list;
-        _bannerIndex = 0;
-        _loadingBanners = false;
-      });
-      _startBannerAutoScroll();
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loginBanners = [];
-        _bannerIndex = 0;
-        _loadingBanners = false;
-      });
-      _bannerTimer?.cancel();
-    }
-  }
-
-  List<_LoginBanner> _parseBannerList(dynamic data) {
-    final items = <dynamic>[];
-    if (data is Map) {
-      final inner = data['data'];
-      if (inner is Map && inner['list'] is List) {
-        items.addAll(inner['list'] as List);
-      } else if (data['list'] is List) {
-        items.addAll(data['list'] as List);
-      }
-    } else if (data is List) {
-      items.addAll(data);
-    }
-    return items
-        .map<_LoginBanner>((item) {
-          if (item is Map) {
-            final raw = item['image_url']?.toString() ?? '';
-            final link = item['link_value']?.toString() ?? '';
-            if (raw.isEmpty) {
-              return const _LoginBanner(imageUrl: '');
-            }
-            return _LoginBanner(
-              imageUrl: _normalizeBannerUrl(raw),
-              link: link.isEmpty ? null : link,
-            );
-          }
-          return const _LoginBanner(imageUrl: '');
-        })
-        .where((b) => b.imageUrl.isNotEmpty)
-        .toList();
-  }
-
-  String _normalizeBannerUrl(String raw) {
-    if (raw.startsWith('http')) return raw;
-    final trimmed = raw.startsWith('/') ? raw.substring(1) : raw;
-    return '${AppConfig.apiBaseUrl}/$trimmed';
-  }
-
-  void _handleBannerPageChange() {
-    final page = _bannerController.page?.round() ?? 0;
-    if (page != _bannerIndex && page >= 0 && page < _loginBanners.length) {
-      setState(() => _bannerIndex = page);
-    }
-  }
-
-  void _startBannerAutoScroll() {
-    _bannerTimer?.cancel();
-    if (_loginBanners.length <= 1) return;
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!_bannerController.hasClients) return;
-      final next =
-          ((_bannerController.page ?? 0).round() + 1) % _loginBanners.length;
-      _bannerController.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  Widget _buildLoginBanner() {
-    if (_loadingBanners || _loginBanners.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final banners = _loginBanners;
-    return Column(
-      children: [
-        SizedBox(
-          height: 70,
-          child: PageView.builder(
-            controller: _bannerController,
-            onPageChanged: (_) {},
-            itemCount: banners.length,
-            itemBuilder: (context, index) {
-              final banner = banners[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(9),
-                  child: GestureDetector(
-                    onTap: () {
-                      final link = banner.link;
-                      if (link == null || link.isEmpty) return;
-                      if (link.startsWith('http')) {
-                        launchUrl(Uri.parse(link),
-                            mode: LaunchMode.externalApplication);
-                      } else {
-                        Get.toNamed(link);
-                      }
-                    },
-                    child: CompatibleImage.network(
-                      banner.imageUrl,
-                      fit: BoxFit.fill,
-                      errorBuilder: (_, __, ___) => _bannerFallback(),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        // 指示点已移除
-      ],
-    );
-  }
-
-  Widget _bannerFallback() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF5C3BFF), Color(0xFF8A5BFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(
-            scrollbars: false,
-            overscroll: false,
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLoginBanner(),
-                    if (!_loadingBanners && _loginBanners.isNotEmpty)
-                      const SizedBox(height: 12),
-                    _buildTabs(),
-                    const SizedBox(height: 10),
-                    _AuthTextField(
-                      controller: _account,
-                      hint: _usePhone
-                          ? 'pleaseEnterPhone'.tr
-                          : 'pleaseEnterUsername'.tr,
-                      icon: _usePhone
-                          ? Icons.phone_android_outlined
-                          : Icons.person_outline,
-                      keyboardType:
-                          _usePhone ? TextInputType.phone : TextInputType.text,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return _usePhone
-                              ? 'pleaseEnterPhone'.tr
-                              : 'pleaseEnterAccount'.tr;
-                        }
-                        if (_usePhone &&
-                            !RegExp(r'^\d{6,}$').hasMatch(value.trim())) {
-                          return 'pleaseEnterCorrectPhone'.tr;
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _buildSecretField(),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _remember,
-                          activeColor: const Color(0xFF7A4CFF),
-                          checkColor: Colors.white,
-                          onChanged: (value) =>
-                              setState(() => _remember = value ?? false),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'rememberPassword'.tr,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.82),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (supportsTurnstileChallenge &&
-                        AppConfig.turnstileSiteKey.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Center(
-                        child: SizedBox(
-                          width: 300,
-                          child: TurnstileWidget(
-                            key: ValueKey(
-                              'turnstile-$_turnstileLang-$_turnstileEpoch',
-                            ),
-                            siteKey: AppConfig.turnstileSiteKey,
-                            language: _turnstileLang,
-                            onToken: (token) {
-                              if (!mounted) return;
-                              setState(() => _turnstileToken = token);
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    Obx(
-                      () => _GradientButton(
-                        //
-                        text: 'loginRegister'.tr,
-                        height: 48,
-                        colors: const [Color(0xFF7B66FF), Color(0xFF6F7BFF)],
-                        busy: auth.isLoading.value, //busy 是否显示加载中
-                        animate: false,
-                        fontWeight: FontWeight.w800,
-                        onTap: auth.isLoading.value ? null : _submit,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      runSpacing: 2,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            auth.openCustomerService();
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                Colors.white.withValues(alpha: 0.85),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          child: Text('forgotPassword'.tr),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {
-                            auth.openCustomerService();
-                          },
-                          icon:
-                              const Icon(Icons.headset_mic_outlined, size: 18),
-                          label: Text('contactCustomerService'.tr),
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                Colors.white.withValues(alpha: 0.85),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (kIsWeb) ...[
-                      const SizedBox(height: 10),
-                      _DownloadButtons(),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTabs() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _TabChip(
-              label: 'account'.tr,
-              active: !_usePhone,
-              onTap: () => setState(() => _usePhone = false),
-            ),
-          ),
-          Expanded(
-            child: _TabChip(
-              label: 'phone'.tr,
-              active: _usePhone,
-              onTap: () => setState(() => _usePhone = true),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSecretField() {
-    if (_usePhone) {
-      return _AuthTextField(
-        controller: _smsCode,
-        hint: 'pleaseEnterSmsCode'.tr,
-        icon: Icons.verified_outlined,
-        keyboardType: TextInputType.number,
-        textInputAction: TextInputAction.done,
-        onFieldSubmitted: (_) => _submit(),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'pleaseEnterCode'.tr;
-          }
-          if (value.length < 4) {
-            return 'codeLengthAtLeast4'.tr;
-          }
-          return null;
-        },
-        suffix: TextButton(
-          onPressed: (_sendingCode || _smsCountdown > 0) ? null : _sendSmsCode,
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF8A6CFF),
-            minimumSize: const Size(68, 38),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-          ),
-          child: _sendingCode
-              ? const SizedBox(
-                  height: 14,
-                  width: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : (_smsCountdown > 0
-                  ? Text('${_smsCountdown}s')
-                  : Text('getCode'.tr)),
-        ),
-      );
-    }
-
-    return _AuthTextField(
-      controller: _password,
-      hint: 'passwordHint'.tr,
-      icon: Icons.lock_outline,
-      obscure: _obscurePwd,
-      textInputAction: TextInputAction.done,
-      onFieldSubmitted: (_) => _submit(),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'pleaseEnterPassword'.tr;
-        }
-        if (value.length < 6) {
-          return 'passwordLengthMustBeAtLeast6'.tr;
-        }
-        return null;
-      },
-      suffix: IconButton(
-        onPressed: () => setState(() => _obscurePwd = !_obscurePwd),
-        icon: Icon(
-          _obscurePwd
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined,
-          color: Colors.white70,
-          size: 18,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendSmsCode() async {
-    final phone = _account.text.trim();
-    if (phone.isEmpty) {
-      Get.snackbar('tip'.tr, 'pleaseEnterPhone'.tr,
-          snackPosition: SnackPosition.TOP);
-      return;
-    }
-    if (_smsCountdown > 0) return;
-    setState(() => _sendingCode = true);
-    final auth = Get.find<AuthController>();
-    final nonce =
-        '${DateTime.now().millisecondsSinceEpoch}${Random().nextInt(9000) + 1000}';
-    final timestamp =
-        (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-    final sign = _buildOtpSign(phone, nonce, timestamp);
-
-    try {
-      final resp = await auth._apiClient.post(
-        '/user/otp/send',
-        data: {
-          'phone': phone,
-          'nonce': nonce,
-          'timestamp': timestamp,
-          'sign': sign,
-        },
-        withAuth: false,
-      );
-      final data = resp.data;
-      final code = data is Map ? data['code'] : null;
-      final msg = data is Map ? data['msg']?.toString() ?? '' : '';
-      if (code == 1) {
-        _startCountdown();
-        Get.snackbar('tip'.tr, 'codeSent'.tr, snackPosition: SnackPosition.TOP);
-      } else {
-        Get.snackbar('tip'.tr, msg.isEmpty ? 'networkError'.tr : msg,
-            snackPosition: SnackPosition.TOP);
-      }
-    } catch (e) {
-      String msg = 'networkError'.tr;
-      if (e is http.DioException) {
-        final data = e.response?.data;
-        final serverMsg = data is Map ? data['msg']?.toString() : null;
-        if (serverMsg != null && serverMsg.isNotEmpty) {
-          msg = serverMsg;
-        }
-      }
-      Get.snackbar('tip'.tr, msg, snackPosition: SnackPosition.TOP);
-    } finally {
-      if (mounted) {
-        setState(() => _sendingCode = false);
-      }
-    }
-  }
-
-  String _buildOtpSign(String phone, String nonce, String timestamp) {
-    final payload = '${phone.toLowerCase()}|$nonce|$timestamp';
-    return md5
-        .convert(utf8.encode(payload + AppConfig.otpSecret))
-        .toString()
-        .toUpperCase();
-  }
-
-  void _startCountdown() {
-    setState(() => _smsCountdown = 60);
-    _smsTimer?.cancel();
-    _smsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        _smsCountdown -= 1;
-        if (_smsCountdown <= 0) {
-          _smsCountdown = 0;
-          timer.cancel();
-        }
-      });
-    });
-  }
-}
-
-class _AuthPanelShell extends StatelessWidget {
-  const _AuthPanelShell({
-    required this.width,
-    required this.height,
-    required this.child,
-  });
-
-  final double width;
-  final double height;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final useWebCompatMode = kIsWeb;
-    return Container(
-      width: width,
-      height: height,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF9C7BFF),
-            Color(0xFF5A7BFF),
-            Color(0xFF2B1C5A),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: useWebCompatMode
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.34),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
-                  blurRadius: 36,
-                  offset: const Offset(0, 18),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.45),
-                  blurRadius: 26,
-                  offset: const Offset(0, 16),
-                ),
-              ],
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1A1E2E), Color(0xFF0F1322)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Stack(
-          children: [
-            if (!useWebCompatMode)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.28),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-              ),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ============== 复用小组件 ==============
-class _AuthTextField extends StatelessWidget {
-  const _AuthTextField({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    this.keyboardType,
-    this.obscure = false,
-    this.validator,
-    this.suffix,
-    this.textInputAction,
-    this.onFieldSubmitted,
-  });
-
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final bool obscure;
-  final String? Function(String?)? validator;
-  final Widget? suffix;
-  final TextInputAction? textInputAction;
-  final void Function(String)? onFieldSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscure,
-      validator: validator,
-      textInputAction: textInputAction,
-      onFieldSubmitted: onFieldSubmitted,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-        filled: true,
-        fillColor: const Color(0xFF1F2433),
-        prefixIcon: Icon(icon, color: Colors.white70),
-        suffixIcon: suffix,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF7A4CFF), width: 1.2),
-        ),
-        errorStyle: const TextStyle(color: Color(0xFFFF6B6B)),
-      ),
-    );
-  }
-}
-
-class _GradientButton extends StatelessWidget {
-  const _GradientButton({
-    required this.text,
-    required this.colors,
-    required this.height,
-    this.onTap,
-    this.busy = false,
-    this.animate = true,
-    this.textColor = Colors.white,
-    this.fontWeight = FontWeight.w700,
-    this.fontSize = 16,
-    this.maxLines = 1,
-    this.overflow = TextOverflow.ellipsis,
-    this.textAlign = TextAlign.center,
-  });
-
-  final String text;
-  final List<Color> colors;
-  final double height;
-  final VoidCallback? onTap;
-  final bool busy;
-  final bool animate;
-  final Color textColor;
-  final FontWeight fontWeight;
-  final double fontSize;
-  final int maxLines;
-  final TextOverflow overflow;
-  final TextAlign textAlign;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    final content = Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: enabled ? onTap : null,
-        child: Container(
-          height: height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: colors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: colors.last.withValues(alpha: 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              )
-            ],
-          ),
-          alignment: Alignment.center,
-          child: busy
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  text,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: fontSize,
-                    fontWeight: fontWeight,
-                  ),
-                  maxLines: maxLines,
-                  overflow: overflow,
-                  textAlign: textAlign,
-                ),
-        ),
-      ),
-    );
-
-    if (!animate) return content;
-
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity: enabled ? 1 : 0.7,
-      child: content,
-    );
-  }
-}
-
-class _TabChip extends StatelessWidget {
-  const _TabChip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFF2A3042) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color:
-                    active ? Colors.white : Colors.white.withValues(alpha: 0.7),
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LoginBanner {
-  final String imageUrl;
-  final String? link;
-
-  const _LoginBanner({required this.imageUrl, this.link});
-}
-
-class _DownloadButtons extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _GradientButton(
-          text: 'downloadAppNow'.tr,
-          height: 44,
-          colors: const [Color(0xFF31C46C), Color(0xFF57E287)],
-          fontSize: 13,
-          onTap: auth.openDownloadUrl,
-        ),
-      ],
-    );
-  }
-}
-
-class _CloseFab extends StatelessWidget {
-  const _CloseFab({
-    required this.onTap,
-    this.size = 56,
-  });
-
-  final VoidCallback onTap;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2F3240), Color(0xFF1F2230)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: size <= 40 ? 8 : 14,
-              offset: Offset(0, size <= 40 ? 3 : 6),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.85),
-            width: size <= 40 ? 1.6 : 2,
-          ),
-        ),
-        child: Icon(
-          Icons.close,
-          color: Colors.white,
-          size: size <= 40 ? 18 : 22,
         ),
       ),
     );

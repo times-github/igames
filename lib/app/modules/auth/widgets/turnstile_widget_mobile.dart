@@ -218,18 +218,23 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         onPressed: _retry,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: const Color(0xFF8A6CFF),
-          foregroundColor: Colors.white,
+          backgroundColor: AppConfig.btnSelectedColor,
+          foregroundColor: AppConfig.btnDefaultTextColor,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           minimumSize: Size(0, height),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(
+              color: AppConfig.btnSelectedBorderColor,
+              width: 1.2,
+            ),
           ),
         ),
         child: Text(
           'refresh'.tr,
           style: const TextStyle(
+            color: AppConfig.btnDefaultTextColor,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -260,7 +265,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.2,
-                        color: Color(0xFF8A6CFF),
+                        color: AppConfig.btnSelectedColor,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -286,7 +291,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.2,
-                        color: Color(0xFF8A6CFF),
+                        color: AppConfig.btnSelectedColor,
                       ),
                     ),
                     const SizedBox(height: 10),

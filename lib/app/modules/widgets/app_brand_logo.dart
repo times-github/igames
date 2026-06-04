@@ -15,6 +15,9 @@ class AppBrandLogo extends StatelessWidget {
     this.backgroundColor = const Color(0x16000000),
     this.borderColor = const Color(0x24FFFFFF),
     this.placeholder,
+    this.width,
+    this.height,
+    this.constraints,
   });
 
   final String logo;
@@ -26,22 +29,32 @@ class AppBrandLogo extends StatelessWidget {
   final Color backgroundColor;
   final Color borderColor;
   final Widget? placeholder;
+  final double? width;
+  final double? height;
+  final BoxConstraints? constraints;
 
   @override
   Widget build(BuildContext context) {
     final child = ClipRRect(
       borderRadius: borderRadius,
-      child: Container(
-        decoration: showBackground
-            ? BoxDecoration(
-                color: backgroundColor,
-                borderRadius: borderRadius,
-                border: Border.all(color: borderColor),
-              )
-            : null,
-        padding: padding,
-        alignment: alignment,
-        child: _buildImage(logo),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: ConstrainedBox(
+          constraints: constraints ?? const BoxConstraints(),
+          child: Container(
+            decoration: showBackground
+                ? BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: borderRadius,
+                    border: Border.all(color: borderColor),
+                  )
+                : null,
+            padding: padding,
+            alignment: alignment,
+            child: _buildImage(logo),
+          ),
+        ),
       ),
     );
     return child;

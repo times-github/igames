@@ -5,6 +5,7 @@ import 'dart:ui_web' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/config/app_config.dart';
 import 'package:web/web.dart' as web;
 
 const bool supportsTurnstileChallenge = true;
@@ -92,6 +93,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         ..src = _buildFrameUrl()
         ..style.width = '100%'
         ..style.height = '100%'
+        ..style.display = 'block'
         ..style.border = 'none'
         ..style.backgroundColor = 'transparent'
         ..style.overflow = 'hidden'
@@ -101,7 +103,11 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
       final container = web.HTMLDivElement()
         ..style.width = '100%'
         ..style.height = '100%'
+        ..style.display = 'block'
+        ..style.position = 'relative'
         ..style.overflow = 'hidden'
+        ..style.borderRadius = '10px'
+        ..style.contain = 'layout paint size style'
         ..append(iframe);
 
       _frameElement = iframe;
@@ -262,12 +268,12 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
   void _syncFrameInteraction() {
     final interactive = _state == _TurnstileViewState.ready;
     final pointerEvents = interactive ? 'auto' : 'none';
-    final opacity = interactive ? '1' : '0';
+    final visibility = interactive ? 'visible' : 'hidden';
 
     _frameContainer?.style.pointerEvents = pointerEvents;
-    _frameContainer?.style.opacity = opacity;
+    _frameContainer?.style.visibility = visibility;
     _frameElement?.style.pointerEvents = pointerEvents;
-    _frameElement?.style.opacity = opacity;
+    _frameElement?.style.visibility = visibility;
   }
 
   void _setViewState(_TurnstileViewState state) {
@@ -294,18 +300,23 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         onPressed: _retry,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: const Color(0xFF8A6CFF),
-          foregroundColor: Colors.white,
+          backgroundColor: AppConfig.btnSelectedColor,
+          foregroundColor: AppConfig.btnDefaultTextColor,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           minimumSize: Size(0, height),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(
+              color: AppConfig.btnSelectedBorderColor,
+              width: 1.2,
+            ),
           ),
         ),
         child: Text(
           'refresh'.tr,
           style: const TextStyle(
+            color: AppConfig.btnDefaultTextColor,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -338,7 +349,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.2,
-                        color: Color(0xFF8A6CFF),
+                        color: AppConfig.btnSelectedColor,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -364,7 +375,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.2,
-                        color: Color(0xFF8A6CFF),
+                        color: AppConfig.btnSelectedColor,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -444,32 +455,32 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF20242D),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            alignment: Alignment.center,
-            child: HtmlElementView(
-              key: ValueKey(_viewType),
-              viewType: _viewType,
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              ignoring: _state == _TurnstileViewState.ready,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxHeight <= 84;
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    child: _buildOverlay(compact: compact),
-                  );
-                },
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF20242D),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              alignment: Alignment.center,
+              child: HtmlElementView(
+                key: ValueKey(_viewType),
+                viewType: _viewType,
               ),
             ),
           ),
+          if (_state != _TurnstileViewState.ready)
+            Positioned.fill(
+              child: AbsorbPointer(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxHeight <= 84;
+                    return _buildOverlay(compact: compact);
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );

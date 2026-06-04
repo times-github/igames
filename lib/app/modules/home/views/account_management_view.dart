@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/routes/app_pages.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class AccountManagementView extends StatefulWidget {
   const AccountManagementView({super.key});
@@ -47,7 +47,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -77,9 +77,6 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                       }),
                       onTap: () => Get.toNamed(
                         Routes.BANK_CARD,
-                        arguments: {
-                          'bank_cards': _bankCards,
-                        },
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -91,9 +88,6 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                       }),
                       onTap: () => Get.toNamed(
                         Routes.CRYPTO_ADDRESS,
-                        arguments: {
-                          'crypto_addresses': _cryptoAddresses,
-                        },
                       ),
                     ),
                   ],
@@ -113,10 +107,8 @@ class _AccountManagementViewState extends State<AccountManagementView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(

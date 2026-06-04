@@ -5,17 +5,23 @@ import 'package:igames/app/data/models/jackpot.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
 import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
 import 'package:igames/app/modules/widgets/language_selector/controllers/language_selector_controller.dart';
-import 'package:igames/app/modules/widgets/language_selector/views/language_selector_view.dart';
 import 'package:igames/app/routes/app_pages.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/config/app_config_export.dart';
 
 class SideDrawer extends StatelessWidget {
-  const SideDrawer({super.key});
+  const SideDrawer({
+    super.key,
+    this.isOpen = false,
+  });
+
+  final bool isOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -25,99 +31,111 @@ class SideDrawer extends StatelessWidget {
         Get.isRegistered<HomeController>() ? Get.find<HomeController>() : null;
 
     return Drawer(
-      backgroundColor: const Color(0xFF0E1621),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // 顶部区域：Logo + 金额 + 充值按钮 + 关闭按钮
-            _DrawerHeader(
-              auth: auth,
-              appInfo: appInfo,
-              homeController: homeController,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xD90D1D27),
+          border: Border(
+            right: BorderSide(
+              color: Colors.white.withValues(alpha: 0.06),
             ),
-            const SizedBox(height: 12),
-            // 菜单项
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: [
-                  _DrawerMenuItem(
-                    icon: Icons.favorite_border,
-                    label: 'myFavorites'.tr,
-                    onTap: () async {
-                      final ok = await auth.ensureAuthenticated(context);
-                      if (!context.mounted) return;
-                      if (ok) {
-                        Navigator.pop(context);
-                        Future.microtask(() {
-                          Get.toNamed(Routes.FAVORITES);
-                        });
-                      }
-                    },
-                  ),
-                  _DrawerMenuItem(
-                    icon: Icons.history,
-                    label: 'recentlyPlayed'.tr,
-                    onTap: () async {
-                      final ok = await auth.ensureAuthenticated(context);
-                      if (!context.mounted) return;
-                      if (ok) {
-                        Navigator.pop(context);
-                        Future.microtask(() {
-                          Get.toNamed(Routes.RECENTLY_PLAYED);
-                        });
-                      }
-                    },
-                  ),
-                  _DrawerMenuItem(
-                    icon: Icons.local_activity_outlined,
-                    label: 'promo'.tr,
-                    onTap: () {
-                      Navigator.pop(context);
-                      if (homeController != null) {
-                        homeController.currentTab.value = 1;
-                      }
-                    },
-                  ),
-                  _DrawerMenuItem(
-                    icon: Icons.support_agent_rounded,
-                    label: 'helpCenter'.tr,
-                    onTap: () {
-                      Navigator.pop(context);
-                      auth.openCustomerService();
-                    },
-                  ),
-                  _DrawerLanguageItem(),
-                  const SizedBox(height: 20),
-                  // 实时爆奖标题
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.emoji_events,
-                          color: Color(0xFFFFD700),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'jackpotWinners'.tr,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // 实时爆奖列表
-                  const _JackpotList(),
-                ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // 顶部区域：Logo + 金额 + 充值按钮 + 关闭按钮
+              _DrawerHeader(
+                auth: auth,
+                appInfo: appInfo,
+                homeController: homeController,
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              // 菜单项
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  children: [
+                    _DrawerMenuItem(
+                      icon: Icons.favorite_border,
+                      label: 'myFavorites'.tr,
+                      onTap: () async {
+                        final ok = await auth.ensureAuthenticated(context);
+                        if (!context.mounted) return;
+                        if (ok) {
+                          Navigator.pop(context);
+                          Future.microtask(() {
+                            Get.toNamed(Routes.FAVORITES);
+                          });
+                        }
+                      },
+                    ),
+                    _DrawerMenuItem(
+                      icon: Icons.history,
+                      label: 'recentlyPlayed'.tr,
+                      onTap: () async {
+                        final ok = await auth.ensureAuthenticated(context);
+                        if (!context.mounted) return;
+                        if (ok) {
+                          Navigator.pop(context);
+                          Future.microtask(() {
+                            Get.toNamed(Routes.RECENTLY_PLAYED);
+                          });
+                        }
+                      },
+                    ),
+                    _DrawerMenuItem(
+                      icon: Icons.local_activity_outlined,
+                      label: 'promo'.tr,
+                      onTap: () {
+                        Navigator.pop(context);
+                        if (homeController != null) {
+                          homeController.currentTab.value = 1;
+                        }
+                      },
+                    ),
+                    _DrawerMenuItem(
+                      icon: Icons.support_agent_rounded,
+                      label: 'helpCenter'.tr,
+                      onTap: () {
+                        Navigator.pop(context);
+                        auth.openCustomerService();
+                      },
+                    ),
+                    _DrawerLanguageItem(),
+                    if (isOpen) ...[
+                      const SizedBox(height: 20),
+                      // 实时爆奖标题
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.emoji_events,
+                              color: Color(0xFFFFD700),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'jackpotWinners'.tr,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // 实时爆奖列表
+                      const _JackpotList(),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -140,11 +158,7 @@ class _DrawerHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1D2E), Color(0xFF2A2D3E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppConfig.webDesktopOuterBackground,
         border: Border(
           bottom: BorderSide(
             color: Colors.white.withValues(alpha: 0.1),
@@ -157,36 +171,37 @@ class _DrawerHeader extends StatelessWidget {
             children: [
               // Logo
               Obx(() {
+                final r = Responsive.fromContext(context);
+                final logoWidth = r.size(156);
+                final logoHeight = r.size(48);
                 return SizedBox(
-                  width: 50,
-                  height: 50,
+                  width: logoWidth,
+                  height: logoHeight,
                   child: AppBrandLogo(
                     logo: appInfo.appLogo.value,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                );
-              }),
-              const SizedBox(width: 8),
-              // 网站名称
-              Obx(() {
-                final name = appInfo.appName.value;
-                return Text(
-                  name.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    letterSpacing: 1.1,
+                    borderRadius: BorderRadius.zero,
+                    width: logoWidth,
+                    height: logoHeight,
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.size(2),
+                      vertical: r.size(1),
+                    ),
                   ),
                 );
               }),
               const Spacer(),
-              // 关闭按钮
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close, color: Colors.white70),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+              // 返回按钮
+              Builder(
+                builder: (context) {
+                  final r = Responsive.fromContext(context);
+                  return AppBackButton(
+                    onPressed: () => Navigator.pop(context),
+                    size: r.size(30),
+                    minTapSize: r.size(38),
+                    padding: EdgeInsets.zero,
+                  );
+                },
               ),
             ],
           ),
@@ -195,23 +210,31 @@ class _DrawerHeader extends StatelessWidget {
           Obx(() {
             final loggedIn = auth.isLoggedIn.value;
             if (!loggedIn) {
-              return ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  auth.openLoginOverlay(context);
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final r = Responsive.fromConstraints(constraints, context);
+                  return ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      auth.openLoginOverlay();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8A6CFF),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: r.size(32),
+                        vertical: r.size(12),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(r.size(12)),
+                      ),
+                    ),
+                    child: Text(
+                      'loginRegister'.tr,
+                      style: TextStyle(fontSize: r.font(14)),
+                    ),
+                  );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8A6CFF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text('loginRegister'.tr),
               );
             }
 
@@ -222,74 +245,48 @@ class _DrawerHeader extends StatelessWidget {
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF222732),
-                    borderRadius: BorderRadius.circular(16),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    color: const Color(0xFF14383C),
+                    border: Border.all(
+                      color: const Color(0xFF22D8DF),
+                      width: 1.4,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        AppConfig.currencySymbol(),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
+                      Image.asset(
+                        'assets/images/me/idr.png',
+                        width: 26,
+                        height: 26,
+                        fit: BoxFit.contain,
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 6),
                       Text(
-                        balance,
+                        _formatDrawerBalanceAsK(balance),
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFFFFF133),
                           fontWeight: FontWeight.w800,
-                          fontSize: 13,
+                          fontSize: 15,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       GestureDetector(
                         onTap: () => homeController?.refreshBalance(),
-                        child: AnimatedRotation(
-                          turns: isRefreshing ? 1 : 0,
-                          duration: const Duration(milliseconds: 700),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.refresh,
-                              color: Color(0xFFF1A64C),
-                              size: 16,
-                            ),
+                        child: Opacity(
+                          opacity: isRefreshing ? 0.88 : 1,
+                          child: Image.asset(
+                            'assets/images/me/add.png',
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    homeController?.currentTab.value = 2;
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8A6CFF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text('recharge'.tr),
                 ),
               ],
             );
@@ -321,7 +318,7 @@ class _DrawerMenuItem extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.08),
           ),
@@ -330,10 +327,10 @@ class _DrawerMenuItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: const Color(0xFF8A6CFF),
+              color: AppConfig.buttonColor,
               size: 22,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
@@ -344,10 +341,11 @@ class _DrawerMenuItem extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.4),
-              size: 20,
+            Image.asset(
+              'assets/images/me/into.png',
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
             ),
           ],
         ),
@@ -371,27 +369,33 @@ class _DrawerLanguageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Get.isRegistered<LanguageSelectorController>()
+        ? Get.find<LanguageSelectorController>()
+        : Get.put(LanguageSelectorController());
     return InkWell(
       onTap: () => _openLanguageMenu(context),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.08),
           ),
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.language,
-              color: Color(0xFF8A6CFF),
-              size: 22,
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Image.asset(
+                'assets/images/me/language.png',
+                fit: BoxFit.contain,
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 'language'.tr,
@@ -402,8 +406,24 @@ class _DrawerLanguageItem extends StatelessWidget {
                 ),
               ),
             ),
-            IgnorePointer(
-              child: LanguageSelectorView(compact: false),
+            Obx(
+              () => Text(
+                languageController.currentLanguage.value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Image.asset(
+              'assets/images/me/into.png',
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
             ),
           ],
         ),
@@ -882,6 +902,7 @@ class _SidebarAmountText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.fromContext(context);
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
@@ -893,11 +914,11 @@ class _SidebarAmountText extends StatelessWidget {
           scale: scaleAnimation.value,
           alignment: Alignment.centerRight,
           child: Text(
-            _formatAmount(amountValue),
+            _formatCompactAmount(amountValue),
             textAlign: TextAlign.right,
             style: TextStyle(
               color: amountColor,
-              fontSize: 13,
+              fontSize: r.font(14),
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
               shadows: [
@@ -971,13 +992,20 @@ String _firstNonEmptyText(String? first, [String? second, String? third]) {
   return '';
 }
 
-String _formatAmount(num? amount) {
+String _formatCompactAmount(num? amount) {
   final value = (amount ?? 0).toDouble();
-  final fixed = value.toStringAsFixed(2);
-  return fixed.replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-    (m) => '${m[1]},',
-  );
+  if (value < 1000) {
+    return value.round().toString();
+  }
+  return '${(value / 1000).floor()}k';
+}
+
+String _formatDrawerBalanceAsK(String raw) {
+  final normalized = raw.replaceAll(',', '').replaceAll(' ', '');
+  final value = double.tryParse(normalized);
+  if (value == null) return raw;
+  final scaled = value / 1000;
+  return '${scaled.toStringAsFixed(2)} K';
 }
 
 String? _resolveGameIconUrl(String? url) {

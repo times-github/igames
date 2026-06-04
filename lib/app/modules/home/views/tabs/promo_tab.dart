@@ -5,7 +5,9 @@ import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/promo_controller.dart';
 import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/common_header.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/config/app_config_export.dart';
+// import 'package:igames/config/app_config.dart';
 import 'package:igames/app/modules/home/views/promo_detail_view.dart';
 
 class PromoTab extends StatelessWidget {
@@ -16,66 +18,90 @@ class PromoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final promoController = Get.find<PromoController>();
+    final headerHeight = Responsive.fromContext(context).size(41);
 
-    return Container(
-      decoration:
-          const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // 顶部栏（和首页一样）
-            Container(
-              color: AppColors.backgroundDark,
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-              height: 41,
-              alignment: Alignment.center,
-              child: buildCommonHeader(
-                context,
-                auth,
-                showNotification: true,
-                showMenu: true,
-              ),
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          // 顶部栏（和首页一样）
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+            height: headerHeight,
+            alignment: Alignment.center,
+            child: buildCommonHeader(
+              context,
+              auth,
+              showNotification: true,
+              showMenu: true,
             ),
-            // 内容区域
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PromoCategorySidebar(controller: promoController),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: _PromoActivityList(controller: promoController),
-                    ),
-                  ],
-                ),
-              ),
+          ),
+          // 内容区域
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final r = Responsive.fromConstraints(constraints, context);
+                final sidebarWidth = r.width < 360 ? r.size(82) : r.size(92);
+                final contentGap = r.size(4);
+                final contentPadding = r.size(10);
+
+                return Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    0,
+                    contentPadding,
+                    0,
+                    contentPadding,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: sidebarWidth,
+                        child: _PromoCategorySidebar(
+                          controller: promoController,
+                          scale: r.scale,
+                        ),
+                      ),
+                      SizedBox(width: contentGap),
+                      Expanded(
+                        child: _PromoActivityList(controller: promoController),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _PromoCategorySidebar extends StatelessWidget {
-  const _PromoCategorySidebar({required this.controller});
+  const _PromoCategorySidebar({
+    required this.controller,
+    required this.scale,
+  });
 
   final PromoController controller;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final itemGap = 8 * scale;
+      final loadingSize = 18 * scale;
+      final textSize = 14 * scale;
+
       if (controller.isLoading.value && controller.categories.isEmpty) {
-        return const SizedBox(
-          height: 42,
+        return SizedBox(
+          height: 42 * scale,
           child: Center(
             child: SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
+              width: loadingSize,
+              height: loadingSize,
+              child: const CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
@@ -86,46 +112,42 @@ class _PromoCategorySidebar extends StatelessWidget {
 
       if (controller.categories.isEmpty) {
         if (controller.loadError.value) {
-          return SizedBox(
-            width: 88,
-            child: Text(
-              'checkNetwork'.tr,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
-                fontSize: 14,
-              ),
+          return Text(
+            'checkNetwork'.tr,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: textSize,
             ),
           );
         }
-        return const SizedBox(width: 88);
+        return const SizedBox.shrink();
       }
 
-      return SizedBox(
-        width: 92,
-        child: ListView(
-          padding: const EdgeInsets.only(top: 2),
-          children: [
-            _PromoCategoryChip(
-              label: 'promoAll'.tr,
-              selected: controller.selectedId.value == null,
-              onTap: controller.selectAll,
-            ),
-            const SizedBox(height: 8),
-            ...controller.categories.map((item) {
-              final isSelected = controller.selectedId.value == item.id;
-              final name = item.name.trim();
-              final label = name;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _PromoCategoryChip(
-                  label: label.isEmpty ? '--' : label,
-                  selected: isSelected,
-                  onTap: () => controller.selectCategory(item),
-                ),
-              );
-            }),
-          ],
-        ),
+      return ListView(
+        padding: EdgeInsets.only(top: 2 * scale),
+        children: [
+          _PromoCategoryChip(
+            label: 'promoAll'.tr,
+            selected: controller.selectedId.value == null,
+            onTap: controller.selectAll,
+            scale: scale,
+          ),
+          SizedBox(height: itemGap),
+          ...controller.categories.map((item) {
+            final isSelected = controller.selectedId.value == item.id;
+            final name = item.name.trim();
+            final label = name;
+            return Padding(
+              padding: EdgeInsets.only(bottom: itemGap),
+              child: _PromoCategoryChip(
+                label: label.isEmpty ? '--' : label,
+                selected: isSelected,
+                onTap: () => controller.selectCategory(item),
+                scale: scale,
+              ),
+            );
+          }),
+        ],
       );
     });
   }
@@ -137,45 +159,43 @@ class _PromoCategoryChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    required this.scale,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
-    final selectedGradient = const LinearGradient(
-      colors: [Color(0xFFB07CFF), Color(0xFF6B6CFF)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
+    final radius = 12 * scale;
+    final height = 34 * scale;
+    final fontSize = 12.5 * scale;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(radius),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 400), //动画时间
-          padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 1), //内边距
+          padding:
+              EdgeInsets.symmetric(horizontal: 1 * scale, vertical: 1 * scale),
           decoration: BoxDecoration(
-            color:
-                selected ? null : const Color.fromARGB(255, 45, 49, 64), //选中背景色
-            gradient: selected ? selectedGradient : null, //选中渐变背景
-            borderRadius: BorderRadius.circular(12), //圆角
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
+            image: DecorationImage(
+              image: AssetImage(
+                selected
+                    ? AppConfig.btnSelectedBackgroundAsset
+                    : AppConfig.btnDefaultBackgroundAsset,
+              ),
+              fit: BoxFit.fill,
+            ),
+            borderRadius: BorderRadius.circular(radius), //圆角
           ),
           child: SizedBox(
             //盒子
-            height: 34,
+            height: height,
             child: Center(
               child: Text(
                 label,
@@ -184,9 +204,9 @@ class _PromoCategoryChip extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: selected
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.75),
-                  fontSize: 12.5,
+                      ? AppConfig.btnSelectedTextColor
+                      : AppConfig.btnDefaultTextColor,
+                  fontSize: fontSize,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   height: 1.1,
                 ),
@@ -266,9 +286,12 @@ class _PromoActivityCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: AspectRatio(
-          aspectRatio: 16 / 4.2,
-          child: _PromoImage(url: activity.picture),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: AspectRatio(
+            aspectRatio: 16 / 4.2,
+            child: _PromoImage(url: activity.picture),
+          ),
         ),
       ),
     );

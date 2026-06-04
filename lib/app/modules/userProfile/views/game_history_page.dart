@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:igames/config/app_colors.dart';
-
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import '../controllers/user_profile_controller.dart';
 import 'game_history_view.dart';
 
@@ -15,30 +14,26 @@ class GameHistoryPage extends StatelessWidget {
     final controller = Get.find<UserProfileController>();
     // 每次进入默认展示全部
     controller.setGameFilter('all');
-    return Container(
-      decoration: const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
-      child: SafeArea(
-        child: Scaffold(
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          elevation: 0,
           backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-              onPressed: () => Get.back(),
-            ),
-            centerTitle: true,
-            title: Text(
-              'gameHistory'.tr,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-              ),
+          leading: AppBackButton(
+            onPressed: () => Get.back(),
+          ),
+          centerTitle: true,
+          title: Text(
+            'gameHistory'.tr,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
             ),
           ),
-          body: const GameHistoryView(),
         ),
+        body: const GameHistoryView(),
       ),
     );
   }

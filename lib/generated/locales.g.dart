@@ -17,6 +17,8 @@ class LocaleKeys {
   static const button_signOut = 'button_signOut';
   static const button_submit = 'button_submit';
   static const button_cancel = 'button_cancel';
+  static const switchLanguageTitle = 'switchLanguageTitle';
+  static const switchLanguageSubtitle = 'switchLanguageSubtitle';
   static const language = 'language';
   static const turnstileRequired = 'turnstileRequired';
   static const turnstileLoading = 'turnstileLoading';
@@ -29,6 +31,10 @@ class LocaleKeys {
   static const authRegisterAutoFailed = 'authRegisterAutoFailed';
   static const authPasswordOrCodeRequired = 'authPasswordOrCodeRequired';
   static const authUnknownError = 'authUnknownError';
+  static const user_banned = 'user_banned';
+  static const user_frozen = 'user_frozen';
+  static const user_not_found = 'user_not_found';
+  static const user_status_query_failed = 'user_status_query_failed';
   static const paymentMethod = 'paymentMethod';
   static const payMethodIdr = 'payMethodIdr';
   static const payMethodUsdtTrc20 = 'payMethodUsdtTrc20';
@@ -52,8 +58,10 @@ class LocaleKeys {
   static const pleaseEnterAgreeToTerms = 'pleaseEnterAgreeToTerms';
   static const pleaseEnterAtLeast18YearsOld = 'pleaseEnterAtLeast18YearsOld';
   static const loginSuccess = 'loginSuccess';
+  static const login_success = 'login_success';
   static const loginFailed = 'loginFailed';
   static const registerSuccess = 'registerSuccess';
+  static const register_success = 'register_success';
   static const registerFailed = 'registerFailed';
   static const networkError = 'networkError';
   static const errorNotLogin = 'errorNotLogin';
@@ -67,6 +75,9 @@ class LocaleKeys {
   static const tip = 'tip';
   static const passwordNotMatch = 'passwordNotMatch';
   static const passwordError = 'passwordError';
+  static const password_invalid = 'password_invalid';
+  static const password_login_locked = 'password_login_locked';
+  static const retry_after_seconds = 'retry_after_seconds';
   static const pleaseEnterAllInformation = 'pleaseEnterAllInformation';
   static const contactCustomerService = 'contactCustomerService';
   static const customerService = 'customerService';
@@ -174,6 +185,7 @@ class LocaleKeys {
   static const pleaseEnterValidWithdrawAmount =
       'pleaseEnterValidWithdrawAmount';
   static const withdrawSubmitted = 'withdrawSubmitted';
+  static const withdraw_submitted = 'withdraw_submitted';
   static const withdrawSuccess = 'withdrawSuccess';
   static const withdrawFailed = 'withdrawFailed';
   static const errorWithdrawAmountInvalid = 'errorWithdrawAmountInvalid';
@@ -290,6 +302,7 @@ class LocaleKeys {
   static const registerNow = 'registerNow';
   static const hasAccountLogin = 'hasAccountLogin';
   static const downloadAppNow = 'downloadAppNow';
+  static const appUpdate = 'appUpdate';
   static const aboutUs = 'aboutUs';
   static const fairAndJust = 'fairAndJust';
   static const safeAndReliable = 'safeAndReliable';
@@ -468,6 +481,8 @@ class Locales {
     'button_signOut': 'Keluar',
     'button_submit': 'Kirim',
     'button_cancel': 'Batal',
+    'switchLanguageTitle': 'Pilih bahasa',
+    'switchLanguageSubtitle': 'Pilih bahasa tampilan Anda',
     'language': 'Bahasa',
     'turnstileRequired':
         'Silakan selesaikan verifikasi keamanan manusia terlebih dahulu',
@@ -483,6 +498,10 @@ class Locales {
     'authPasswordOrCodeRequired':
         'Silakan masukkan kata sandi atau kode verifikasi',
     'authUnknownError': 'Login gagal, silakan coba lagi nanti',
+    'user_banned': 'Akun Anda telah diblokir',
+    'user_frozen': 'Akun Anda dibekukan',
+    'user_not_found': 'Pengguna tidak ditemukan',
+    'user_status_query_failed': 'Gagal memuat status pengguna',
     'paymentMethod': 'Metode pembayaran',
     'payMethodIdr': 'IDR',
     'payMethodUsdtTrc20': 'USDT',
@@ -509,8 +528,10 @@ class Locales {
     'pleaseEnterAtLeast18YearsOld':
         'Silakan masukkan berusia 18 tahun atau lebih',
     'loginSuccess': 'Login berhasil',
+    'login_success': 'Login berhasil',
     'loginFailed': 'Login gagal',
     'registerSuccess': 'Daftar berhasil',
+    'register_success': 'Pendaftaran berhasil',
     'registerFailed': 'Daftar gagal',
     'networkError': 'Kesalahan jaringan, silakan coba lagi',
     'errorNotLogin': 'Belum login',
@@ -524,6 +545,10 @@ class Locales {
     'tip': 'Tip',
     'passwordNotMatch': 'Kata sandi tidak cocok',
     'passwordError': 'Kata sandi salah',
+    'password_invalid': 'Kata sandi tidak valid',
+    'password_login_locked':
+        'Terlalu banyak percobaan kata sandi yang gagal. Silakan coba lagi nanti.',
+    'retry_after_seconds': 'Coba lagi dalam @minutes menit',
     'pleaseEnterAllInformation': 'Silakan masukkan semua informasi',
     'contactCustomerService': 'Hubungi layanan pelanggan',
     'customerService': 'Layanan pelanggan',
@@ -652,6 +677,7 @@ class Locales {
     'pleaseEnterValidWithdrawAmount':
         'Silakan masukkan jumlah penarikan yang valid',
     'withdrawSubmitted': 'Permintaan penarikan telah dikirim',
+    'withdraw_submitted': 'Permintaan penarikan berhasil dikirim',
     'withdrawSuccess': 'Penarikan berhasil',
     'withdrawFailed': 'Penarikan gagal',
     'errorWithdrawAmountInvalid': 'Konversi jumlah gagal',
@@ -766,6 +792,7 @@ class Locales {
     'registerNow': 'Daftar Sekarang',
     'hasAccountLogin': 'Sudah punya akun? Masuk',
     'downloadAppNow': 'Unduh APP sekarang',
+    'appUpdate': 'Pembaruan APP',
     'aboutUs': 'Tentang Kami',
     'fairAndJust': 'Adil & Jujur',
     'safeAndReliable': 'Aman & Terpercaya',
@@ -939,6 +966,8 @@ class Locales {
     'button_signOut': '退出',
     'button_submit': '提交',
     'button_cancel': '取消',
+    'switchLanguageTitle': '选择语言',
+    'switchLanguageSubtitle': '请选择您的显示语言',
     'language': '语言',
     'turnstileRequired': '请先完成人机安全校验',
     'turnstileLoading': '正在加载安全验证...',
@@ -951,6 +980,10 @@ class Locales {
     'authRegisterAutoFailed': '注册失败，请稍后再试',
     'authPasswordOrCodeRequired': '请输入密码或验证码',
     'authUnknownError': '登录失败，请稍后重试',
+    'user_banned': '您的账号已被封禁',
+    'user_frozen': '您的账号已被冻结',
+    'user_not_found': '未找到用户',
+    'user_status_query_failed': '加载用户状态失败',
     'paymentMethod': '支付方式',
     'payMethodIdr': 'IDR',
     'payMethodUsdtTrc20': 'USDT',
@@ -974,8 +1007,11 @@ class Locales {
     'pleaseEnterAgreeToTerms': '请输入同意条款',
     'pleaseEnterAtLeast18YearsOld': '请输入至少18岁',
     'loginSuccess': '登录成功',
+    'login_success': '登录成功',
     'loginFailed': '登录失败',
     'registerSuccess': '注册成功',
+    'registerFailed': '注册失败',
+    'register_success': '注册成功',
     'networkError': '网络错误，请稍后重试',
     'errorNotLogin': '未登录',
     'errorAddressFormat': '地址格式错误',
@@ -988,6 +1024,9 @@ class Locales {
     'tip': '提示',
     'passwordNotMatch': '两次密码不一致',
     'passwordError': '密码错误',
+    'password_invalid': '密码错误',
+    'password_login_locked': '密码错误次数过多，请稍后再试',
+    'retry_after_seconds': '请在 @minutes 分钟后重试',
     'pleaseEnterAllInformation': '请填写完整信息',
     'contactCustomerService': '联系客服',
     'customerService': '客服',
@@ -1110,6 +1149,7 @@ class Locales {
     'pleaseEnterWithdrawAmount': '请输入提现金额',
     'pleaseEnterValidWithdrawAmount': '请输入有效的提现金额',
     'withdrawSubmitted': '提现请求已提交',
+    'withdraw_submitted': '提现提交成功',
     'withdrawSuccess': '提现成功',
     'withdrawFailed': '提现失败',
     'errorWithdrawAmountInvalid': '金额转换失败',
@@ -1222,6 +1262,7 @@ class Locales {
     'registerNow': '立即注册',
     'hasAccountLogin': '已有账号？立即登录',
     'downloadAppNow': '立即下载APP',
+    'appUpdate': 'APP更新',
     'aboutUs': '关于我们',
     'fairAndJust': '公平公正',
     'safeAndReliable': '安全可靠',
@@ -1381,6 +1422,8 @@ class Locales {
     'button_signOut': 'Sign Out',
     'button_submit': 'Submit',
     'button_cancel': 'Cancel',
+    'switchLanguageTitle': 'Choose language',
+    'switchLanguageSubtitle': 'Select your display language',
     'language': 'Language',
     'turnstileRequired': 'Please complete the human verification first',
     'turnstileLoading': 'Loading security verification...',
@@ -1396,6 +1439,10 @@ class Locales {
     'authPasswordOrCodeRequired':
         'Please enter a password or verification code',
     'authUnknownError': 'Login failed. Please try again later',
+    'user_banned': 'Your account has been banned',
+    'user_frozen': 'Your account is frozen',
+    'user_not_found': 'User not found',
+    'user_status_query_failed': 'Failed to load user status',
     'paymentMethod': 'Payment method',
     'payMethodIdr': 'IDR',
     'payMethodUsdtTrc20': 'USDT',
@@ -1420,8 +1467,10 @@ class Locales {
     'pleaseEnterAgreeToTerms': 'Please enter agree to terms',
     'pleaseEnterAtLeast18YearsOld': 'Please enter at least 18 years old',
     'loginSuccess': 'Login success',
+    'login_success': 'Login successful',
     'loginFailed': 'Login failed',
     'registerSuccess': 'Register success',
+    'register_success': 'Registration successful',
     'registerFailed': 'Register failed',
     'networkError': 'Network error, please try again',
     'errorNotLogin': 'Not logged in',
@@ -1435,6 +1484,10 @@ class Locales {
     'tip': 'Tip',
     'passwordNotMatch': 'Password not match',
     'passwordError': 'Password error',
+    'password_invalid': 'Invalid password',
+    'password_login_locked':
+        'Too many failed password attempts. Please try again later.',
+    'retry_after_seconds': 'Retry in @minutes min',
     'pleaseEnterAllInformation': 'Please enter all information',
     'contactCustomerService': 'Contact customer service',
     'customerService': 'Customer service',
@@ -1560,6 +1613,7 @@ class Locales {
     'pleaseEnterWithdrawAmount': 'Please enter withdraw amount',
     'pleaseEnterValidWithdrawAmount': 'Please enter valid withdraw amount',
     'withdrawSubmitted': 'Withdraw request submitted',
+    'withdraw_submitted': 'Withdrawal submitted successfully',
     'withdrawSuccess': 'Withdraw success',
     'withdrawFailed': 'Withdraw failed',
     'errorWithdrawAmountInvalid': 'Amount conversion failed',
@@ -1674,6 +1728,7 @@ class Locales {
     'agreeTerms': 'Agree to terms',
     'registerNow': 'Register Now',
     'hasAccountLogin': 'Have account? Login',
+    'appUpdate': 'App Update',
     'aboutUs': 'About Us',
     'fairAndJust': 'Fair & Just',
     'safeAndReliable': 'Safe & Reliable',

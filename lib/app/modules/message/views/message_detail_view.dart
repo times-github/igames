@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 
 class MessageDetailView extends StatefulWidget {
   const MessageDetailView({super.key});
@@ -40,12 +41,11 @@ class _MessageDetailViewState extends State<MessageDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1923),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        leading: AppBackButton(
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -81,7 +81,8 @@ class _MessageDetailViewState extends State<MessageDetailView> {
                       const SizedBox(height: 12),
                       Text(
                         _formatDate(_detail!.publishAt),
-                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 12),
                       ),
                       const SizedBox(height: 20),
                       Container(

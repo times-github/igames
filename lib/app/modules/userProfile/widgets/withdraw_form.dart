@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/payment_services.dart';
+import 'package:igames/app/utils/user_status_error.dart';
+import 'package:igames/app/modules/widgets/app_close_button.dart';
 import 'package:igames/config/app_config_export.dart';
-import '../controllers/user_profile_controller.dart';
 
 class WithdrawForm extends StatefulWidget {
   const WithdrawForm({super.key});
@@ -93,11 +94,21 @@ class _WithdrawFormState extends State<WithdrawForm> {
         name: name,
         bankCode: _selectedBankCode,
       );
+      final handled = await handleUserStatusError(
+        code: result.code,
+        message: result.msg,
+      );
+      if (handled) {
+        return;
+      }
 
       if (result.code == 1) {
-        Get.snackbar('tip'.tr, result.msg ?? 'withdrawSubmitted'.tr);
+        Get.snackbar('tip'.tr, 'withdraw_submitted'.tr);
       } else {
-        Get.snackbar('tip'.tr, result.msg ?? 'withdrawFailed'.tr);
+        Get.snackbar(
+          'tip'.tr,
+          _resolveWithdrawMessage(result.code, result.msg),
+        );
       }
     } catch (e) {
       Get.snackbar('tip'.tr, e.toString());
@@ -106,6 +117,14 @@ class _WithdrawFormState extends State<WithdrawForm> {
         _isLoading = false;
       });
     }
+  }
+
+  String _resolveWithdrawMessage(int? code, String? message) {
+    final statusError = parseUserStatusError(code: code, message: message);
+    if (statusError != null) {
+      return statusError.localizedMessage;
+    }
+    return 'withdrawFailed'.tr;
   }
 
   @override
@@ -137,11 +156,7 @@ class _WithdrawFormState extends State<WithdrawForm> {
                   const Spacer(),
                   GestureDetector(
                     onTap: () => Get.back(),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white70,
-                      size: 24,
-                    ),
+                    child: const AppCloseIcon(size: 24),
                   ),
                 ],
               ),

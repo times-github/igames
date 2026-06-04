@@ -1,20 +1,28 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/models/jackpot.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/app_close_button.dart';
 import 'package:igames/app/modules/widgets/compatible_image.dart';
 import 'package:igames/app/modules/widgets/game_cover_image.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
+import 'package:igames/app/modules/widgets/jackpot_scroller_controller.dart';
 import 'package:igames/config/app_config_export.dart';
 
 class JackpotScroller extends StatefulWidget {
-  const JackpotScroller({super.key});
+  const JackpotScroller({
+    super.key,
+    this.autoPlayEnabled = true,
+  });
+
+  final bool autoPlayEnabled;
 
   @override
   State<JackpotScroller> createState() => _JackpotScrollerState();
@@ -53,63 +61,34 @@ void showJackpotDetailSheet({
 }
 
 class _JackpotScrollerState extends State<JackpotScroller> {
-  final Duration _stayDuration = const Duration(seconds: 5);
-  final Duration _slideDuration = const Duration(milliseconds: 650);
-  final ScrollController _scrollController = ScrollController();
-  int _currentIndex = 0;
-  int _activeIndex = -1;
-  double _itemExtent = 0;
-  Timer? _timer;
-  Timer? _activeTimer;
+  late final JackpotScrollerController controller;
 
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
+    controller = JackpotScrollerController(
+      autoPlayEnabled: widget.autoPlayEnabled,
+    );
+    controller.onInit();
   }
 
-  void _startAutoScroll() {
-    _timer?.cancel();
-    _timer = Timer.periodic(_stayDuration, (_) {
-      if (!mounted) return;
-      if (!Get.isRegistered<JackpotService>()) return;
-
-      final service = Get.find<JackpotService>();
-      final records = service.jackpotList;
-      if (records.length <= 1) return;
-
-      _advance(records.length);
-    });
-  }
-
-  void _advance(int length) {
-    if (length <= 1) return;
-    final nextIndex = (_currentIndex + 1) % length;
-
-    setState(() {
-      _currentIndex = nextIndex;
-    });
-
-    if (!_scrollController.hasClients || _itemExtent <= 0) return;
-
-    if (nextIndex == 0) {
-      _scrollController.jumpTo(0);
-    } else {
-      _scrollController.animateTo(
-        nextIndex * _itemExtent,
-        duration: _slideDuration,
-        curve: Curves.easeOutCubic,
+  @override
+  void didUpdateWidget(covariant JackpotScroller oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // autoPlayEnabled 变化时，需要重新创建 Controller
+    if (oldWidget.autoPlayEnabled != widget.autoPlayEnabled) {
+      controller.onClose();
+      controller = JackpotScrollerController(
+        autoPlayEnabled: widget.autoPlayEnabled,
       );
+      controller.onInit();
     }
+  }
 
-    final targetActive = nextIndex;
-    _activeTimer?.cancel();
-    _activeTimer = Timer(_slideDuration + const Duration(milliseconds: 80), () {
-      if (!mounted) return;
-      setState(() {
-        _activeIndex = targetActive;
-      });
-    });
+  @override
+  void dispose() {
+    controller.onClose(); // Controller会自动清理所有Timer和ScrollController
+    super.dispose();
   }
 
   void _showJackpotDetail(
@@ -129,8 +108,7 @@ class _JackpotScrollerState extends State<JackpotScroller> {
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _activeTimer?.cancel();
+    _timerController.onClose(); // Controller会自动清理所有Timer
     _scrollController.dispose();
     super.dispose();
   }
@@ -149,6 +127,19 @@ class _JackpotScrollerState extends State<JackpotScroller> {
         return const SizedBox.shrink();
       }
 
+      if (_currentIndex >= records.length ||
+          _webDisplayIndex > records.length) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            _currentIndex = 0;
+            _activeIndex = records.isNotEmpty ? 0 : -1;
+            _webDisplayIndex = 0;
+            _webSlideDuration = Duration.zero;
+          });
+        });
+      }
+
       final fallbackActive =
           records.isNotEmpty ? _currentIndex % records.length : 0;
       if (_activeIndex < 0 || _activeIndex >= records.length) {
@@ -165,56 +156,86 @@ class _JackpotScrollerState extends State<JackpotScroller> {
 
       return LayoutBuilder(
         builder: (context, constraints) {
+          final isCompactWeb = kIsWeb && DeviceUtils.isCompactLayout(context);
+          final widthScale =
+              (constraints.maxWidth / AppConfig.webDesktopShellWidth)
+                  .clamp(0.86, 1.0);
           final containerHeight = DeviceUtils.responsiveValue(
-            context: context,
-            mobile: 66.0,
-            tablet: 72.0,
-            desktop: 78.0,
-            largeDesktop: 82.0,
-          );
+                context: context,
+                mobile: 66.0,
+                tablet: 72.0,
+                desktop: 78.0,
+                largeDesktop: 82.0,
+              ) *
+              widthScale;
           final verticalPadding = DeviceUtils.responsiveValue(
-            context: context,
-            mobile: 3.0,
-            tablet: 4.0,
-            desktop: 5.0,
-            largeDesktop: 5.0,
-          );
+                context: context,
+                mobile: 3.0,
+                tablet: 4.0,
+                desktop: 5.0,
+                largeDesktop: 5.0,
+              ) *
+              widthScale;
           final cardHeight = containerHeight - verticalPadding * 2;
           final labelWidth = DeviceUtils.responsiveValue(
-            context: context,
-            mobile: 26.0,
-            tablet: 28.0,
-            desktop: 30.0,
-            largeDesktop: 32.0,
-          );
-          const gap = 10.0;
+                context: context,
+                mobile: 26.0,
+                tablet: 28.0,
+                desktop: 30.0,
+                largeDesktop: 32.0,
+              ) *
+              widthScale;
+          final gap = 10.0 * widthScale;
 
           final available = math.max(
             0.0,
             constraints.maxWidth - labelWidth - 24,
           );
           final desiredCardWidth = DeviceUtils.responsiveValue(
-            context: context,
-            mobile: 220.0,
-            tablet: 240.0,
-            desktop: 260.0,
-            largeDesktop: 280.0,
-          );
+                context: context,
+                mobile: 220.0,
+                tablet: 240.0,
+                desktop: 260.0,
+                largeDesktop: 280.0,
+              ) *
+              widthScale;
           final minCardWidth = DeviceUtils.responsiveValue(
-            context: context,
-            mobile: 190.0,
-            tablet: 210.0,
-            desktop: 230.0,
-            largeDesktop: 250.0,
+                context: context,
+                mobile: 190.0,
+                tablet: 210.0,
+                desktop: 230.0,
+                largeDesktop: 250.0,
+              ) *
+              widthScale;
+          final compactWebCardWidth = math.max(
+            minCardWidth,
+            math.min(desiredCardWidth, available * 0.82),
           );
-          final twoCardWidth = (available - gap) / 2;
-          final targetWidth = math.min(desiredCardWidth, twoCardWidth);
-          final cardWidth = targetWidth >= minCardWidth
-              ? targetWidth
-              : math.min(desiredCardWidth, available);
+          final webVisibleCount = kIsWeb && !isCompactWeb
+              ? math.max(
+                  1,
+                  math.min(
+                    records.length,
+                    ((available + gap) / (minCardWidth + gap)).floor(),
+                  ),
+                )
+              : 1;
+          final showTwoCards = !kIsWeb &&
+              records.length > 1 &&
+              available >= (minCardWidth * 2 + gap);
+          final twoCardWidth = math.max(0.0, (available - gap) / 2);
+          final rawCardWidth = kIsWeb
+              ? (isCompactWeb
+                  ? compactWebCardWidth
+                  : ((available - gap * (webVisibleCount - 1)) /
+                      webVisibleCount))
+              : (showTwoCards
+                  ? math.min(desiredCardWidth, twoCardWidth)
+                  : available);
+          final cardWidth = math.max(0.0, rawCardWidth.floorToDouble());
           _itemExtent = cardWidth > 0 ? cardWidth + gap : 0;
 
-          if (_scrollController.hasClients && records.length > 1) {
+          if (!kIsWeb && _scrollController.hasClients && records.length > 1) {
             final maxOffset = math.max(0.0, (records.length - 1) * _itemExtent);
             if (_scrollController.offset > maxOffset) {
               _scrollController.jumpTo(maxOffset);
@@ -224,24 +245,24 @@ class _JackpotScrollerState extends State<JackpotScroller> {
           return Container(
             height: containerHeight,
             padding: EdgeInsets.symmetric(
-              horizontal: 8,
+              horizontal: 8 * widthScale,
               vertical: verticalPadding,
             ),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF141723), Color(0xFF1F2432)],
+                colors: [Color(0xCC12353A), Color(0xB8142C33)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(18 * widthScale),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: Color(0xFF7CF3F1).withValues(alpha: 0.14),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
+                  color: Color(0xFF041519).withValues(alpha: 0.22),
+                  blurRadius: 18 * widthScale,
+                  offset: Offset(0, 8 * widthScale),
                 ),
               ],
             ),
@@ -251,47 +272,58 @@ class _JackpotScrollerState extends State<JackpotScroller> {
                   width: labelWidth,
                   height: cardHeight,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8 * widthScale),
                 Expanded(
-                  child: ScrollConfiguration(
-                    behavior: const _NoScrollbarBehavior(),
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      scrollDirection: Axis.horizontal,
-                      primary: false,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: records.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: gap),
-                      itemBuilder: (context, index) {
-                        final record = records[index];
-                        return SizedBox(
-                          width: cardWidth,
-                          height: cardHeight,
-                          child: Material(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: () => _showJackpotDetail(
-                                context,
-                                record,
-                                records,
-                                index,
-                              ),
-                              child: _JackpotRecordCard(
-                                key: ValueKey(
-                                  '${record.eventTime}_${record.account}_${record.gamecode}_$index',
+                  child: kIsWeb
+                      ? _buildWebMarqueeCards(
+                          context: context,
+                          records: records,
+                          activeIndex: activeIndex,
+                          visibleCount: webVisibleCount,
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                          gap: gap,
+                        )
+                      : ScrollConfiguration(
+                          behavior: const _NoScrollbarBehavior(),
+                          child: ListView.separated(
+                            controller: _scrollController,
+                            scrollDirection: Axis.horizontal,
+                            primary: false,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: records.length,
+                            separatorBuilder: (_, __) => SizedBox(width: gap),
+                            itemBuilder: (context, index) {
+                              final record = records[index];
+                              return SizedBox(
+                                width: cardWidth,
+                                height: cardHeight,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () => _showJackpotDetail(
+                                      context,
+                                      record,
+                                      records,
+                                      index,
+                                    ),
+                                    child: _JackpotRecordCard(
+                                      key: ValueKey(
+                                        '${record.eventTime}_${record.account}_${record.gamecode}_$index',
+                                      ),
+                                      record: record,
+                                      isActive: index == activeIndex,
+                                      compact: cardWidth < 240,
+                                      width: cardWidth,
+                                    ),
+                                  ),
                                 ),
-                                record: record,
-                                isActive: index == activeIndex,
-                                compact: cardWidth < 240,
-                              ),
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
                 ),
               ],
             ),
@@ -299,6 +331,76 @@ class _JackpotScrollerState extends State<JackpotScroller> {
         },
       );
     });
+  }
+
+  Widget _buildWebMarqueeCards({
+    required BuildContext context,
+    required List<JackpotRecord> records,
+    required int activeIndex,
+    required int visibleCount,
+    required double cardWidth,
+    required double cardHeight,
+    required double gap,
+  }) {
+    if (records.isEmpty || cardWidth <= 0 || cardHeight <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    final marqueeRecords = <JackpotRecord>[
+      ...records,
+      ...records.take(visibleCount),
+    ];
+
+    final children = <Widget>[];
+    for (var i = 0; i < marqueeRecords.length; i++) {
+      final record = marqueeRecords[i];
+      final sourceIndex = i % records.length;
+      children.add(
+        SizedBox(
+          width: cardWidth,
+          height: cardHeight,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () =>
+                  _showJackpotDetail(context, record, records, sourceIndex),
+              child: _JackpotRecordCard(
+                key: ValueKey(
+                  'web_marquee_${record.eventTime}_${record.account}_${record.gamecode}_$i',
+                ),
+                record: record,
+                isActive: sourceIndex == activeIndex,
+                compact: cardWidth < 240,
+                width: cardWidth,
+              ),
+            ),
+          ),
+        ),
+      );
+      if (i != marqueeRecords.length - 1) {
+        children.add(SizedBox(width: gap));
+      }
+    }
+
+    return ClipRect(
+      child: Stack(
+        children: [
+          AnimatedPositioned(
+            duration: _webSlideDuration,
+            curve: Curves.easeOutCubic,
+            left: -(_webDisplayIndex * _itemExtent),
+            top: 0,
+            bottom: 0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -380,16 +482,16 @@ class _LiveLabel extends StatelessWidget {
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFFFFD36E), Color(0xFFFF7A1A)],
+              colors: [Color(0xFFFFCF75), Color(0xFFFF8C2A)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFFA933).withValues(alpha: 0.4),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: const Color(0xFFFFA933).withValues(alpha: 0.22),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
@@ -424,11 +526,13 @@ class _JackpotRecordCard extends StatefulWidget {
     required this.record,
     required this.isActive,
     required this.compact,
+    required this.width,
   });
 
   final JackpotRecord record;
   final bool isActive;
   final bool compact;
+  final double width;
 
   @override
   State<_JackpotRecordCard> createState() => _JackpotRecordCardState();
@@ -447,7 +551,7 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1400),
     );
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
@@ -479,13 +583,7 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
     }
 
     if (widget.isActive && (!oldWidget.isActive || dataChanged)) {
-      if (_showRate) {
-        setState(() {
-          _showRate = false;
-        });
-      } else {
-        _showRate = false;
-      }
+      _showRate = false;
       _playAnimation();
       return;
     }
@@ -505,7 +603,7 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
     );
     _valueAnimation = Tween<double>(begin: 0, end: amount).animate(curve);
     _colorAnimation = ColorTween(
-      begin: const Color(0xFFFFF1B5),
+      begin: const Color(0xFFE5FFFE),
       end: const Color(0xFFFFC24B),
     ).animate(curve);
     _scaleAnimation = Tween<double>(begin: 0.92, end: 1).animate(
@@ -530,12 +628,13 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
 
   @override
   Widget build(BuildContext context) {
-    final isActive = widget.isActive;
-    final cardPadding = widget.compact ? 8.0 : 10.0;
-    final titleSize = widget.compact ? 12.0 : 13.5;
-    final subtitleSize = widget.compact ? 10.5 : 11.5;
-    final amountSize = widget.compact ? 13.5 : 15.5;
-    final iconSize = widget.compact ? 38.0 : 44.0;
+    final compact = widget.compact || widget.width < 240;
+    final widthScale = (widget.width / 260).clamp(0.86, 1.0);
+    final cardPadding = (compact ? 8.0 : 10.0) * widthScale;
+    final titleSize = (compact ? 11.5 : 13.0) * widthScale;
+    final subtitleSize = (compact ? 10.0 : 11.0) * widthScale;
+    final amountSize = (compact ? 13.0 : 16.0) * widthScale;
+    final iconSize = (compact ? 36.0 : 42.0) * widthScale;
 
     final title = _firstNonEmptyText(
       widget.record.gameName,
@@ -548,134 +647,112 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
         : _firstNonEmptyText(widget.record.gamecode, widget.record.gamehall);
 
     final rateText = _rateText();
+    final verticalPadding = (compact ? 3.0 : 5.0) * widthScale;
+    final subtitleSpacing = compact ? 0.0 : 1.0;
+    final leadingGap = (compact ? 6.0 : 8.0) * widthScale;
+    final rateGap = compact ? 4.0 : 6.0;
 
-    final verticalPadding = widget.compact ? 3.0 : 7.0;
-    final subtitleSpacing = widget.compact ? 0.0 : 2.0;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 320),
+    return Container(
       padding: EdgeInsets.symmetric(
         horizontal: cardPadding,
         vertical: verticalPadding,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2A2F3B), Color(0xFF1B1F2A)],
+        gradient: LinearGradient(
+          colors: widget.isActive
+              ? const [
+                  Color(0xCC243A44),
+                  Color(0xB829303F),
+                ]
+              : const [
+                  Color(0xB8212835),
+                  Color(0xA61A2230),
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive
-              ? const Color(0xFFFFC862).withValues(alpha: 0.5)
+          color: widget.isActive
+              ? const Color(0xFF79F4F2).withValues(alpha: 0.38)
               : Colors.white.withValues(alpha: 0.08),
-          width: isActive ? 1.2 : 1,
+          width: widget.isActive ? 1.15 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: isActive
-                ? const Color(0xFFFF7A1A).withValues(alpha: 0.35)
-                : Colors.black.withValues(alpha: 0.25),
-            blurRadius: isActive ? 16 : 10,
-            offset: const Offset(0, 6),
+            color: widget.isActive
+                ? const Color(0xFF45E7E1).withValues(alpha: 0.14)
+                : Colors.black.withValues(alpha: 0.14),
+            blurRadius: widget.isActive ? 14 : 10,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Positioned(
-            right: -24,
-            top: -28,
-            child: Container(
-              width: 70,
-              height: 70,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0x33FFD86A),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
+          RepaintBoundary(
+            child: _GameIcon(
+              iconUrl: widget.record.iconUrl,
+              size: iconSize,
             ),
           ),
-          Positioned(
-            left: -18,
-            bottom: -24,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0x3326D9FF),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _GameIcon(
-                iconUrl: widget.record.iconUrl,
-                size: iconSize,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    _AmountBox(
-                      amountSize: amountSize,
-                      isActive: isActive,
-                      valueAnimation: _valueAnimation,
-                      colorAnimation: _colorAnimation,
-                      scaleAnimation: _scaleAnimation,
-                      controller: _controller,
-                    ),
-                    Text(
-                      title.isNotEmpty ? title : '--',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
+          SizedBox(width: leadingGap),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _AmountText(
+                          controller: _controller,
+                          valueAnimation: _valueAnimation,
+                          colorAnimation: _colorAnimation,
+                          scaleAnimation: _scaleAnimation,
+                          amountSize: amountSize,
+                          isActive: widget.isActive,
+                        ),
                       ),
+                      if (rateText.isNotEmpty) ...[
+                        SizedBox(width: rateGap),
+                        _RateBadge(
+                          text: rateText,
+                          show: _showRate,
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: subtitleSpacing),
+                  Text(
+                    title.isNotEmpty ? title : '--',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
                     ),
-                    SizedBox(height: subtitleSpacing),
-                    Text(
-                      subTitle.isNotEmpty ? subTitle : '--',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: subtitleSize,
-                        fontWeight: FontWeight.w500,
-                        height: 1.1,
-                      ),
+                  ),
+                  SizedBox(height: subtitleSpacing),
+                  Text(
+                    subTitle.isNotEmpty ? subTitle : '--',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.62),
+                      fontSize: subtitleSize,
+                      fontWeight: FontWeight.w500,
+                      height: 1,
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (rateText.isNotEmpty)
-            Positioned(
-              top: -4,
-              right: -2,
-              child: _RateBadge(
-                text: rateText,
-                show: _showRate,
+                  ),
+                ],
               ),
             ),
+          ),
         ],
       ),
     );
@@ -694,65 +771,6 @@ class _JackpotRecordCardState extends State<_JackpotRecordCard>
     final win = record.winAmount?.toDouble() ?? 0;
     if (bet <= 0 || win <= 0) return null;
     return win / bet;
-  }
-}
-
-class _AmountBox extends StatelessWidget {
-  const _AmountBox({
-    required this.amountSize,
-    required this.isActive,
-    required this.valueAnimation,
-    required this.colorAnimation,
-    required this.scaleAnimation,
-    required this.controller,
-  });
-
-  final double amountSize;
-  final bool isActive;
-  final Animation<double> valueAnimation;
-  final Animation<Color?> colorAnimation;
-  final Animation<double> scaleAnimation;
-  final AnimationController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) {
-          final amountValue = valueAnimation.value;
-          final amountColor = colorAnimation.value ?? const Color(0xFFFFC24B);
-          final glowAlpha = isActive ? 0.8 : 0.5;
-          final glowBlur = isActive ? 18.0 : 12.0;
-          return Transform.scale(
-            scale: scaleAnimation.value,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              _formatAmount(amountValue),
-              style: TextStyle(
-                color: amountColor,
-                fontSize: amountSize,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.6,
-                height: 1,
-                shadows: [
-                  Shadow(
-                    color: amountColor.withValues(alpha: glowAlpha),
-                    blurRadius: glowBlur,
-                  ),
-                  Shadow(
-                    color: const Color(0xFFFF2A1A).withValues(alpha: glowAlpha),
-                    blurRadius: glowBlur * 1.4,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 }
 
@@ -803,17 +821,24 @@ class _JackpotDetailSheet extends StatelessWidget {
               EdgeInsets.symmetric(horizontal: horizontalMargin, vertical: 12),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2C2F45), Color(0xFF1C1E2B)],
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF145A5C).withValues(alpha: 0.98),
+                const Color(0xFF0C373B).withValues(alpha: 0.99),
+                const Color(0xFF071F23),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(
+              color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.68),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
-                blurRadius: 18,
+                color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.18),
+                blurRadius: 24,
                 offset: const Offset(0, 10),
               ),
             ],
@@ -826,7 +851,8 @@ class _JackpotDetailSheet extends StatelessWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: AppConfig.btnSelectedBorderColor
+                          .withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -887,25 +913,10 @@ class _JackpotDetailSheet extends StatelessWidget {
               Positioned(
                 top: 6,
                 right: 8,
-                child: InkWell(
-                  onTap: () => Navigator.of(context).pop(),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                  ),
+                child: AppCloseButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  size: 22,
+                  minTapSize: 36,
                 ),
               ),
             ],
@@ -954,6 +965,7 @@ class _JackpotDetailSheet extends StatelessWidget {
 
     Future.microtask(() {
       if (!Get.isRegistered<GameMenuController>()) return;
+      if (!parentContext.mounted) return;
       menuController.startGame(parentContext, target!);
     });
   }
@@ -979,13 +991,16 @@ class _AvatarBlock extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const LinearGradient(
-              colors: [Color(0xFF8A6CFF), Color(0xFF5B35F0)],
+              colors: [
+                AppConfig.btnSelectedBorderColor,
+                AppConfig.buttonColor,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6B4CFF).withValues(alpha: 0.4),
+                color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.28),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -994,9 +1009,9 @@ class _AvatarBlock extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF272A3B),
+              color: const Color(0xFF0A2428).withValues(alpha: 0.95),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white.withValues(alpha: 0.14),
               ),
             ),
             child: const Icon(
@@ -1047,13 +1062,18 @@ class _DetailAmountBlock extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2F2448), Color(0xFF231C36)],
+        gradient: LinearGradient(
+          colors: [
+            AppConfig.buttonColor.withValues(alpha: 0.18),
+            const Color(0xFF0D3337).withValues(alpha: 0.9),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.28),
+        ),
       ),
       child: Column(
         children: [
@@ -1113,9 +1133,11 @@ class _DetailStatItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: AppConfig.buttonColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.22),
+        ),
       ),
       child: Column(
         children: [
@@ -1361,22 +1383,25 @@ class _FollowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         height: 46,
         width: double.infinity,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF7A4DFF), Color(0xFF4B2CDA)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          image: const DecorationImage(
+            image: AssetImage(AppConfig.btnDefaultBackgroundAsset),
+            fit: BoxFit.fill,
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppConfig.btnSelectedBorderColor,
+            width: 1.8,
+          ),
+          boxShadow: const [
             BoxShadow(
-              color: const Color(0xFF5A3BFF).withValues(alpha: 0.45),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+              color: Color(0x331ADBE8),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -1386,15 +1411,15 @@ class _FollowButton extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppConfig.btnDefaultTextColor,
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(width: 6),
             const Icon(
               Icons.chevron_right,
-              color: Colors.white,
+              color: AppConfig.btnDefaultTextColor,
               size: 18,
             ),
           ],
@@ -1405,7 +1430,10 @@ class _FollowButton extends StatelessWidget {
 }
 
 class _RateBadge extends StatelessWidget {
-  const _RateBadge({required this.text, required this.show});
+  const _RateBadge({
+    required this.text,
+    required this.show,
+  });
 
   final String text;
   final bool show;
@@ -1415,39 +1443,84 @@ class _RateBadge extends StatelessWidget {
     return AnimatedOpacity(
       opacity: show ? 1 : 0,
       duration: const Duration(milliseconds: 260),
-      child: AnimatedScale(
-        scale: show ? 1 : 0.92,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: show ? 0.82 : 1, end: show ? 1 : 0.82),
         duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) {
+          return Transform.scale(
+            scale: scale,
+            child: child,
+          );
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF8A1A), Color(0xFFFF1C1C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: const Color(0xFFF56D1C),
             borderRadius: BorderRadius.circular(999),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFF3B3B).withValues(alpha: 0.75),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-                spreadRadius: 1,
-              ),
-            ],
           ),
           child: Text(
             text,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 9,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               height: 1,
-              letterSpacing: 0.2,
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AmountText extends StatelessWidget {
+  const _AmountText({
+    required this.controller,
+    required this.valueAnimation,
+    required this.colorAnimation,
+    required this.scaleAnimation,
+    required this.amountSize,
+    required this.isActive,
+  });
+
+  final AnimationController controller;
+  final Animation<double> valueAnimation;
+  final Animation<Color?> colorAnimation;
+  final Animation<double> scaleAnimation;
+  final double amountSize;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final amountColor = colorAnimation.value ?? const Color(0xFFFFC24B);
+        final glowAlpha = isActive ? 0.75 : 0.45;
+        final glowBlur = isActive ? 14.0 : 8.0;
+        return Transform.scale(
+          scale: scaleAnimation.value,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            _formatCompactAmount(valueAnimation.value),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: amountColor,
+              fontSize: amountSize,
+              fontWeight: FontWeight.w800,
+              height: 1,
+              shadows: [
+                Shadow(
+                  color: amountColor.withValues(alpha: glowAlpha),
+                  blurRadius: glowBlur,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1548,6 +1621,14 @@ String _formatAmount(num? amount) {
   );
   final symbol = AppConfig.currencySymbol();
   return '$symbol$formatted';
+}
+
+String _formatCompactAmount(num? amount) {
+  final value = (amount ?? 0).toDouble();
+  if (value < 1000) {
+    return value.round().toString();
+  }
+  return '${(value / 1000).floor()}k';
 }
 
 String _maskAccountText(String? account) {

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/utils/api_lang.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
 
 /// 公告消息模型
 class Announcement {
@@ -87,7 +87,7 @@ class AnnouncementService extends GetxService {
       auth.logout();
       final context = Get.context;
       if (context != null) {
-        auth.openLoginOverlay(context);
+        auth.openLoginOverlay();
       }
     }
   }

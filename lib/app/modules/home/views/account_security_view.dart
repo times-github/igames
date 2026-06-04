@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/utils/api_client.dart';
 import 'package:igames/app/routes/app_pages.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class AccountSecurityView extends StatefulWidget {
   const AccountSecurityView({super.key});
@@ -48,7 +48,7 @@ class _AccountSecurityViewState extends State<AccountSecurityView> {
   Widget build(BuildContext context) {
     final status = _status ?? _AccountSecurityStatus.empty();
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -89,10 +89,8 @@ class _AccountSecurityViewState extends State<AccountSecurityView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -449,7 +447,6 @@ class _SecurityItem {
   final VoidCallback? onTap;
 }
 
-
 class _AccountSecurityStatus {
   const _AccountSecurityStatus({
     required this.score,
@@ -506,9 +503,8 @@ class _AccountSecurityStatus {
     final cryptoAddresses = json['crypto_addresses'];
     final verifiedValue = json['verified'] ?? json['is_verified'];
     final realName = json['real_name']?.toString() ?? '';
-    final verifiedFlag = verifiedValue == true ||
-        verifiedValue == 1 ||
-        verifiedValue == '1';
+    final verifiedFlag =
+        verifiedValue == true || verifiedValue == 1 || verifiedValue == '1';
     final verified = verifiedFlag && realName.isNotEmpty;
     return _AccountSecurityStatus(
       score: _toInt(json['score']),

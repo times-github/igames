@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:igames/config/app_colors.dart';
 import '../controllers/user_profile_controller.dart';
 
 class GameHistoryView extends GetView<UserProfileController> {
@@ -8,65 +7,63 @@ class GameHistoryView extends GetView<UserProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
-      child: Column(
-        children: [
-          const SizedBox(height: 14),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: _buildFilters(),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Obx(() {
-              return RefreshIndicator(
-                onRefresh: controller.refreshGameHistory,
-                color: const Color(0xFF1E7BFF),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: controller.gameHistory.isEmpty &&
-                          !controller.gameIsLoading.value
-                      ? _buildEmptyState()
-                      : ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: controller.gameHistory.length + 1,
-                          itemBuilder: (context, index) {
-                            if (index == controller.gameHistory.length) {
-                              if (controller.gameIsLoading.value &&
-                                  controller.gameHistory.isEmpty) {
-                                return _buildLoading();
-                              }
-                              if (controller.gameHasMore.value &&
-                                  !controller.gameIsLoading.value) {
-                                controller.loadMoreGameHistory();
-                              }
-                              return _buildListFooter();
+    return Column(
+      children: [
+        const SizedBox(height: 14),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: _buildFilters(),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: Obx(() {
+            return RefreshIndicator(
+              onRefresh: controller.refreshGameHistory,
+              color: const Color(0xFF1E7BFF),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: controller.gameHistory.isEmpty &&
+                        !controller.gameIsLoading.value
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: controller.gameHistory.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == controller.gameHistory.length) {
+                            if (controller.gameIsLoading.value &&
+                                controller.gameHistory.isEmpty) {
+                              return _buildLoading();
                             }
+                            if (controller.gameHasMore.value &&
+                                !controller.gameIsLoading.value) {
+                              controller.loadMoreGameHistory();
+                            }
+                            return _buildListFooter();
+                          }
 
-                            final item = controller.gameHistory[index];
-                            final change = item.changeAmount ?? 0;
-                            // 投注类型强制显示为负数（红色）
-                            final isPositive = (item.eventType == 'bet' || item.eventType == 'rollout')
-                                ? false
-                                : (change > 0 || (item.changeType == 'add'));
+                          final item = controller.gameHistory[index];
+                          final change = item.changeAmount ?? 0;
+                          // 投注类型强制显示为负数（红色）
+                          final isPositive = (item.eventType == 'bet' ||
+                                  item.eventType == 'rollout')
+                              ? false
+                              : (change > 0 || (item.changeType == 'add'));
 
-                            return _buildGameItem(
-                              eventType: item.eventType?.tr ?? '-',
-                              time: item.updatedAt ?? '-',
-                              changeAmount: change,
-                              balanceBefore: item.balanceBefore ?? 0,
-                              balanceAfter: item.balanceAfter ?? 0,
-                              isPositive: isPositive,
-                            );
-                          },
-                        ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
+                          return _buildGameItem(
+                            eventType: item.eventType?.tr ?? '-',
+                            time: item.updatedAt ?? '-',
+                            changeAmount: change,
+                            balanceBefore: item.balanceBefore ?? 0,
+                            balanceAfter: item.balanceAfter ?? 0,
+                            isPositive: isPositive,
+                          );
+                        },
+                      ),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 

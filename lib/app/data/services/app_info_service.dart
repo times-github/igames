@@ -9,28 +9,9 @@ import 'dart:convert';
 class AppInfoService extends GetxService {
   final ApiClient _apiClient = ApiClient();
 
-  /// 站点名称，默认使用本地配置，拉取后更新
-  final RxString appName = AppConfig.appName.obs;
   final RxString appLogo = 'assets/images/getwiner.png'.obs;
   final RxList<String> depositAmountOptions = <String>[].obs;
   final RxList<AppBanner> banners = <AppBanner>[].obs;
-
-  /// 拉取最新站点名称
-  Future<void> fetchAppName() async {
-    try {
-      final resp =
-          await _apiClient.get('/user/config/app_name', withAuth: false);
-      if (resp.statusCode == 200) {
-        final value = _extractConfigValue(resp.data)?.toString();
-        if (value != null && value.isNotEmpty) {
-          appName.value = value;
-          Get.forceAppUpdate();
-        }
-      }
-    } catch (e) {
-      debugPrint('获取站点名称失败: $e');
-    }
-  }
 
   /// 拉取站点 Logo
   Future<void> fetchAppLogo() async {
@@ -41,7 +22,6 @@ class AppInfoService extends GetxService {
         final value = _extractConfigValue(resp.data)?.toString();
         if (value != null && value.isNotEmpty) {
           appLogo.value = _normalizeUrl(value);
-          Get.forceAppUpdate();
         }
       }
     } catch (e) {
@@ -62,7 +42,6 @@ class AppInfoService extends GetxService {
         if (configValue is List) {
           depositAmountOptions
               .assignAll(configValue.map((e) => e.toString()).toList());
-          Get.forceAppUpdate();
           return;
         }
         final raw = configValue?.toString();
@@ -70,7 +49,6 @@ class AppInfoService extends GetxService {
           final parsed = _parseAmountList(raw);
           if (parsed.isNotEmpty) {
             depositAmountOptions.assignAll(parsed);
-            Get.forceAppUpdate();
           }
         }
       }
@@ -118,7 +96,6 @@ class AppInfoService extends GetxService {
       );
       if (parsed.isNotEmpty) {
         banners.assignAll(parsed);
-        Get.forceAppUpdate();
       }
     } catch (e) {
       debugPrint('获取首页轮播失败: $e');
@@ -208,16 +185,14 @@ class AppInfoService extends GetxService {
                 '';
             final link =
                 item['link_value']?.toString() ?? item['link']?.toString();
-            final title = item['title']?.toString();
             final weight = int.tryParse(item['weight']?.toString() ?? '') ?? 0;
             return AppBanner(
               img: _normalizeUrl(img),
               link: link,
-              title: title,
               weight: weight,
             );
           }
-          return AppBanner(img: '', link: null, title: null, weight: 0);
+          return AppBanner(img: '', link: null, weight: 0);
         })
         .where((e) => e.img.isNotEmpty)
         .toList()
@@ -234,8 +209,7 @@ class AppInfoService extends GetxService {
 class AppBanner {
   final String img;
   final String? link;
-  final String? title;
   final int weight;
 
-  const AppBanner({required this.img, this.link, this.title, this.weight = 0});
+  const AppBanner({required this.img, this.link, this.weight = 0});
 }

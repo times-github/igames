@@ -20,11 +20,35 @@ class PromoCategory {
 class PromoActivity {
   PromoActivity({
     required this.id,
+    required this.categoryId,
+    required this.title,
     required this.picture,
+    required this.content,
+    required this.linkType,
+    required this.linkValue,
+    required this.openMode,
+    required this.linkParams,
+    required this.status,
+    required this.endAt,
+    required this.sort,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   final int id;
+  final int categoryId;
+  final String title;
   final String picture;
+  final String content;
+  final String linkType;
+  final String linkValue;
+  final String openMode;
+  final String linkParams;
+  final int status;
+  final int endAt;
+  final int sort;
+  final int createdAt;
+  final int updatedAt;
 }
 
 class PromoController extends GetxController {
@@ -114,7 +138,6 @@ class PromoController extends GetxController {
       final response = await _apiClient.get(
         '/user/activity/list',
         queryParameters: {
-          'lang': _resolveLang(),
           if (categoryId != null) 'category_id': categoryId.toString(),
         },
         withAuth: false,
@@ -168,13 +191,38 @@ class PromoController extends GetxController {
 
   PromoActivity _mapToActivity(Map<String, dynamic> json) {
     final id = json['id'];
+    final categoryId = json['category_id'];
+    final status = json['status'];
+    final endAt = json['end_at'];
+    final sort = json['sort'];
+    final createdAt = json['created_at'];
+    final updatedAt = json['updated_at'];
     return PromoActivity(
       id: id is int ? id : int.tryParse(id?.toString() ?? '') ?? 0,
+      categoryId: categoryId is int
+          ? categoryId
+          : int.tryParse(categoryId?.toString() ?? '') ?? 0,
+      title: (json['title'] ?? '').toString(),
       picture: (json['title_picture'] ??
               json['titlePicture'] ??
               json['picture'] ??
               '')
           .toString(),
+      content: (json['content'] ?? '').toString(),
+      linkType: (json['link_type'] ?? json['linkType'] ?? '').toString(),
+      linkValue: (json['link_value'] ?? json['linkValue'] ?? '').toString(),
+      openMode: (json['open_mode'] ?? json['openMode'] ?? '').toString(),
+      linkParams: (json['link_params'] ?? json['linkParams'] ?? '').toString(),
+      status:
+          status is int ? status : int.tryParse(status?.toString() ?? '') ?? 0,
+      endAt: endAt is int ? endAt : int.tryParse(endAt?.toString() ?? '') ?? 0,
+      sort: sort is int ? sort : int.tryParse(sort?.toString() ?? '') ?? 0,
+      createdAt: createdAt is int
+          ? createdAt
+          : int.tryParse(createdAt?.toString() ?? '') ?? 0,
+      updatedAt: updatedAt is int
+          ? updatedAt
+          : int.tryParse(updatedAt?.toString() ?? '') ?? 0,
     );
   }
 }

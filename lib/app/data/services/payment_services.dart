@@ -155,7 +155,8 @@ class PaymentServices {
       if (response.statusCode == 200) {
         return withdrawapi.fromJson(response.data);
       } else {
-        throw Exception('withdrawRequestFailed'.tr + ': ${response.statusCode}');
+        throw Exception(
+            'withdrawRequestFailed'.tr + ': ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('withdrawFailed'.tr + ': $e');
@@ -262,11 +263,22 @@ class PaymentServices {
         data: params,
         withAuth: true,
       );
-      if (response.statusCode == 200 && response.data is Map) {
-        return Map<String, dynamic>.from(response.data as Map);
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return Map<String, dynamic>.from(response.data as Map);
+        }
+        return {'code': 0, 'msg': 'withdrawFailed'};
       }
-    } catch (_) {}
-    return {'code': 0, 'msg': 'withdrawFailed'.tr};
+      return {
+        'code': response.statusCode ?? 0,
+        'msg': 'withdrawRequestFailed',
+      };
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+    }
+    return {'code': 0, 'msg': 'withdrawFailed'};
   }
 
   /// 设置默认虚拟币提现地址

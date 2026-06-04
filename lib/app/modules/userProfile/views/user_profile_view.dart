@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/config/app_config_export.dart';
 import '../controllers/user_profile_controller.dart';
 
@@ -10,12 +12,13 @@ class UserProfileView extends GetView<UserProfileController> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.fromContext(context);
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFF0E1621),
+      backgroundColor: Colors.transparent,
       drawer: _buildEndDrawer(),
       body: Container(
-        color: const Color(0xFF0E1621),
+        color: Colors.transparent,
         child: Column(
           children: [
             // 顶部菜单栏
@@ -85,11 +88,13 @@ class UserProfileView extends GetView<UserProfileController> {
                       Get.back();
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: r.size(16),
+                        vertical: r.size(8),
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A2332),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(r.size(20)),
                         border: Border.all(
                           color: const Color(0xFF2A3441),
                           width: 1,
@@ -97,22 +102,22 @@ class UserProfileView extends GetView<UserProfileController> {
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                            blurRadius: r.size(4),
+                            offset: Offset(0, r.size(2)),
                           ),
                         ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_back_ios,
-                              color: Colors.white, size: 21),
+                          SizedBox(width: r.size(6)),
+                          const AppBackIcon(size: 24),
+                          SizedBox(width: r.size(8)),
                           Text(
                             'back'.tr,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontSize: r.font(14),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart' as http;
-import 'package:igames/app/data/services/userServices.dart';
+import 'package:igames/app/data/services/user_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:igames/config/app_config_export.dart';
 
@@ -45,7 +45,7 @@ class ApiClient {
           try {
             final token = await UserServices.getToken();
             if (token != null && token.isNotEmpty) {
-              options.headers['AuthorizationU'] = 'Bearer ' + token;
+              options.headers['AuthorizationU'] = 'Bearer $token';
             }
           } catch (_) {}
         }
@@ -57,12 +57,19 @@ class ApiClient {
       onResponse: (response, handler) {
         debugPrint(
             '✅ response: ${response.statusCode} ${response.requestOptions.path}');
-        _handleUnauthorizedResponse(response.data);
+        _handleUnauthorizedResponse(
+          response.data,
+          withAuth:
+              (response.requestOptions.extra['withAuth'] as bool?) ?? true,
+        );
         handler.next(response);
       },
       onError: (error, handler) {
         debugPrint('❌ error: ${error.message ?? error.toString()}');
-        _handleUnauthorizedResponse(error.response?.data);
+        _handleUnauthorizedResponse(
+          error.response?.data,
+          withAuth: (error.requestOptions.extra['withAuth'] as bool?) ?? true,
+        );
         handler.next(error);
       },
     ));
@@ -119,15 +126,23 @@ class ApiClient {
     }
   }
 
-  static void _handleUnauthorizedResponse(dynamic data) {
-    if (_isUnauthorized(data)) {
+  static void _handleUnauthorizedResponse(
+    dynamic data, {
+    required bool withAuth,
+  }) {
+    if (withAuth && _isUnauthorized(data)) {
       onUnauthorized?.call();
     }
   }
 
   static bool _isUnauthorized(dynamic data) {
     if (data is Map) {
-      return data['code'] == 0 && data['msg'] == 'unauthorized';
+      final code = data['code'];
+      final normalizedCode =
+          code is int ? code : int.tryParse(code?.toString() ?? '');
+      final message = data['msg']?.toString().trim().toLowerCase();
+      return (normalizedCode == 0 && message == 'unauthorized') ||
+          normalizedCode == 3103;
     }
     return false;
   }

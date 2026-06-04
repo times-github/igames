@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
+import 'package:igames/app/modules/widgets/app_close_button.dart';
 import 'package:igames/app/routes/app_pages.dart';
+import 'package:igames/config/app_config_export.dart';
 import 'game_frame_stub.dart'
     if (dart.library.js_interop) 'game_frame_web.dart';
 import '../controllers/game_start_controller.dart';
@@ -14,7 +16,7 @@ class GameStartView extends GetView<GameStartController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
+      backgroundColor: Colors.transparent,
       body: Obx(() {
         Widget content;
         if (controller.isLoading.value && controller.gameUrl.isEmpty) {
@@ -30,8 +32,7 @@ class GameStartView extends GetView<GameStartController> {
         return Stack(
           children: [
             Positioned.fill(child: content),
-            if (controller.hasGameContext)
-              _FloatingMenuButton(onTap: _openMenu),
+            _FloatingMenuButton(onTap: _openMenu),
           ],
         );
       }),
@@ -46,25 +47,13 @@ class GameStartView extends GetView<GameStartController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.games,
-                size: 60,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-            const SizedBox(height: 24),
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppConfig.btnSelectedBorderColor,
+              ),
               strokeWidth: 3,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
               'loadingGame'.tr,
               style: TextStyle(
@@ -108,6 +97,19 @@ class GameStartView extends GetView<GameStartController> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: controller.reloadGame,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConfig.buttonColor,
+              foregroundColor: AppConfig.btnDefaultTextColor,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(
+                  color: AppConfig.btnSelectedBorderColor,
+                  width: 1.8,
+                ),
+              ),
+            ),
             child: Text('reloadGame'.tr),
           ),
         ],
@@ -201,8 +203,29 @@ class GameStartView extends GetView<GameStartController> {
                       width: 300,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E2E),
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppConfig.buttonColor.withValues(alpha: 0.22),
+                            const Color(0xFF103C3E).withValues(alpha: 0.96),
+                            const Color(0xFF0A2428).withValues(alpha: 0.98),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: AppConfig.btnSelectedBorderColor
+                              .withValues(alpha: 0.72),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppConfig.btnSelectedBorderColor
+                                .withValues(alpha: 0.18),
+                            blurRadius: 22,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -257,19 +280,25 @@ class GameStartView extends GetView<GameStartController> {
                                 controller.goBack();
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF7C3AED),
+                                backgroundColor: AppConfig.buttonColor,
+                                foregroundColor: AppConfig.btnDefaultTextColor,
+                                elevation: 0,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(14),
+                                  side: const BorderSide(
+                                    color: AppConfig.btnSelectedBorderColor,
+                                    width: 1.8,
+                                  ),
                                 ),
                               ),
                               child: Text(
                                 'exitGame'.tr,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppConfig.btnDefaultTextColor,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
@@ -286,10 +315,17 @@ class GameStartView extends GetView<GameStartController> {
                         height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white54, width: 2),
+                          color:
+                              const Color(0xFF0A2428).withValues(alpha: 0.72),
+                          border: Border.all(
+                            color: AppConfig.btnSelectedBorderColor
+                                .withValues(alpha: 0.85),
+                            width: 2,
+                          ),
                         ),
-                        child: const Icon(Icons.close,
-                            color: Colors.white54, size: 20),
+                        child: const Center(
+                          child: AppCloseIcon(size: 20),
+                        ),
                       ),
                     ),
                   ],
@@ -444,10 +480,19 @@ class _MenuAction extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                color: AppConfig.buttonColor.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color:
+                      AppConfig.btnSelectedBorderColor.withValues(alpha: 0.4),
+                  width: 1,
+                ),
               ),
-              child: Icon(icon, color: const Color(0xFF7C3AED), size: 24),
+              child: Icon(
+                icon,
+                color: AppConfig.btnSelectedBorderColor,
+                size: 24,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -455,8 +500,11 @@ class _MenuAction extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),

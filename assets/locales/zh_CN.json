@@ -7,6 +7,8 @@
         "cancel": "取消"
     },
     "language": "语言",
+    "switchLanguageTitle": "切换语言",
+    "switchLanguageSubtitle": "请选择要切换的语言",
     "turnstileRequired": "请先完成人机安全校验",
     "moneySymbol": "¥",
     "login": "登录",
@@ -38,6 +40,9 @@
     
     "passwordNotMatch": "两次密码不一致",
     "passwordError": "密码错误",
+    "password_invalid": "密码错误",
+    "password_login_locked": "密码错误次数过多，请稍后再试",
+    "retry_after_seconds": "请在 @minutes 分钟后重试",
     "pleaseEnterAllInformation": "请填写完整信息",
     "contactCustomerService": "联系客服",
     "customerService": "客服",

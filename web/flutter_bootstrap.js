@@ -9,12 +9,20 @@
     webkit: false,
     unknown: false,
   };
+  const APPLY_RELOAD_TIMEOUT_MS = 1500;
+  const UPDATE_POLL_INTERVAL_MS = 60000;
+  const UPDATE_POLL_START_DELAY_MS = 15000;
+  const APPLYING_VERSION_KEY = 'igames_sw_applying_version';
   const DISMISSED_VERSION_KEY = 'igames_sw_dismissed_version';
   const KNOWN_VERSION_KEY = 'igames_sw_known_version';
   let refreshing = false;
   let applyRequested = false;
   let registration = null;
   let pendingWorker = null;
+  let applyReloadTimer = null;
+  let updatePollTimer = null;
+  const observedRegistrations = new WeakSet();
+  const observedWorkers = new WeakSet();
 
   function normalizeText(value) {
     return typeof value === 'string' ? value.trim() : '';
@@ -174,6 +182,24 @@
     }
   }
 
+  function readApplyingVersion() {
+    try {
+      return window.sessionStorage.getItem(APPLYING_VERSION_KEY);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeApplyingVersion(version) {
+    try {
+      if (!version) {
+        window.sessionStorage.removeItem(APPLYING_VERSION_KEY);
+        return;
+      }
+      window.sessionStorage.setItem(APPLYING_VERSION_KEY, version);
+    } catch (_) {}
+  }
+
   function writeDismissedVersion(version) {
     try {
       if (!version) {
@@ -206,46 +232,134 @@
     window.__igamesSwUpdateState || {
       available: false,
       version: null,
+      applyingVersion: readApplyingVersion(),
       dismissedVersion: readDismissedVersion(),
       knownVersion: readKnownVersion(),
     });
 
+  function setApplyingVersion(version) {
+    const normalized = normalizeVersion(version);
+    state.applyingVersion = normalized || null;
+    writeApplyingVersion(normalized || null);
+  }
+
+  function clearApplyingVersion() {
+    state.applyingVersion = null;
+    writeApplyingVersion(null);
+  }
+
   function markUpdateAvailable(version) {
-    if (!version || state.dismissedVersion === version) {
+    const normalizedVersion = normalizeVersion(version);
+    if (
+      !normalizedVersion ||
+      state.dismissedVersion === normalizedVersion ||
+      state.applyingVersion === normalizedVersion
+    ) {
       return;
     }
 
     state.available = true;
-    state.version = version;
+    state.version = normalizedVersion;
 
     window.dispatchEvent(
       new CustomEvent('igames-sw-update-available', {
-        detail: {version},
+        detail: {version: normalizedVersion},
       }),
     );
   }
 
+  function clearApplyReloadTimer() {
+    if (applyReloadTimer !== null) {
+      window.clearTimeout(applyReloadTimer);
+      applyReloadTimer = null;
+    }
+  }
+
+  function forceReloadPage() {
+    if (refreshing) {
+      return;
+    }
+    refreshing = true;
+    window.location.reload();
+  }
+
+  function requestWorkerActivation(worker, fallbackVersion) {
+    if (!worker) {
+      return false;
+    }
+
+    const targetVersion =
+      normalizeVersion(fallbackVersion) || resolvePendingVersion(worker, '');
+
+    clearApplyReloadTimer();
+    applyRequested = true;
+    state.available = false;
+    state.version = null;
+    writeDismissedVersion(null);
+    if (targetVersion) {
+      setApplyingVersion(targetVersion);
+    }
+    pendingWorker = worker;
+
+    applyReloadTimer = window.setTimeout(() => {
+      forceReloadPage();
+    }, APPLY_RELOAD_TIMEOUT_MS);
+
+    worker.postMessage({type: 'SKIP_WAITING'});
+    return true;
+  }
+
   window.__igamesDismissWebUpdate = function () {
+    clearApplyReloadTimer();
     if (state.version) {
       state.dismissedVersion = state.version;
       writeDismissedVersion(state.version);
     }
     state.available = false;
+    state.version = null;
     applyRequested = false;
+    pendingWorker = null;
   };
 
   window.__igamesApplyWebUpdate = function () {
     const waitingWorker = pendingWorker || registration?.waiting;
-    if (!waitingWorker) {
-      return;
+    if (!requestWorkerActivation(waitingWorker, state.version)) {
+      forceReloadPage();
     }
-    applyRequested = true;
-    writeDismissedVersion(null);
-    waitingWorker.postMessage({type: 'SKIP_WAITING'});
   };
 
   function normalizeVersion(value) {
     return typeof value === 'string' ? value.trim() : '';
+  }
+
+  function getCurrentEngineRevision() {
+    return normalizeVersion(_flutter?.buildConfig?.engineRevision || '');
+  }
+
+  function parseEngineRevisionFromBootstrapText(text) {
+    const normalizedText = normalizeText(text);
+    if (!normalizedText) {
+      return '';
+    }
+
+    const match = normalizedText.match(/"engineRevision"\s*:\s*"([^"]+)"/);
+    return normalizeVersion(match?.[1] || '');
+  }
+
+  function buildSwUrl(version, engineRevision) {
+    const params = new URLSearchParams();
+    const normalizedVersion = normalizeVersion(version);
+    const normalizedEngineRevision = normalizeVersion(engineRevision);
+
+    if (normalizedVersion) {
+      params.set('v', normalizedVersion);
+    }
+    if (normalizedEngineRevision) {
+      params.set('engine', normalizedEngineRevision);
+    }
+
+    const queryString = params.toString();
+    return queryString ? `/sw.js?${queryString}` : '/sw.js';
   }
 
   function parseVersionFromWorkerUrl(scriptUrl) {
@@ -270,12 +384,33 @@
 
   function syncKnownVersion(version) {
     const normalized = normalizeVersion(version);
+    if (normalized && state.applyingVersion === normalized) {
+      clearApplyingVersion();
+    }
     if (!normalized || state.knownVersion === normalized) {
       return;
     }
 
     state.knownVersion = normalized;
     writeKnownVersion(normalized);
+  }
+
+  function getActiveBaselineVersion() {
+    return normalizeVersion(getControllerVersion() || state.knownVersion || '');
+  }
+
+  function shouldAutoApplyLoadedBuild(version) {
+    const pendingVersion = normalizeVersion(version);
+    const loadedVersion = normalizeVersion(state.loadedVersion);
+    const baselineVersion = getActiveBaselineVersion();
+
+    return !!(
+      pendingVersion &&
+      loadedVersion &&
+      baselineVersion &&
+      pendingVersion === loadedVersion &&
+      pendingVersion !== baselineVersion
+    );
   }
 
   function resolvePendingVersion(worker, fallbackVersion) {
@@ -285,88 +420,246 @@
     );
   }
 
+  function handlePendingWorker(worker, hadController, fallbackVersion) {
+    if (!worker) {
+      return;
+    }
+
+    pendingWorker = worker;
+    const pendingVersion = resolvePendingVersion(worker, fallbackVersion);
+
+    if (shouldAutoApplyLoadedBuild(pendingVersion)) {
+      requestWorkerActivation(worker, pendingVersion);
+      return;
+    }
+
+    if (
+      state.applyingVersion &&
+      normalizeVersion(pendingVersion) === state.applyingVersion
+    ) {
+      requestWorkerActivation(worker, pendingVersion);
+      return;
+    }
+
+    if (shouldPromptForUpdate(pendingVersion, hadController)) {
+      markUpdateAvailable(pendingVersion);
+    }
+  }
+
+  function observeWorker(worker, hadController, fallbackVersion) {
+    if (!worker || observedWorkers.has(worker)) {
+      return;
+    }
+
+    observedWorkers.add(worker);
+    worker.addEventListener('statechange', () => {
+      const pendingVersion = resolvePendingVersion(worker, fallbackVersion);
+      if (
+        worker.state === 'installed' &&
+        navigator.serviceWorker.controller
+      ) {
+        handlePendingWorker(
+          worker,
+          !!navigator.serviceWorker.controller,
+          fallbackVersion,
+        );
+        return;
+      }
+
+      if (worker.state === 'activated' && pendingVersion) {
+        syncKnownVersion(pendingVersion);
+      }
+    });
+  }
+
+  function observeRegistration(targetRegistration, hadController, fallbackVersion) {
+    if (!targetRegistration) {
+      return;
+    }
+
+    if (targetRegistration.waiting) {
+      handlePendingWorker(
+        targetRegistration.waiting,
+        hadController,
+        fallbackVersion,
+      );
+    }
+
+    if (targetRegistration.installing) {
+      observeWorker(
+        targetRegistration.installing,
+        hadController,
+        fallbackVersion,
+      );
+    }
+
+    if (observedRegistrations.has(targetRegistration)) {
+      return;
+    }
+
+    observedRegistrations.add(targetRegistration);
+    targetRegistration.addEventListener('updatefound', () => {
+      observeWorker(
+        targetRegistration.installing,
+        hadController,
+        fallbackVersion,
+      );
+    });
+  }
+
   function shouldPromptForUpdate(version, hadController) {
     const pendingVersion = normalizeVersion(version);
-    const baselineVersion = getControllerVersion() || state.knownVersion || '';
+    const baselineVersion = getActiveBaselineVersion();
     if (!hadController || !pendingVersion || !baselineVersion) {
+      return false;
+    }
+
+    if (shouldAutoApplyLoadedBuild(pendingVersion)) {
       return false;
     }
 
     return pendingVersion !== baselineVersion;
   }
 
-  function getBuildVersionCandidates() {
-    const candidates = [];
-    const seen = new Set();
-    const builds = Array.isArray(_flutter?.buildConfig?.builds)
-      ? _flutter.buildConfig.builds
-      : [];
-
-    function pushIfPresent(value) {
-      if (typeof value !== 'string') {
-        return;
-      }
-
-      const normalized = value.trim();
-      if (!normalized || seen.has(normalized)) {
-        return;
-      }
-
-      seen.add(normalized);
-      candidates.push(normalized);
-    }
-
-    for (const build of builds) {
-      if (!build || typeof build !== 'object') {
-        continue;
-      }
-      pushIfPresent(build.jsSupportRuntimePath);
-      pushIfPresent(build.mainWasmPath);
-      pushIfPresent(build.mainJsPath);
-    }
-
-    pushIfPresent('main.dart.mjs');
-    pushIfPresent('main.dart.wasm');
-    pushIfPresent('main.dart.js');
-
-    return candidates;
-  }
-
-  async function resolveVersionFromAssets() {
-    const candidates = getBuildVersionCandidates();
-    if (candidates.length === 0) {
+  function buildResponseVersionSignature(response) {
+    if (!response || !response.ok) {
       return '';
     }
 
-    const parts = [];
+    return [
+      response.headers.get('etag'),
+      response.headers.get('last-modified'),
+      response.headers.get('content-length'),
+    ]
+      .filter(Boolean)
+      .join(':');
+  }
 
-    for (const assetPath of candidates) {
-      try {
-        const response = await fetch(assetPath, {
-          method: 'HEAD',
-          cache: 'no-store',
-        });
-        if (!response.ok) {
-          continue;
-        }
-
-        const eTag = response.headers.get('etag');
-        const lastModified = response.headers.get('last-modified');
-        const contentLength = response.headers.get('content-length');
-        const assetVersion = [eTag, lastModified, contentLength]
-          .filter(Boolean)
-          .join(':');
-
-        if (assetVersion) {
-          parts.push(`${assetPath}:${assetVersion}`);
-        }
-      } catch (_) {}
+  function hashText(text) {
+    let hash = 5381;
+    for (let index = 0; index < text.length; index += 1) {
+      hash = ((hash << 5) + hash + text.charCodeAt(index)) >>> 0;
     }
 
-    return parts.join('|');
+    return hash.toString(16);
+  }
+
+  async function resolveVersionFromPath(path, allowTextFallback) {
+    try {
+      const headResponse = await fetch(path, {
+        method: 'HEAD',
+        cache: 'no-store',
+      });
+      const signature = buildResponseVersionSignature(headResponse);
+      if (signature) {
+        return signature;
+      }
+    } catch (_) {}
+
+    if (!allowTextFallback) {
+      return '';
+    }
+
+    try {
+      const response = await fetch(path, {cache: 'no-store'});
+      if (!response.ok) {
+        return '';
+      }
+
+      const text = await response.text();
+      if (!text) {
+        return '';
+      }
+
+      return `text:${hashText(text)}:${text.length}`;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  async function resolveVersionFromBuildMarker() {
+    try {
+      const response = await fetch('.last_build_id', {cache: 'no-store'});
+      if (!response.ok) {
+        return '';
+      }
+
+      return normalizeVersion(await response.text());
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function getActiveBuildAssetPath() {
+    const builds = Array.isArray(_flutter?.buildConfig?.builds)
+      ? _flutter.buildConfig.builds
+      : [];
+    const runtime = window[FLUTTER_RUNTIME_KEY];
+    const usesWasm = runtime?.usesWasm === true;
+    const renderer = normalizeText(runtime?.renderer);
+
+    const selectedBuild =
+      builds.find((build) => {
+        if (!build || typeof build !== 'object') {
+          return false;
+        }
+        const buildRenderer = normalizeText(build.renderer);
+        const compileTarget = normalizeText(build.compileTarget);
+        const buildUsesWasm = compileTarget === 'dart2wasm';
+        return buildUsesWasm === usesWasm && buildRenderer === renderer;
+      }) || null;
+
+    if (usesWasm) {
+      return (
+        selectedBuild?.mainWasmPath ||
+        selectedBuild?.jsSupportRuntimePath ||
+        'main.dart.wasm'
+      );
+    }
+
+    return selectedBuild?.mainJsPath || 'main.dart.js';
+  }
+
+  async function resolveVersionFromActiveAsset() {
+    const assetPath = getActiveBuildAssetPath();
+    if (!assetPath) {
+      return '';
+    }
+
+    return resolveVersionFromPath(assetPath, false);
+  }
+
+  async function resolveVersionFromBootstrapAsset() {
+    return resolveVersionFromPath('flutter_bootstrap.js', true);
+  }
+
+  async function resolveBootstrapBuildInfoFromNetwork() {
+    try {
+      const response = await fetch('flutter_bootstrap.js', {cache: 'no-store'});
+      if (!response.ok) {
+        return {version: '', engineRevision: ''};
+      }
+
+      const text = await response.text();
+      if (!text) {
+        return {version: '', engineRevision: ''};
+      }
+
+      return {
+        version: `text:${hashText(text)}:${text.length}`,
+        engineRevision: parseEngineRevisionFromBootstrapText(text),
+      };
+    } catch (_) {
+      return {version: '', engineRevision: ''};
+    }
   }
 
   async function resolveBuildVersion() {
+    const buildMarkerVersion = await resolveVersionFromBuildMarker();
+    if (buildMarkerVersion) {
+      return buildMarkerVersion;
+    }
+
     const tokenVersion = {{flutter_service_worker_version}};
     const normalizedTokenVersion = String(tokenVersion ?? '')
       .trim()
@@ -380,9 +673,14 @@
         return tokenVersion;
       }
 
-    const assetVersion = await resolveVersionFromAssets();
+    const assetVersion = await resolveVersionFromActiveAsset();
     if (assetVersion) {
       return assetVersion;
+    }
+
+    const bootstrapVersion = await resolveVersionFromBootstrapAsset();
+    if (bootstrapVersion) {
+      return bootstrapVersion;
     }
 
     try {
@@ -400,6 +698,31 @@
     } catch (_) {
       return '';
     }
+  }
+
+  async function resolveLatestBuildInfoFromNetwork() {
+    const buildMarkerVersion = await resolveVersionFromBuildMarker();
+    if (buildMarkerVersion) {
+      return {
+        version: buildMarkerVersion,
+        engineRevision: '',
+      };
+    }
+
+    const assetVersion = await resolveVersionFromActiveAsset();
+    if (assetVersion) {
+      return {
+        version: assetVersion,
+        engineRevision: '',
+      };
+    }
+
+    return resolveBootstrapBuildInfoFromNetwork();
+  }
+
+  async function resolveRemoteEngineRevisionFromNetwork() {
+    const buildInfo = await resolveBootstrapBuildInfoFromNetwork();
+    return normalizeVersion(buildInfo.engineRevision);
   }
 
   async function unregisterLegacyFlutterWorkers() {
@@ -440,8 +763,8 @@
     await unregisterLegacyFlutterWorkers();
 
     const buildVersion = await resolveBuildVersion();
-    const swVersionParam = buildVersion ? encodeURIComponent(buildVersion) : '';
-    const swUrl = swVersionParam ? `/sw.js?v=${swVersionParam}` : '/sw.js';
+    state.loadedVersion = normalizeVersion(buildVersion);
+    const swUrl = buildSwUrl(buildVersion, getCurrentEngineRevision());
     const hadController = !!navigator.serviceWorker.controller;
     const controllerVersion = getControllerVersion();
 
@@ -450,19 +773,20 @@
     }
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      clearApplyReloadTimer();
       const nextControllerVersion = getControllerVersion();
       if (nextControllerVersion) {
         syncKnownVersion(nextControllerVersion);
       }
 
-      if (!hadController || !applyRequested || refreshing) {
+      if (!applyRequested || refreshing) {
         return;
       }
-      refreshing = true;
-      window.location.reload();
+      forceReloadPage();
     });
 
     registration = await navigator.serviceWorker.register(swUrl);
+    observeRegistration(registration, hadController, '');
 
     const activeVersion = parseVersionFromWorkerUrl(
       registration.active?.scriptURL || '',
@@ -473,42 +797,48 @@
       syncKnownVersion(buildVersion);
     }
 
-    if (registration.waiting) {
-      pendingWorker = registration.waiting;
-      const waitingVersion =
-        resolvePendingVersion(registration.waiting, buildVersion) || 'latest';
-      if (shouldPromptForUpdate(waitingVersion, hadController)) {
-        markUpdateAvailable(waitingVersion);
-      }
+    if (updatePollTimer === null) {
+      updatePollTimer = window.setTimeout(() => {
+        const poll = async () => {
+          try {
+            const remoteBuildInfo = await resolveLatestBuildInfoFromNetwork();
+            const normalizedRemoteVersion = normalizeVersion(
+              remoteBuildInfo?.version,
+            );
+            const activeVersion = getActiveBaselineVersion();
+
+            if (
+              !normalizedRemoteVersion ||
+              !activeVersion ||
+              normalizedRemoteVersion === activeVersion ||
+              normalizedRemoteVersion === state.dismissedVersion ||
+              normalizedRemoteVersion === state.applyingVersion
+            ) {
+              return;
+            }
+
+            let remoteEngineRevision = normalizeVersion(
+              remoteBuildInfo?.engineRevision,
+            );
+            if (!remoteEngineRevision) {
+              remoteEngineRevision =
+                (await resolveRemoteEngineRevisionFromNetwork()) ||
+                getCurrentEngineRevision();
+            }
+
+            const remoteSwUrl = buildSwUrl(
+              normalizedRemoteVersion,
+              remoteEngineRevision,
+            );
+            registration = await navigator.serviceWorker.register(remoteSwUrl);
+            observeRegistration(registration, true, '');
+          } catch (_) {}
+        };
+
+        poll();
+        window.setInterval(poll, UPDATE_POLL_INTERVAL_MS);
+      }, UPDATE_POLL_START_DELAY_MS);
     }
-
-    registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing;
-      if (!newWorker) {
-        return;
-      }
-
-      newWorker.addEventListener('statechange', () => {
-        const pendingVersion = resolvePendingVersion(newWorker, buildVersion);
-        if (
-          newWorker.state === 'installed' &&
-          navigator.serviceWorker.controller &&
-          shouldPromptForUpdate(pendingVersion, hadController)
-        ) {
-          pendingWorker = newWorker;
-          markUpdateAvailable(pendingVersion || 'latest');
-          return;
-        }
-
-        if (newWorker.state === 'activated' && pendingVersion) {
-          syncKnownVersion(pendingVersion);
-        }
-      });
-    });
-
-    window.setInterval(() => {
-      registration?.update();
-    }, 60000);
   }
 
   function startWebUpdaterLater() {
@@ -518,20 +848,14 @@
       } catch (_) {}
     };
 
-    const schedule = () => {
-      window.setTimeout(() => {
-        if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(run, {timeout: 4000});
-        } else {
-          run();
-        }
-      }, 15000);
-    };
-
     window.addEventListener(
       'flutter-first-frame',
       () => {
-        schedule();
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(run, {timeout: 2500});
+        } else {
+          window.setTimeout(run, 800);
+        }
       },
       {once: true},
     );

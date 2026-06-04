@@ -15,6 +15,8 @@ class AppTheme {
       // 基础配置
       useMaterial3: true,
       brightness: Brightness.light,
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: Colors.transparent,
 
       // 颜色配置
       colorScheme: const ColorScheme.light(
@@ -38,9 +40,10 @@ class AppTheme {
 
       // 应用栏主题
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
         titleTextStyle: TextStyle(
           fontSize: 20.0,
@@ -301,6 +304,8 @@ class AppTheme {
       // 基础配置
       useMaterial3: true,
       brightness: Brightness.dark,
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: Colors.transparent,
 
       // 颜色配置（根据图片中的深色主题）
       colorScheme: const ColorScheme.dark(
@@ -324,9 +329,10 @@ class AppTheme {
 
       // 应用栏主题（根据图片中的顶部导航栏）
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         centerTitle: false,
         titleTextStyle: TextStyle(
           fontSize: 20.0,

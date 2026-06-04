@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:igames/app/base/base_controller.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/utils/api_lang.dart';
 import 'dart:ui';
@@ -36,43 +37,43 @@ class SlotProviderOption {
   final bool translateLabel;
 }
 
-class GameMenuController extends GetxController {
+class GameMenuController extends BaseController {
   static const String _allProviderId = 'all';
   static const List<GameCategoryOption> _gameCategoryOptions = [
     GameCategoryOption(
       nameKey: 'gamestype_recommend',
       type: 'HOME_TOP',
-      assetPath: 'assets/images/gamecategory/recommend.avif',
+      assetPath: 'assets/images/gamecategory/recommend.gif',
     ),
     GameCategoryOption(
       nameKey: 'gamestype_slot',
       type: 'slot',
-      assetPath: 'assets/images/gamecategory/slot.avif',
+      assetPath: 'assets/images/gamecategory/slot.png',
     ),
     GameCategoryOption(
       nameKey: 'gamestype_table',
       type: 'table',
-      assetPath: 'assets/images/gamecategory/tab.avif',
+      assetPath: 'assets/images/gamecategory/tab.png',
     ),
     GameCategoryOption(
       nameKey: 'gamestype_animal',
       type: 'animal',
-      assetPath: 'assets/images/gamecategory/animal.avif',
+      assetPath: 'assets/images/gamecategory/animal.png',
     ),
     GameCategoryOption(
       nameKey: 'gamestype_live',
       type: 'live',
-      assetPath: 'assets/images/gamecategory/live.avif',
+      assetPath: 'assets/images/gamecategory/live.png',
     ),
     GameCategoryOption(
       nameKey: 'gamestype_fish',
       type: 'fish',
-      assetPath: 'assets/images/gamecategory/fish.avif',
+      assetPath: 'assets/images/gamecategory/fish.png',
     ),
     GameCategoryOption(
       nameKey: 'gamestype_arcade',
       type: 'arcade',
-      assetPath: 'assets/images/gamecategory/arcade.avif',
+      assetPath: 'assets/images/gamecategory/arcade.png',
     ),
   ];
   static const List<SlotProviderOption> _slotProviderOptions = [
@@ -83,16 +84,16 @@ class GameMenuController extends GetxController {
       translateLabel: true,
     ),
     SlotProviderOption(
-      id: 'cq9',
-      label: 'CQ9',
-      assetPath: 'assets/images/provider/CQ9.webp',
-      requestValue: 'cq9',
-    ),
-    SlotProviderOption(
       id: 'pg',
       label: 'PG',
       assetPath: 'assets/images/provider/pg.webp',
       requestValue: 'pg',
+    ),
+    SlotProviderOption(
+      id: 'pp',
+      label: 'Pragmatic',
+      assetPath: 'assets/images/provider/pragmatic.webp',
+      requestValue: 'PP',
     ),
     SlotProviderOption(
       id: 'jdb',
@@ -107,10 +108,10 @@ class GameMenuController extends GetxController {
       requestValue: 'jili',
     ),
     SlotProviderOption(
-      id: 'pp',
-      label: 'Pragmatic',
-      assetPath: 'assets/images/provider/pragmatic.webp',
-      requestValue: 'PP',
+      id: 'cq9',
+      label: 'CQ9',
+      assetPath: 'assets/images/provider/CQ9.webp',
+      requestValue: 'cq9',
     ),
     SlotProviderOption(
       id: 'bg',
@@ -129,6 +130,12 @@ class GameMenuController extends GetxController {
       label: 'HSD',
       assetPath: 'assets/images/provider/hsd.png',
       requestValue: 'hsd',
+    ),
+    SlotProviderOption(
+      id: 'cp',
+      label: 'CP',
+      assetPath: 'assets/images/provider/cp.webp',
+      requestValue: 'cp',
     ),
     SlotProviderOption(
       id: 'tada',
@@ -172,7 +179,6 @@ class GameMenuController extends GetxController {
 
   // API客户端
   final ApiClient _apiClient = Get.find<ApiClient>();
-  Worker? _authWorker;
   bool _hasAttemptedInitialLoad = false;
 
   List<SlotProviderOption> get slotProviders => _slotProviderOptions;
@@ -190,15 +196,16 @@ class GameMenuController extends GetxController {
   void onInit() {
     super.onInit();
     final authController = Get.find<AuthController>();
-    _authWorker = ever<bool>(authController.isLoggedIn, (_) {
+    final worker = ever<bool>(authController.isLoggedIn, (_) {
       refreshGames();
     });
+    addWorker(worker); // 使用BaseController的方法注册Worker
     _loadLocalGameCategories();
   }
 
   @override
   void onClose() {
-    _authWorker?.dispose();
+    // Worker会由BaseController自动清理
     super.onClose();
   }
 
@@ -432,7 +439,7 @@ class GameMenuController extends GetxController {
   void startGame(BuildContext context, GameList game) {
     // 判断是否登录
     if (!Get.find<AuthController>().isLoggedIn.value) {
-      Get.find<AuthController>().openLoginOverlay(context);
+      Get.find<AuthController>().openLoginOverlay();
       return;
     }
 
@@ -440,7 +447,7 @@ class GameMenuController extends GetxController {
     //关闭弹窗
     closeGameOverlay();
     // 跳转到游戏启动页面
-    Get.toNamed(Routes.GAME_START, arguments: game);
+    Get.toNamed(Routes.GAME_START, arguments: game.toJson());
   }
 
   /// 获取分类显示名称
@@ -455,6 +462,28 @@ class GameMenuController extends GetxController {
   }
 
   bool _isSlotCategory(String type) => type.trim().toLowerCase() == 'slot';
+
+  bool _isSameGame(GameList left, GameList right) {
+    return left.gamecode == right.gamecode && left.gamehall == right.gamehall;
+  }
+
+  void _updateFavoriteStatus(GameList game, bool isFavorite) {
+    game.isFavorite = isFavorite;
+
+    for (var i = 0; i < gameList.length; i++) {
+      final item = gameList[i];
+      if (identical(item, game) || _isSameGame(item, game)) {
+        item.isFavorite = isFavorite;
+        gameList[i] = item;
+      }
+    }
+
+    final currentSelected = selectedGame.value;
+    if (currentSelected != null && _isSameGame(currentSelected, game)) {
+      currentSelected.isFavorite = isFavorite;
+      selectedGame.refresh();
+    }
+  }
 
   /// 切换游戏收藏状态
   Future<void> toggleFavorite(GameList game) async {
@@ -485,9 +514,7 @@ class GameMenuController extends GetxController {
         );
 
         if (response.statusCode == 200 && response.data['code'] == 1) {
-          // 更新本地状态
-          game.isFavorite = false;
-          gameList.refresh(); // 刷新列表
+          _updateFavoriteStatus(game, false);
         } else {
           final msg = response.data['msg']?.toString();
           Get.snackbar(
@@ -508,9 +535,7 @@ class GameMenuController extends GetxController {
         );
 
         if (response.statusCode == 200 && response.data['code'] == 1) {
-          // 更新本地状态
-          game.isFavorite = true;
-          gameList.refresh(); // 刷新列表
+          _updateFavoriteStatus(game, true);
         } else {
           final msg = response.data['msg']?.toString();
           Get.snackbar(

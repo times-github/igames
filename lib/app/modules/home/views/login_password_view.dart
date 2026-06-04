@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/utils/api_client.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class LoginPasswordView extends StatefulWidget {
   const LoginPasswordView({super.key});
@@ -42,7 +42,7 @@ class _LoginPasswordViewState extends State<LoginPasswordView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -74,10 +74,8 @@ class _LoginPasswordViewState extends State<LoginPasswordView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -162,7 +160,8 @@ class _LoginPasswordViewState extends State<LoginPasswordView> {
               autocorrect: false,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                hintStyle:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                 border: InputBorder.none,
                 isDense: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -248,8 +247,7 @@ class _LoginPasswordViewState extends State<LoginPasswordView> {
   }
 
   bool _hasSpecialChar(String value) {
-    return RegExp(r'[!@#$%^&*()_+\-=\[\]{};:,.<>/?`~\\|]')
-        .hasMatch(value);
+    return RegExp(r'[!@#$%^&*()_+\-=\[\]{};:,.<>/?`~\\|]').hasMatch(value);
   }
 
   bool _isLoginPasswordFormatValid(String value) {

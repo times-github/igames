@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:igames/app/base/base_controller.dart';
 import 'package:igames/app/data/models/gametype.dart';
 import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
 import 'package:igames/app/modules/home/controllers/home_controller.dart';
 import 'package:igames/app/modules/widgets/app_brand_logo.dart';
+import 'package:igames/app/modules/widgets/app_close_button.dart';
 import 'package:igames/app/modules/widgets/compatible_image.dart';
-import 'package:igames/app/modules/widgets/game_cover_image.dart';
+import 'package:igames/app/modules/widgets/game_card.dart';
 import 'package:igames/app/modules/widgets/gameMenu/controllers/game_menu_controller.dart';
 import 'package:igames/app/modules/widgets/common_header.dart';
 import 'package:igames/app/modules/widgets/jackpot_scroller.dart';
@@ -16,9 +17,17 @@ import 'package:igames/app/data/services/app_info_service.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
 import 'package:igames/app/data/services/jackpot_service.dart';
 import 'package:igames/app/utils/api_lang.dart';
+import 'package:igames/app/utils/responsive.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:igames/config/app_config_export.dart';
+
+/// 简单的Timer管理器，用于StatefulWidget
+class _TimerManager extends BaseController {
+  _TimerManager() {
+    onInit();
+  }
+}
 
 class HomeTab extends StatefulWidget {
   const HomeTab({
@@ -38,15 +47,20 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   final ScrollController _scrollController = ScrollController();
+  late final _TimerManager _timerManager; // 使用TimerManager管理Timer
   static const int _priorityHomeImageCount = 6;
+  static const double _homeShowcaseAutoPlayCutoff = 320;
   bool _showBackToTop = false;
   bool _allowAnnouncementFetch = false;
   bool _allowDeferredHomeImages = false;
   bool _didKickOffHomeDeferredResources = false;
+  bool _pauseHomeAutoPlay = false;
+  bool _homeShowcaseVisible = true;
 
   @override
   void initState() {
     super.initState();
+    _timerManager = _TimerManager(); // 初始化TimerManager
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _kickOffHomeDeferredResources();
@@ -56,6 +70,8 @@ class _HomeTabState extends State<HomeTab> {
 
   void _handleScroll() {
     final pos = _scrollController.position;
+    _markHomeScrollActive();
+    _updateHomeShowcaseVisibility(pos.pixels);
     final prefetchThreshold = pos.viewportDimension * 1.5;
     if (pos.pixels + prefetchThreshold >= pos.maxScrollExtent) {
       widget.menuController.loadMoreGames();
@@ -78,7 +94,6 @@ class _HomeTabState extends State<HomeTab> {
     _didKickOffHomeDeferredResources = true;
 
     final appInfo = Get.find<AppInfoService>();
-    final jackpotService = Get.find<JackpotService>();
     final locale = Get.locale;
     final resolvedLang = normalizeApiLang(
       locale?.toLanguageTag() ?? locale?.languageCode,
@@ -92,10 +107,49 @@ class _HomeTabState extends State<HomeTab> {
     if (appInfo.banners.isEmpty) {
       unawaited(appInfo.fetchAppBanners(lang: resolvedLang));
     }
-    if (jackpotService.jackpotList.isEmpty) {
-      unawaited(jackpotService.ensureLoaded());
+    if (Get.isRegistered<JackpotService>()) {
+      final jackpotService = Get.find<JackpotService>();
+      if (jackpotService.jackpotList.isEmpty) {
+        unawaited(jackpotService.ensureLoaded());
+      }
     }
   }
+
+  void _markHomeScrollActive() {
+    if (!AppConfig.homePauseAutoPlayWhileScrolling) {
+      return;
+    }
+
+    if (!_pauseHomeAutoPlay && mounted) {
+      setState(() {
+        _pauseHomeAutoPlay = true;
+      });
+    }
+
+    // 使用TimerManager注册Timer
+    final timer = Timer(
+      AppConfig.homeAutoPlayResumeDelay,
+      () {
+        if (!mounted || !_pauseHomeAutoPlay) return;
+        setState(() {
+          _pauseHomeAutoPlay = false;
+        });
+      },
+    );
+    _timerManager.addTimer(timer);
+  }
+
+  void _updateHomeShowcaseVisibility(double pixels) {
+    final nextValue = pixels < _homeShowcaseAutoPlayCutoff;
+    if (nextValue == _homeShowcaseVisible || !mounted) {
+      return;
+    }
+    setState(() {
+      _homeShowcaseVisible = nextValue;
+    });
+  }
+
+  bool get _homeAutoPlayEnabled => !_pauseHomeAutoPlay && _homeShowcaseVisible;
 
   void _unlockDeferredHomeImagesLater() {
     Future.delayed(const Duration(milliseconds: 700), () {
@@ -111,7 +165,9 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   @override
+  @override
   void dispose() {
+    _timerManager.onClose(); // TimerManager会自动清理所有Timer
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     super.dispose();
@@ -121,13 +177,9 @@ class _HomeTabState extends State<HomeTab> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Container(
-          decoration:
-              const BoxDecoration(gradient: AppColors.darkBackgroundGradient),
-          child: SafeArea(
-            bottom: false,
-            child: _buildContent(context, widget.menuController),
-          ),
+        SafeArea(
+          bottom: false,
+          child: _buildContent(context, widget.menuController),
         ),
         if (_showBackToTop)
           Positioned(
@@ -175,6 +227,10 @@ class _HomeTabState extends State<HomeTab> {
       BuildContext context, GameMenuController menuController) {
     final appInfo = Get.find<AppInfoService>();
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final r = Responsive.fromContext(context);
+    final topBarHeight = r.size(41);
+    final categoryHeaderHeight = r.size(35);
+    final slotProviderHeight = r.size(64);
     const bottomNavHeight = 2.0;
     final bottomSpacer = bottomNavHeight + bottomInset + 2;
     return RefreshIndicator(
@@ -188,7 +244,7 @@ class _HomeTabState extends State<HomeTab> {
             floating: false,
             delegate: HomeTopBarDelegate(
               auth: widget.auth,
-              height: 41,
+              height: topBarHeight,
             ),
           ),
           SliverToBoxAdapter(
@@ -198,14 +254,25 @@ class _HomeTabState extends State<HomeTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  HomeAnnouncementBar(
-                    service: Get.find<AnnouncementService>(),
-                    shouldFetch: _allowAnnouncementFetch,
+                  RepaintBoundary(
+                    child: HomeBannerCarousel(
+                      appInfo: appInfo,
+                      autoPlayEnabled: _homeAutoPlayEnabled,
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  HomeBannerCarousel(appInfo: appInfo),
+                  RepaintBoundary(
+                    child: HomeAnnouncementBar(
+                      service: Get.find<AnnouncementService>(),
+                      shouldFetch: _allowAnnouncementFetch,
+                      autoPlayEnabled: _homeAutoPlayEnabled,
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  const JackpotScroller(),
+                  RepaintBoundary(
+                    child:
+                        JackpotScroller(autoPlayEnabled: _homeAutoPlayEnabled),
+                  ),
                 ],
               ),
             ),
@@ -215,7 +282,7 @@ class _HomeTabState extends State<HomeTab> {
             floating: false,
             delegate: CategoryHeaderDelegate(
               menuController: menuController,
-              height: 40,
+              height: categoryHeaderHeight,
             ),
           ),
           Obx(() {
@@ -227,7 +294,7 @@ class _HomeTabState extends State<HomeTab> {
               floating: false,
               delegate: SlotProviderHeaderDelegate(
                 menuController: menuController,
-                height: 61,
+                height: slotProviderHeight,
               ),
             );
           }),
@@ -254,7 +321,9 @@ class _HomeTabState extends State<HomeTab> {
             hasScrollBody: false,
             child: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppConfig.btnSelectedBorderColor,
+                ),
               ),
             ),
           );
@@ -278,11 +347,11 @@ class _HomeTabState extends State<HomeTab> {
         }
 
         return SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: AppConfig.homeGameGridCrossAxisCount,
             mainAxisSpacing: 4,
             crossAxisSpacing: 8,
-            childAspectRatio: 1.05,
+            childAspectRatio: AppConfig.gameCardAspectRatio,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -318,7 +387,6 @@ class HomeTopBarDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: AppColors.backgroundDark,
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       alignment: Alignment.center,
       child: buildCommonHeader(
@@ -341,10 +409,12 @@ class HomeAnnouncementBar extends StatefulWidget {
     super.key,
     required this.service,
     required this.shouldFetch,
+    required this.autoPlayEnabled,
   });
 
   final AnnouncementService service;
   final bool shouldFetch;
+  final bool autoPlayEnabled;
 
   @override
   State<HomeAnnouncementBar> createState() => _HomeAnnouncementBarState();
@@ -355,7 +425,6 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
   final Duration _animDuration = const Duration(milliseconds: 380);
   List<Announcement> _announcements = [];
   int _currentIndex = 0;
-  Timer? _timer;
   bool _hasRequested = false;
   bool _loading = true;
 
@@ -370,6 +439,9 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.shouldFetch && widget.shouldFetch) {
       _tryFetchAnnouncements();
+    }
+    if (oldWidget.autoPlayEnabled != widget.autoPlayEnabled) {
+      _syncTickerState();
     }
   }
 
@@ -397,7 +469,7 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
           _currentIndex = 0;
           _loading = false;
         });
-        _startTicker();
+        _syncTickerState();
       }
     } finally {
       if (mounted) {
@@ -408,86 +480,131 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
     }
   }
 
-  void _startTicker() {
-    _timer?.cancel();
-    if (_announcements.length <= 1) return;
-    _timer = Timer.periodic(_stayDuration, (_) {
-      if (!mounted) return;
-      setState(() {
-        _currentIndex = (_currentIndex + 1) % _announcements.length;
-      });
+  void _syncTickerState() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _showNextAnnouncement() {
+    if (!mounted || !widget.autoPlayEnabled || _announcements.length <= 1) {
+      return;
+    }
+    setState(() {
+      _currentIndex = (_currentIndex + 1) % _announcements.length;
     });
+  }
+
+  void _handleMarqueeCycleComplete(int index) {
+    if (index != _currentIndex) return;
+    _showNextAnnouncement();
+  }
+
+  String _normalizeAnnouncementText(String? value) {
+    if (value == null) return '';
+    return value.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_hasRequested) {
-      return const SizedBox(height: 32);
+      return const SizedBox(height: 44);
     }
     if (_loading && _announcements.isEmpty) {
-      return const SizedBox(height: 32);
+      return const SizedBox(height: 44);
     }
     if (_announcements.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final current = _announcements[_currentIndex];
+    final currentIndex = _currentIndex;
+    final titleText = _normalizeAnnouncementText(current.title);
+    final contentText = _normalizeAnnouncementText(
+      current.content ?? current.summary,
+    );
     return GestureDetector(
       onTap: () => _showAnnouncementDialog(context, current),
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 41, 43, 47).withValues(alpha: 0.86),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.campaign, color: Colors.white70, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: _animDuration,
-                transitionBuilder: (child, animation) {
-                  final offsetTween = Tween<Offset>(
-                      begin: const Offset(0, 0.4), end: Offset.zero);
-                  return ClipRect(
-                    child: SlideTransition(
-                      position: offsetTween.animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeInOut,
-                        ),
-                      ),
-                      child: FadeTransition(
-                        opacity: animation,
-                        child: child,
-                      ),
-                    ),
-                  );
-                },
-                child: Text(
-                  current.title,
-                  key: ValueKey<int>(_currentIndex),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final r = Responsive.fromConstraints(constraints, context);
+          final barHeight = r.size(44);
+          final horizontalPadding = r.size(14);
+          final iconSize = r.size(26);
+          final iconGap = r.size(10);
+          final titleSize = r.font(15);
+
+          return Container(
+            height: barHeight,
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            decoration: BoxDecoration(
+              image: const DecorationImage(
+                image: AssetImage('assets/images/top_roll_bg.2bca030a.png'),
+                fit: BoxFit.fill,
               ),
             ),
-          ],
-        ),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/images/tongzhi.png',
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.low,
+                ),
+                SizedBox(width: iconGap),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: _animDuration,
+                    transitionBuilder: (child, animation) {
+                      final offsetTween = Tween<Offset>(
+                        begin: const Offset(0, 0.4),
+                        end: Offset.zero,
+                      );
+                      return ClipRect(
+                        child: SlideTransition(
+                          position: offsetTween.animate(
+                            CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeInOut,
+                            ),
+                          ),
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        ),
+                      );
+                    },
+                    child: _AnnouncementTickerText(
+                      key: ValueKey<String>(
+                        '$currentIndex-${widget.autoPlayEnabled}-$titleText-$contentText',
+                      ),
+                      title: titleText.isNotEmpty ? titleText : contentText,
+                      content: contentText,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      titleDuration: const Duration(seconds: 3),
+                      contentStaticDuration: _stayDuration,
+                      autoPlayEnabled: widget.autoPlayEnabled,
+                      onCycleComplete:
+                          widget.autoPlayEnabled && _announcements.length > 1
+                              ? () => _handleMarqueeCycleComplete(currentIndex)
+                              : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -496,22 +613,34 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
       BuildContext context, Announcement announcement) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.66),
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF2A2D3E), Color(0xFF1A1D2E)],
+              colors: [
+                AppConfig.buttonColor.withValues(alpha: 0.26),
+                const Color(0xFF103C3E).withValues(alpha: 0.96),
+                const Color(0xFF0A2428).withValues(alpha: 0.98),
+              ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
+              color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.72),
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppConfig.btnSelectedBorderColor.withValues(alpha: 0.18),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -519,10 +648,8 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
               // 关闭按钮
               Align(
                 alignment: Alignment.topRight,
-                child: IconButton(
+                child: AppCloseButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon:
-                      const Icon(Icons.close, color: Colors.white54, size: 22),
                 ),
               ),
               // 标题
@@ -532,8 +659,9 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
                   announcement.title,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    height: 1.35,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -546,9 +674,9 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
                   child: Text(
                     announcement.content ?? announcement.summary ?? '',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
-                      height: 1.6,
+                      height: 1.65,
                     ),
                   ),
                 ),
@@ -569,9 +697,9 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
                         child: Text(
                           'viewAll'.tr,
                           style: const TextStyle(
-                            color: Color(0xFF6C63FF),
+                            color: AppConfig.btnSelectedBorderColor,
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -587,9 +715,9 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
                         child: Text(
                           'detail'.tr,
                           style: const TextStyle(
-                            color: Color(0xFF6C63FF),
+                            color: AppConfig.btnSelectedBorderColor,
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -606,20 +734,267 @@ class _HomeAnnouncementBarState extends State<HomeAnnouncementBar> {
   }
 }
 
+class _AnnouncementTickerText extends StatefulWidget {
+  const _AnnouncementTickerText({
+    super.key,
+    required this.title,
+    required this.content,
+    required this.style,
+    required this.titleDuration,
+    required this.contentStaticDuration,
+    required this.autoPlayEnabled,
+    this.onCycleComplete,
+  });
+
+  final String title;
+  final String content;
+  final TextStyle style;
+  final Duration titleDuration;
+  final Duration contentStaticDuration;
+  final bool autoPlayEnabled;
+  final VoidCallback? onCycleComplete;
+
+  @override
+  State<_AnnouncementTickerText> createState() =>
+      _AnnouncementTickerTextState();
+}
+
+class _AnnouncementTickerTextState extends State<_AnnouncementTickerText>
+    with SingleTickerProviderStateMixin {
+  static const double _pixelsPerSecond = 42;
+  static const double _contentEndPadding = 24;
+  static const Duration _contentEndPauseDuration = Duration(milliseconds: 1500);
+
+  late final AnimationController _controller;
+  Timer? _phaseTimer;
+  bool _showContent = false;
+  bool _isScrolling = false;
+  double _scrollStartOffset = 0;
+  double _scrollDistance = 0;
+  Duration? _scrollDuration;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+    _controller.addStatusListener(_handleAnimationStatus);
+    _startTitlePhase();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnnouncementTickerText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.title != widget.title ||
+        oldWidget.content != widget.content ||
+        oldWidget.autoPlayEnabled != widget.autoPlayEnabled) {
+      _startTitlePhase();
+    }
+  }
+
+  @override
+  void dispose() {
+    _phaseTimer?.cancel();
+    _controller.removeStatusListener(_handleAnimationStatus);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleAnimationStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _phaseTimer?.cancel();
+    _phaseTimer = Timer(_contentEndPauseDuration, () {
+      if (!mounted) return;
+      _completeCycle();
+    });
+  }
+
+  void _startTitlePhase() {
+    _phaseTimer?.cancel();
+    _controller.stop();
+    _controller.reset();
+    _isScrolling = false;
+    _scrollStartOffset = 0;
+    _scrollDistance = 0;
+    _scrollDuration = null;
+
+    if (_showContent && mounted) {
+      setState(() {
+        _showContent = false;
+      });
+    } else {
+      _showContent = false;
+    }
+
+    if (!widget.autoPlayEnabled) return;
+    _phaseTimer = Timer(widget.titleDuration, _startContentPhase);
+  }
+
+  void _startContentPhase() {
+    if (!mounted || !widget.autoPlayEnabled) return;
+    if (widget.content.trim().isEmpty) {
+      _completeCycle();
+      return;
+    }
+    setState(() {
+      _showContent = true;
+    });
+  }
+
+  void _completeCycle() {
+    if (!mounted || !widget.autoPlayEnabled) return;
+    if (widget.onCycleComplete != null) {
+      widget.onCycleComplete?.call();
+      return;
+    }
+    _startTitlePhase();
+  }
+
+  void _updateScrollState({
+    required bool shouldScroll,
+    required double startOffset,
+    required double distance,
+    required Duration duration,
+  }) {
+    if (_isScrolling == shouldScroll &&
+        _scrollStartOffset == startOffset &&
+        _scrollDistance == distance &&
+        _scrollDuration == duration) {
+      return;
+    }
+
+    _controller.stop();
+    _controller.reset();
+    _phaseTimer?.cancel();
+
+    _isScrolling = shouldScroll;
+    _scrollStartOffset = startOffset;
+    _scrollDistance = distance;
+    _scrollDuration = duration;
+
+    if (_isScrolling) {
+      _controller.duration = duration;
+      _controller.forward();
+    } else if (widget.onCycleComplete != null) {
+      _phaseTimer = Timer(widget.contentStaticDuration, () {
+        if (!mounted) return;
+        _completeCycle();
+      });
+    } else if (widget.autoPlayEnabled) {
+      _phaseTimer = Timer(widget.contentStaticDuration, () {
+        if (!mounted) return;
+        _completeCycle();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_showContent) {
+      return Text(
+        widget.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: widget.style,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textDirection = Directionality.of(context);
+        final painter = TextPainter(
+          text: TextSpan(text: widget.content, style: widget.style),
+          maxLines: 1,
+          textDirection: textDirection,
+        )..layout(maxWidth: double.infinity);
+
+        final textWidth = painter.width;
+        final maxWidth = constraints.maxWidth;
+        final shouldScroll = textWidth > maxWidth;
+        final contentWidth = textWidth + _contentEndPadding;
+        final startOffset = 0.0;
+        final distance = shouldScroll ? (contentWidth - maxWidth) : 0.0;
+        final duration = shouldScroll
+            ? Duration(
+                milliseconds:
+                    ((distance / _pixelsPerSecond) * 1000).round().clamp(
+                          2000,
+                          45000,
+                        ),
+              )
+            : const Duration(milliseconds: 1);
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _updateScrollState(
+            shouldScroll: shouldScroll,
+            startOffset: startOffset,
+            distance: distance,
+            duration: duration,
+          );
+        });
+
+        if (!shouldScroll) {
+          return Text(
+            widget.content,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: widget.style,
+          );
+        }
+
+        return ClipRect(
+          child: AnimatedBuilder(
+            animation: _controller,
+            child: SizedBox(
+              width: contentWidth,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.content,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: widget.style,
+                  ),
+                  const SizedBox(width: _contentEndPadding),
+                ],
+              ),
+            ),
+            builder: (context, child) {
+              final offset =
+                  _scrollStartOffset - (_scrollDistance * _controller.value);
+              return Transform.translate(
+                offset: Offset(offset, 0),
+                child: child,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
 class HomeBannerCarousel extends StatefulWidget {
-  const HomeBannerCarousel({super.key, required this.appInfo});
+  const HomeBannerCarousel({
+    super.key,
+    required this.appInfo,
+    required this.autoPlayEnabled,
+  });
 
   final AppInfoService appInfo;
+  final bool autoPlayEnabled;
 
   @override
   State<HomeBannerCarousel> createState() => _HomeBannerCarouselState();
 }
 
 class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
-  static const double _bannerAspectRatio = 2.22;
   final PageController _controller = PageController();
   int _current = 0;
   Timer? _autoTimer;
+  int _lastKnownBannerCount = -1;
 
   List<AppBanner> get _banners =>
       widget.appInfo.banners.isNotEmpty ? widget.appInfo.banners : _fallback;
@@ -628,7 +1003,6 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     AppBanner(
       img: 'assets/images/getwiner.png',
       link: null,
-      title: null,
       weight: 0,
     ),
   ];
@@ -637,7 +1011,15 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   void initState() {
     super.initState();
     _controller.addListener(_handlePageChange);
-    _startAutoScroll();
+    _syncAutoScrollState();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeBannerCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.autoPlayEnabled != widget.autoPlayEnabled) {
+      _syncAutoScrollState();
+    }
   }
 
   void _handlePageChange() {
@@ -649,15 +1031,15 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     }
   }
 
-  void _startAutoScroll() {
+  void _syncAutoScrollState() {
     _autoTimer?.cancel();
-    if (_banners.length <= 1) return;
+    if (!widget.autoPlayEnabled || _banners.length <= 1) return;
     _autoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!_controller.hasClients) return;
       final next = ((_controller.page ?? 0).round() + 1) % _banners.length;
       _controller.animateToPage(
         next,
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 750),
         curve: Curves.easeInOut,
       );
     });
@@ -683,56 +1065,69 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final banners = _banners;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AspectRatio(
-          aspectRatio: _bannerAspectRatio,
-          child: PageView.builder(
-            controller: _controller,
-            physics: const BouncingScrollPhysics(),
-            itemCount: banners.length,
-            itemBuilder: (context, index) {
-              final banner = banners[index];
-              return BannerCard(
-                imagePath: banner.img,
-                title: banner.title,
-                onTap: () => _onBannerTap(banner),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(banners.length, (index) {
-            final isActive = index == _current;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: 6,
-              width: isActive ? 18 : 8,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(12),
+    return Obx(() {
+      final banners = widget.appInfo.banners.isNotEmpty
+          ? widget.appInfo.banners.toList(growable: false)
+          : _fallback;
+      if (_lastKnownBannerCount != banners.length) {
+        _lastKnownBannerCount = banners.length;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _syncAutoScrollState();
+        });
+      }
+      return AspectRatio(
+        aspectRatio: AppConfig.homeBannerAspectRatio,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _controller,
+                physics: const BouncingScrollPhysics(),
+                itemCount: banners.length,
+                itemBuilder: (context, index) {
+                  final banner = banners[index];
+                  return BannerCard(
+                    imagePath: banner.img,
+                    onTap: () => _onBannerTap(banner),
+                  );
+                },
               ),
-            );
-          }),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 12,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(banners.length, (index) {
+                  final isActive = index == _current;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 350),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    height: 6,
+                    width: isActive ? 18 : 8,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
         ),
-      ],
-    );
+      );
+    });
   }
 }
 
 class BannerCard extends StatelessWidget {
-  const BannerCard(
-      {required this.imagePath, this.title, this.onTap, super.key});
+  const BannerCard({required this.imagePath, this.onTap, super.key});
 
   final String imagePath;
-  final String? title;
   final VoidCallback? onTap;
 
   bool get _isBrandBanner => imagePath == kDefaultAppLogoAsset;
@@ -746,11 +1141,7 @@ class BannerCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: AppColors.darkBackgroundGradient,
-              ),
-            ),
+            const ColoredBox(color: Colors.transparent),
             _BannerImage(imagePath: imagePath),
             if (!_isBrandBanner)
               Container(
@@ -763,26 +1154,6 @@ class BannerCard extends StatelessWidget {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                   ),
-                ),
-              ),
-            if (title != null && title!.isNotEmpty)
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 14,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Colors.white),
-                  ],
                 ),
               ),
           ],
@@ -807,23 +1178,19 @@ class _BannerImage extends StatelessWidget {
     final image = isNetwork
         ? CompatibleImage.network(
             imagePath,
-            fit: BoxFit.cover,
+            fit: BoxFit.fill,
             errorBuilder: (context, error, stack) => _fallback(),
           )
         : Image.asset(
             imagePath,
-            fit: BoxFit.cover,
+            fit: BoxFit.fill,
             errorBuilder: (context, error, stack) => _fallback(),
           );
     return image;
   }
 
   Widget _fallback() {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: AppColors.darkBackgroundGradient,
-      ),
-    );
+    return const ColoredBox(color: Colors.transparent);
   }
 }
 
@@ -954,35 +1321,18 @@ class CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final bg = Colors.white.withValues(alpha: overlapsContent ? 0.07 : 0.05);
+    final bg = overlapsContent
+        ? AppConfig.webDesktopOuterBackground
+        : Colors.transparent;
     return Container(
-      color: Colors.transparent,
-      padding: EdgeInsets.zero,
+      color: bg,
+      height: height,
       child: Container(
-        height: height,
-        margin: const EdgeInsets.symmetric(horizontal: 0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.22),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: _PrimaryCategoryFilterBar(menuController: menuController),
-            ),
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        decoration: BoxDecoration(
+          color: bg,
         ),
+        child: _PrimaryCategoryFilterBar(menuController: menuController),
       ),
     );
   }
@@ -1049,117 +1399,132 @@ class _PrimaryCategoryFilterBarState extends State<_PrimaryCategoryFilterBar> {
     return Obx(() {
       final categories = widget.menuController.gameCategories;
       final selected = widget.menuController.selectedCategory.value;
-      return Stack(
-        alignment: Alignment.centerLeft,
-        children: [
-          Align(
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final r = Responsive.fromConstraints(constraints, context);
+          final itemRadius = r.size(14);
+          final itemHPadding = r.size(5);
+          final itemVPadding = r.size(1);
+          final itemGap = r.size(4);
+          final iconSize = r.size(44);
+          final labelSize = r.font(14.5);
+          final hintWidth = r.size(34);
+          final hintRadius = r.size(14);
+          final hintIconSize = r.size(44);
+
+          return Stack(
             alignment: Alignment.centerLeft,
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(0, 0, 30, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: categories.map((category) {
-                  final type = category.type;
-                  final label = category.nameKey;
-                  final iconAssetPath = category.assetPath;
-                  final bool isSelected = selected == type;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: GestureDetector(
-                      onTap: () => widget.menuController.selectCategory(type),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          gradient: isSelected
-                              ? const LinearGradient(
-                                  colors: [
-                                    Color(0xFF8A6CFF),
-                                    Color(0xFF6D7BFF)
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                )
-                              : null,
-                          color: isSelected
-                              ? null
-                              : Colors.white.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected
-                                ? const Color(0xFF8A6CFF)
-                                : Colors.white.withValues(alpha: 0.14),
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(0, 0, hintWidth - 4, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: categories.map((category) {
+                      final type = category.type;
+                      final label = category.nameKey;
+                      final iconAssetPath = category.assetPath;
+                      final bool isSelected = selected == type;
+                      return Padding(
+                        padding: EdgeInsets.only(right: itemGap),
+                        child: GestureDetector(
+                          onTap: () =>
+                              widget.menuController.selectCategory(type),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: itemHPadding,
+                              vertical: itemVPadding,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? AppConfig.btnSelectedGradient
+                                  : null,
+                              color: isSelected
+                                  ? null
+                                  : Colors.white.withValues(alpha: 0.03),
+                              borderRadius: BorderRadius.circular(itemRadius),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppConfig.btnSelectedBorderColor
+                                    : Colors.white.withValues(alpha: 0.14),
+                                width: isSelected ? 1.8 : 1,
+                              ),
+                              boxShadow: isSelected
+                                  ? AppConfig.btnSelectedShadow
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                CompatibleImage.asset(
+                                  iconAssetPath,
+                                  width: iconSize,
+                                  height: iconSize,
+                                  fit: BoxFit.contain,
+                                ),
+                                SizedBox(width: r.size(1)),
+                                Text(
+                                  label.tr,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: labelSize,
+                                    height: 1,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CompatibleImage.asset(
-                              iconAssetPath,
-                              width: 49,
-                              height: 49,
-                              fit: BoxFit.contain,
-                            ),
-                            const SizedBox(width: 1),
-                            Text(
-                              label.tr,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                height: 1,
-                                fontWeight: isSelected
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: AnimatedOpacity(
+                      opacity: _showRightHint ? 1 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: Container(
+                        width: hintWidth,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(hintRadius),
+                            bottomRight: Radius.circular(hintRadius),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.42),
+                            ],
+                          ),
+                        ),
+                        alignment: Alignment.centerRight,
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppConfig.btnSelectedBorderColor,
+                          size: hintIconSize,
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: AnimatedOpacity(
-                  opacity: _showRightHint ? 1 : 0,
-                  duration: const Duration(milliseconds: 180),
-                  child: Container(
-                    width: 34,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(14),
-                        bottomRight: Radius.circular(14),
-                      ),
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.42),
-                        ],
-                      ),
-                    ),
-                    alignment: Alignment.centerRight,
-                    child: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.primary,
-                      size: 44,
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       );
     });
   }
@@ -1175,6 +1540,8 @@ class _SlotProviderFilterBar extends StatefulWidget {
 }
 
 class _SlotProviderFilterBarState extends State<_SlotProviderFilterBar> {
+  static const AssetImage _providerCardBackground =
+      AssetImage('assets/images/gamecategory/cardbg.png');
   final ScrollController _scrollController = ScrollController();
   bool _showRightHint = false;
 
@@ -1220,138 +1587,218 @@ class _SlotProviderFilterBarState extends State<_SlotProviderFilterBar> {
     return Obx(
       () {
         final selectedId = widget.menuController.selectedSlotProvider.value;
-        return SizedBox(
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: providers.map((provider) {
-                    final isSelected = provider.id == selectedId;
-                    final label = provider.translateLabel
-                        ? provider.label.tr
-                        : provider.label;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 1),
-                      child: GestureDetector(
-                        onTap: () => widget.menuController
-                            .selectSlotProvider(provider.id),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 68,
-                          decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? const LinearGradient(
-                                    colors: [
-                                      Color(0xFF8A6CFF),
-                                      Color(0xFF5A6DFF),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  )
-                                : null,
-                            color: isSelected
-                                ? null
-                                : Colors.white.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFF9B86FF)
-                                  : Colors.white.withValues(alpha: 0.08),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final r = Responsive.fromConstraints(constraints, context);
+            final itemWidth = r.size(72);
+            final itemHeight = r.size(54);
+            final itemRadius = r.size(16);
+            final cardInnerRadius = r.size(15);
+            final itemGap = r.size(4);
+            final logoBoxWidth = r.size(42);
+            final logoBoxHeight = r.size(22);
+            final textSize = r.font(9.5);
+            final innerHPadding = r.size(5);
+            final innerVPadding = r.size(4);
+            final hintWidth = r.size(34);
+            final hintRadius = r.size(14);
+            final hintIconSize = r.size(44);
+            final fallbackIconSize = r.size(28);
+
+            return SizedBox(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.only(right: hintWidth - 4),
+                    child: Row(
+                      children: providers.map((provider) {
+                        final isSelected = provider.id == selectedId;
+                        final label = provider.translateLabel
+                            ? provider.label.tr
+                            : provider.label;
+                        return Padding(
+                          padding: EdgeInsets.only(right: itemGap),
+                          child: GestureDetector(
+                            onTap: () => widget.menuController
+                                .selectSlotProvider(provider.id),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: itemWidth,
+                              height: itemHeight,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(itemRadius),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppConfig.btnSelectedBorderColor
+                                      : Colors.white.withValues(alpha: 0.08),
+                                  width: isSelected ? 1.8 : 0.9,
+                                ),
+                                boxShadow: isSelected
+                                    ? AppConfig.btnSelectedShadow
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          blurRadius: r.size(8),
+                                          offset: Offset(
+                                            0,
+                                            r.size(3),
+                                          ),
+                                        ),
+                                      ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(cardInnerRadius),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    const DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        image: DecorationImage(
+                                          image: _providerCardBackground,
+                                          fit: BoxFit.fill,
+                                        ),
+                                      ),
+                                    ),
+                                    AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 180),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: isSelected
+                                              ? [
+                                                  AppConfig.btnSelectedColor
+                                                      .withValues(alpha: 0.85),
+                                                  AppConfig.btnSelectedColor
+                                                      .withValues(alpha: 0.28),
+                                                ]
+                                              : [
+                                                  Colors.black.withValues(
+                                                    alpha: 0.12,
+                                                  ),
+                                                  Colors.black.withValues(
+                                                    alpha: 0.22,
+                                                  ),
+                                                ],
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.fromLTRB(
+                                        innerHPadding,
+                                        innerVPadding,
+                                        innerHPadding,
+                                        innerVPadding,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: logoBoxWidth,
+                                            height: logoBoxHeight,
+                                            child: Center(
+                                              child: Image.asset(
+                                                provider.assetPath,
+                                                fit: BoxFit.contain,
+                                                filterQuality:
+                                                    FilterQuality.low,
+                                                errorBuilder: (_, __, ___) =>
+                                                    Icon(
+                                                  Icons.casino_rounded,
+                                                  color: Colors.white54,
+                                                  size: fallbackIconSize,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: r.size(3),
+                                          ),
+                                          Text(
+                                            label,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: textSize,
+                                              height: 1,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w800
+                                                  : FontWeight.w700,
+                                              shadows: [
+                                                Shadow(
+                                                  color:
+                                                      Colors.black.withValues(
+                                                    alpha: 0.28,
+                                                  ),
+                                                  blurRadius: r.size(4),
+                                                  offset: Offset(
+                                                    0,
+                                                    r.size(1),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: const Color(0xFF7E66FF)
-                                          .withValues(alpha: 0.24),
-                                      blurRadius: 14,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ]
-                                : null,
                           ),
-                          child: Column(
-                            spacing: 1,
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                height: 40,
-                                width: 40,
-                                child: Center(
-                                  child: Image.asset(
-                                    provider.assetPath,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.casino_rounded,
-                                      color: Colors.white54,
-                                      size: 30,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              Text(
-                                label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  height: 1,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: AnimatedOpacity(
-                      opacity: _showRightHint ? 1 : 0,
-                      duration: const Duration(milliseconds: 180),
-                      child: Container(
-                        width: 34,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(14),
-                            bottomRight: Radius.circular(14),
-                          ),
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.42),
-                            ],
-                          ),
-                        ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Align(
                         alignment: Alignment.centerRight,
-                        child: const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.primary,
-                          size: 44,
+                        child: AnimatedOpacity(
+                          opacity: _showRightHint ? 1 : 0,
+                          duration: const Duration(milliseconds: 180),
+                          child: Container(
+                            width: hintWidth,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(hintRadius),
+                                bottomRight: Radius.circular(hintRadius),
+                              ),
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.42),
+                                ],
+                              ),
+                            ),
+                            alignment: Alignment.centerRight,
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppConfig.btnSelectedBorderColor,
+                              size: hintIconSize,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1376,33 +1823,24 @@ class SlotProviderHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final bg = Colors.white.withValues(alpha: overlapsContent ? 0.07 : 0.05);
+    final bg = overlapsContent
+        ? AppConfig.webDesktopOuterBackground
+        : Colors.transparent;
     return Container(
-      color: Colors.transparent,
+      color: bg,
       padding: EdgeInsets.zero,
       child: SizedBox(
         height: height,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(0, 0, 6, 0),
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.22),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              alignment: Alignment.centerLeft,
-              child: _SlotProviderFilterBar(menuController: menuController),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(0, 0, 6, 0),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(16),
             ),
+            alignment: Alignment.centerLeft,
+            child: _SlotProviderFilterBar(menuController: menuController),
           ),
         ),
       ),
@@ -1420,146 +1858,37 @@ Widget _mobileGameCard(
     BuildContext context, GameList game, GameMenuController menuController,
     {required bool shouldLoadImage}) {
   final authController = Get.find<AuthController>();
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final r = Responsive.fromConstraints(
+        constraints,
+        context,
+        designWidth: 104,
+      );
 
-  return InkWell(
-    onTap: () => menuController.startGame(context, game),
-    child: Ink(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        borderRadius: BorderRadius.circular(10),
-        gradient: const LinearGradient(
-          colors: [AppColors.cardBackground, AppColors.backgroundLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      return GameCard(
+        game: game,
+        shouldLoadImage: shouldLoadImage,
+        topLeftBadgeOffset: EdgeInsets.zero,
+        nameOverlayColor: Colors.black.withValues(alpha: 0.42),
+        namePadding: EdgeInsets.symmetric(
+          horizontal: r.size(4),
+          vertical: r.size(2),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              color: AppColors.cardBackgroundDark,
-              child: () {
-                final resolvedUrl = _resolveGameIconUrl(game.iconUrl);
-                if (!shouldLoadImage ||
-                    resolvedUrl == null ||
-                    resolvedUrl.isEmpty) {
-                  return _gameCardLogoFallback();
-                }
-                return GameCoverImage(
-                  url: resolvedUrl,
-                  fit: BoxFit.cover,
-                  fallback: _gameCardLogoFallback(),
-                );
-              }(),
-            ),
-            if ((game.gamehall ?? '').isNotEmpty)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Text(
-                    game.gamehall ?? '',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
-                  ),
-                ),
-              ),
-            // 收藏图标（只在登录时显示）
-            Obx(() {
-              if (!authController.isLoggedIn.value) {
-                return const SizedBox.shrink();
-              }
+        onTap: () => menuController.startGame(context, game),
+        topRightAction: Obx(() {
+          if (!authController.isLoggedIn.value) {
+            return const SizedBox.shrink();
+          }
 
-              return Positioned(
-                right: 0,
-                top: 0,
-                child: GestureDetector(
-                  onTap: () {
-                    menuController.toggleFavorite(game);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Icon(
-                      game.isFavorite == true
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color:
-                          game.isFavorite == true ? Colors.red : Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              );
-            }),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(bottom: Radius.circular(10)),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.42),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    game.name ?? 'Game',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
+          return GameCardFavoriteAction(
+            isFavorite: game.isFavorite == true,
+            size: r.size(18),
+            padding: EdgeInsets.all(r.size(5)),
+            onTap: () => menuController.toggleFavorite(game),
+          );
+        }),
+      );
+    },
   );
-}
-
-Widget _gameCardLogoFallback() {
-  return Image.asset(
-    kDefaultAppLogoAsset,
-    fit: BoxFit.cover,
-    errorBuilder: (_, __, ___) =>
-        const Icon(Icons.casino, color: Colors.white38, size: 40),
-  );
-}
-
-String? _resolveGameIconUrl(String? url) {
-  if (url == null || url.isEmpty) return null;
-  final trimmed = url.trim();
-  if (trimmed.startsWith('http')) return trimmed;
-  if (trimmed.startsWith('//')) return 'https:$trimmed';
-  final path = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
-  return '${AppConfig.gameIconBaseUrl}$path';
 }

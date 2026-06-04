@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:igames/app/data/services/userServices.dart';
-import 'package:igames/app/modules/auth/controllers/auth_controller.dart';
+import 'package:igames/app/data/services/user_service.dart';
+import 'package:igames/app/utils/event_bus.dart';
 import 'package:igames/app/utils/launch_params.dart';
 import '../../../utils/api_client.dart';
 
@@ -15,6 +15,7 @@ class HomeController extends GetxController {
   final currentView = 'index'.obs; // 'index' 或 'gameAll'
   // 移动端底部导航索引：0 首页 1 优惠 2 充值 3 赚钱 4 我的
   final currentTab = 0.obs;
+  final rechargeInitialMethod = ''.obs;
 
   // 页面切换方法
   void switchToGameAll() {
@@ -32,6 +33,11 @@ class HomeController extends GetxController {
     }
   }
 
+  void openRecharge({String initialMethod = ''}) {
+    rechargeInitialMethod.value = initialMethod;
+    currentTab.value = 2;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -40,6 +46,21 @@ class HomeController extends GetxController {
     if (args is Map && args['initialTab'] != null) {
       currentTab.value = args['initialTab'] as int;
     }
+
+    // 监听登录成功事件，自动刷新余额（完全解耦）
+    EventBus.on<LoginSuccessEvent>((_) {
+      debugPrint('Received LoginSuccessEvent, refreshing balance');
+      refreshBalance();
+    });
+
+    // 监听登出事件，清空余额
+    EventBus.on<LogoutEvent>((_) {
+      debugPrint('Received LogoutEvent, clearing balance');
+      balance.value = '0';
+      hasFetchedBalance.value = false;
+    });
+
+    _autoOpenAuthFromLink();
   }
 
   @override
@@ -53,8 +74,8 @@ class HomeController extends GetxController {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = Get.context;
       if (context == null) return;
-      final auth = Get.find<AuthController>();
-      auth.openLoginOverlay(context);
+      // 通过事件总线请求打开登录弹窗，完全解耦
+      EventBus.fire(const RequestLoginEvent());
     });
   }
 

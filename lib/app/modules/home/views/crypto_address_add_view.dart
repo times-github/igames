@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/payment_services.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/app/utils/api_client.dart';
-import 'package:igames/config/app_config_export.dart';
 
 class CryptoAddressAddView extends StatefulWidget {
   const CryptoAddressAddView({super.key});
@@ -53,7 +53,7 @@ class _CryptoAddressAddViewState extends State<CryptoAddressAddView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -93,10 +93,8 @@ class _CryptoAddressAddViewState extends State<CryptoAddressAddView> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
+            child: AppBackButton(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 20),
             ),
           ),
           Text(
@@ -344,7 +342,8 @@ class _CryptoAddressAddViewState extends State<CryptoAddressAddView> {
   }
 
   String _resolveCreateAddressError(dynamic code, dynamic msg) {
-    final parsedCode = code is int ? code : int.tryParse(code?.toString() ?? '');
+    final parsedCode =
+        code is int ? code : int.tryParse(code?.toString() ?? '');
     switch (parsedCode) {
       case 2001:
         return 'errorNotLogin'.tr;

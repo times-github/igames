@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:igames/app/data/services/announcement_service.dart';
+import 'package:igames/app/modules/widgets/app_back_button.dart';
 import 'package:igames/app/routes/app_pages.dart';
 import 'package:igames/config/app_colors.dart';
 import '../controllers/message_controller.dart';
@@ -11,12 +12,11 @@ class MessageView extends GetView<MessageController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1923),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        leading: AppBackButton(
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -56,7 +56,8 @@ class MessageView extends GetView<MessageController> {
               return GestureDetector(
                 onTap: () => controller.switchType(index),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     border: isSelected
                         ? const Border(
@@ -72,7 +73,8 @@ class MessageView extends GetView<MessageController> {
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.white54,
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -103,9 +105,8 @@ class MessageView extends GetView<MessageController> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: isUnread
-                        ? const Color(0xFF7C3AED)
-                        : Colors.transparent,
+                    color:
+                        isUnread ? const Color(0xFF7C3AED) : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Center(
